@@ -26,9 +26,11 @@ namespace BACH
 		LabelManager& operator=(const LabelManager&) = delete;
 		~LabelManager() = default;
 
-		label_t AddVertexLabel(std::string_view label);
-		std::tuple<label_t, label_t, label_t> AddEdgeLabel(std::string_view label,
-			std::string_view src_vertex_label, std::string_view dst_vertex_label);
+		label_t AddVertexLabel(std::string_view label_name);
+		label_t AddEdgeLabel(std::string_view edge_label_name,
+			std::string_view src_label_name, std::string_view dst_label_name);
+		label_t AddEdgeLabel(std::string_view edge_label_name,
+			label_t src_label, label_t dst_label);
 		label_t GetVertexLabelId(std::string_view label);
 		label_t GetEdgeLabelId(std::string_view label);
 		std::string_view GetVertexLabel(label_t id);

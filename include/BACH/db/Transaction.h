@@ -2,6 +2,9 @@
 
 #include "DB.h"
 
+#ifndef TransactionOnce
+#define TransactionOnce
+
 namespace BACH
 {
 	class Transaction
@@ -34,3 +37,5 @@ namespace BACH
 		bool read_only;
 	};
 }
+
+#endif

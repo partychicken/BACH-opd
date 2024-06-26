@@ -4,6 +4,7 @@
 #include <string>
 #include <string_view>
 #include "VertexLabelIdEntry.h"
+#include "VertexEntry.h"
 #include "BACH/db/DB.h"
 #include "BACH/label/LabelManager.h"
 #include "BACH/utils/types.h"

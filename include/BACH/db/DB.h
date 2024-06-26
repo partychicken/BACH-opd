@@ -1,5 +1,12 @@
 #pragma once
 
+#include <set>
+#include <tbb/concurrent_set.h>
+#include "Transaction.h"
+#include "BACH/label/LabelManager.h"
+#include "BACH/memory/MemoryManager.h"
+#include "BACH/sstable/FileManager.h"
+
 namespace BACH
 {
 	class LabelManager;
@@ -33,9 +40,8 @@ namespace BACH
 	private:
 		std::shared_ptr<Options> options;
 		std::atomic<time_t> epoch_id;
-		//std::mutex epoch_table_mutex;
-		//lock? tbbconcurrent?
-		std::set<time_t> write_epoch_table;
+		std::shared_mutex epoch_table_mutex;
+		std::set<time_t> epoch_table;
 		std::vector<std::shared_ptr<std::thread>> compact_thread;
 		std::unique_ptr<LabelManager> Labels = NULL;
 		std::unique_ptr<MemoryManager> Memtable = NULL;

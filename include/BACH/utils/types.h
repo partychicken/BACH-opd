@@ -11,6 +11,7 @@ namespace BACH
 	using label_t = uint16_t;
 	using vertex_t = uint32_t;
 	using vertex_pair_t = uint64_t;
+	using edge_t = uint32_t;
 	using vertex_edge_pair_t = uint64_t;
 	using edge_property_t = double_t;
 	using idx_t = uint32_t;

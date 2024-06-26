@@ -1,40 +1,43 @@
 #pragma once
-#ifndef VERTEXENTRY
-#define VERTEXENTRY
+//#ifndef VERTEXENTRY
+//#define VERTEXENTRY
 
-#include <map>
+#include <atomic>
 #include <memory>
-#include <tbb/concurrent_vector.h>
-#include <tbb/concurrent_unordered_map.h>
+#include <vector>
 #include <PMA/CPMA.hpp>
 #include "BACH/utils/types.h"
-#include "EdgeEntry.h"
-#include "Futex.hpp"
-#include "SizeEntry.h"
 
 namespace BACH
 {
+	struct EdgeEntry
+	{
+		vertex_t dst;
+		edge_property_t property;
+		edge_t last_version;
+	};
+	struct SizeEntry
+	{
+		size_t size = 0;
+		std::vector<std::shared_ptr<VertexEntry>> entry;
+		//std::atomic<bool> merging;
+	};
 	struct VertexEntry
 	{
 		vertex_t id;
 		CPMA<spmae_settings<vertex_edge_pair_t>>EdgeIndex;
 		std::vector <EdgeEntry> EdgePool;
 		std::vector <vertex_t> DstPool;
-		std::shared_ptr<SizeEntry> size_info;
+		std::shared_ptr <SizeEntry> size_info;
 		std::shared_mutex mutex;
 		time_t deadtime = TOMBSTONE;
-		VertexEntry(vertex_t id, std::shared_ptr<SizeEntry> size_info, vertex_t local_id) :
+		VertexEntry(vertex_t id, std::shared_ptr<SizeEntry> size_info) :
 			mutex()
 		{
 			this->id = id;
 			this->size_info = size_info;
-			if (size_info->num == 0)
-			{
-				size_info->vertex_id_b = local_id;
-			}
-			size_info->vertex_id_e = local_id;
-			size_info->num++;
+			size_info->entry.push_back(std::shared_ptr<VertexEntry>(this));
 		}
 	};
 }
-#endif // !VERTEXENTRY
+//#endif // !VERTEXENTRY

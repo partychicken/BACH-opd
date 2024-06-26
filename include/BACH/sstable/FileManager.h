@@ -35,5 +35,6 @@ namespace BACH
 		std::queue<Compaction> CompactionList;
 
 		std::shared_ptr<Version> current_version;
+		friend class DB;
 	};
 }

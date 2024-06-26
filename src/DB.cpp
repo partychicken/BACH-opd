@@ -1,0 +1,93 @@
+#include "BACH/db/DB.h"
+
+namespace BACH
+{
+	DB::DB(std::shared_ptr<Options> _options) :
+		options(_options),
+		epoch_id(0)
+	{
+		Labels = std::make_unique<LabelManager>();
+		Memtable = std::make_unique<MemoryManager>(this);
+		Files = std::make_unique<FileManager>(this);
+		for (idx_t i = 0; i < _options->NUM_OF_COMPACTION_THREAD; ++i)
+		{
+			compact_thread.push_back(std::make_shared<std::thread>(
+				[&] {CompactLoop(); }));
+			compact_thread[i]->detach();
+		}
+	}
+	DB::~DB()
+	{
+		std::cout << "closed" << std::endl;
+		close = true;
+		Files->CompactionCV.notify_all();
+	}
+	Transaction DB::BeginTransaction()
+	{
+		std::unique_lock<std::shared_mutex> lock(epoch_table_mutex);
+		time_t local_epoch_id = epoch_id.fetch_add(1, std::memory_order_relaxed);
+		epoch_table.insert(local_epoch_id);
+		return Transaction(local_epoch_id, this, false);
+	}
+	Transaction DB::BeginReadOnlyTransaction()
+	{
+		time_t local_epoch_id;
+		std::shared_lock<std::shared_mutex> lock(epoch_table_mutex);
+		if (epoch_table.empty())
+			local_epoch_id=epoch_id.load(std::memory_order_acquire);
+		else
+			local_epoch_id=(*epoch_table.begin()) - 1;
+		return Transaction(local_epoch_id, this, true);
+	}
+	label_t DB::AddVertexLabel()
+	{
+		return Labels->AddVertexLabel("");
+	}
+	label_t DB::AddVertexLabel(std::string_view label_name)
+	{
+		return Labels->AddVertexLabel(label_name);
+	}
+	label_t DB::AddEdgeLabel(label_t src_label, label_t dst_label)
+	{
+		return Labels->AddEdgeLabel("",src_label,dst_label);
+	}
+	label_t DB::AddEdgeLabel(std::string_view edge_label_name,
+		std::string_view src_label_name, std::string_view dst_label_name)
+	{
+		return Labels->AddEdgeLabel(
+			edge_label_name, src_label_name, dst_label_name);
+	}
+
+	void DB::CompactLoop()
+	{
+		while (true)
+		{
+			std::unique_lock <std::mutex> lock(Files->CompactionCVMutex);
+			if (!Files->CompactionList.empty())
+			{
+				Compaction x(Files->CompactionList.front());
+				Files->CompactionList.pop();
+				lock.unlock();
+				//merge
+				//Files->MergeSSTable(x, epoch_id, deadtime);
+			}
+			else
+			{
+				Files->CompactionCV.wait(lock);
+				if (close)
+				{
+					return;
+				}
+			}
+		}
+	}
+	void DB::CompactAll()
+	{
+		Memtable->PersistenceAll();
+		//bool done;
+		//do
+		//{
+		//	done = true;
+		//}while (done);
+	}
+}

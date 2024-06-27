@@ -17,20 +17,15 @@ namespace BACH
 		return vertex_label_num++;
 	}
 
-	label_t LabelManager::AddEdgeLabel(std::string_view edge_label_name,
+	std::tuple<label_t, label_t, label_t>  LabelManager::AddEdgeLabel(
+		std::string_view edge_label_name,
 		std::string_view src_label_name, std::string_view dst_label_name)
 	{
 		label_t src_id = GetVertexLabelId(src_label_name);
 		label_t dst_id = GetVertexLabelId(dst_label_name);
-		return AddEdgeLabel(edge_label_name, src_id, dst_id);
-	}
-
-	label_t LabelManager::AddEdgeLabel(std::string_view edge_label_name,
-		label_t src_label, label_t dst_label)
-	{
 		EdgeLabelIdIndex[edge_label_name] = edge_label_num;
-		EdgeLabel.emplace_back(edge_label_name, src_label, dst_label);
-		return edge_label_num++;
+		EdgeLabel.emplace_back(edge_label_name, src_id, dst_id);
+		return std::make_tuple(edge_label_num++, src_id, dst_id);
 	}
 
 	label_t LabelManager::GetVertexLabelId(std::string_view label)
@@ -64,6 +59,6 @@ namespace BACH
 	{
 		if (id >= edge_label_num)
 			return "";
-		return EdgeLabel[id].label;
+		return std::get<0>(EdgeLabel[id]);
 	}
 }

@@ -45,9 +45,7 @@ namespace bach
 		~DB();
 		Transaction BeginTransaction();
 		Transaction BeginReadOnlyTransaction();
-		void AddVertexLabel();
 		void AddVertexLabel(std::string_view label_name);
-		void AddEdgeLabel(label_t src_label, label_t dst_label);
 		void AddEdgeLabel(std::string_view label_name,
 			std::string_view src_label_name, std::string_view dst_label_name);
 	private:

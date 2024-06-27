@@ -24,10 +24,8 @@ namespace BACH
 		Transaction BeginTransaction();
 		Transaction BeginReadOnlyTransaction();
 		//return the id of new vlabel
-		label_t AddVertexLabel();
 		label_t AddVertexLabel(std::string_view label_name);
 		//return the id of new elabel
-		label_t AddEdgeLabel(label_t src_label, label_t dst_label);
 		label_t AddEdgeLabel(std::string_view edge_label_name,
 			std::string_view src_label_name, std::string_view dst_label_name);
 		//compaction loop for background thread

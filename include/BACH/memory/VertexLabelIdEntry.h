@@ -8,9 +8,8 @@
 
 namespace BACH
 {
-	struct VertexLabelIdEntry
+	struct VertexLabelEntry
 	{
-		label_t label;
 		tbb::concurrent_vector <std::string> VertexProperty;
 		std::map <time_t, vertex_t> VertexCntTable;
 		tbb::concurrent_vector <vertex_t>FileIndex;
@@ -20,7 +19,7 @@ namespace BACH
 		idx_t property_file_cnt = 0;
 		std::unordered_map <vertex_t, time_t> deletetime;
 		std::shared_mutex mutex;
-		VertexLabelIdEntry(label_t label_id) :
-			label(label_id), total_vertex(0), mutex() {}
+		VertexLabelEntry() :
+			total_vertex(0), mutex() {}
 	};
 }

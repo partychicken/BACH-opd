@@ -23,6 +23,9 @@ namespace BACH
 		MemoryManager(DB* _db);
 		~MemoryManager() = default;
 
+		void AddVertexLabel();
+		void AddEdgeLabel(label_t src_label, label_t dst_label);
+
 		void MemTablePersistence(label_t label_id,
 			std::shared_ptr<SizeEntry> size_info, time_t now_time);
 		void PersistenceAll();
@@ -31,11 +34,8 @@ namespace BACH
 
 	private:
 
-		//a struct to store memtable
-		//tbb::concurrent_vector <EdgeLabelIdEntry> EdgeLabelIndex;
-		
-		//concurrent? other struct?
-		/*tbb::concurrent_*/ std::vector <VertexLabelIdEntry> VertexLabelIndex;
+		ConcurrentArray <std::shared_ptr <EdgeLabelEntry>> EdgeLabelIndex;
+		ConcurrentArray <std::shared_ptr <VertexLabelEntry>> VertexLabelIndex;
 		DB* db;
 		friend class FileManager;
 		friend class Transaction;

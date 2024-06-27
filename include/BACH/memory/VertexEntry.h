@@ -7,6 +7,7 @@
 #include <vector>
 #include <PMA/CPMA.hpp>
 #include "BACH/utils/types.h"
+#include "BACH/utils/ConcurrentArray.h"
 
 namespace BACH
 {
@@ -25,20 +26,25 @@ namespace BACH
 	};
 	struct VertexEntry
 	{
-		vertex_t id;
+		//vertex_t id;
 		CPMA<spmae_settings<vertex_edge_pair_t>>EdgeIndex;
 		std::vector <EdgeEntry> EdgePool;
-		std::vector <vertex_t> DstPool;
 		std::shared_ptr <SizeEntry> size_info;
 		std::shared_mutex mutex;
 		time_t deadtime = TOMBSTONE;
-		VertexEntry(vertex_t id, std::shared_ptr<SizeEntry> size_info) :
+		VertexEntry(/*vertex_t id, */std::shared_ptr<SizeEntry> size_info) :
 			mutex()
 		{
-			this->id = id;
+			//this->id = id;
 			this->size_info = size_info;
 			size_info->entry.push_back(std::shared_ptr<VertexEntry>(this));
 		}
+	};
+	struct EdgeLabelEntry
+	{
+		ConcurrentArray<std::shared_ptr<VertexEntry>> VertexIndex;
+		std::shared_ptr<SizeEntry> now_size_info;
+		label_t src_label_id;
 	};
 }
 //#endif // !VERTEXENTRY

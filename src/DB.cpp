@@ -34,28 +34,24 @@ namespace BACH
 		time_t local_epoch_id;
 		std::shared_lock<std::shared_mutex> lock(epoch_table_mutex);
 		if (epoch_table.empty())
-			local_epoch_id=epoch_id.load(std::memory_order_acquire);
+			local_epoch_id = epoch_id.load(std::memory_order_acquire);
 		else
-			local_epoch_id=(*epoch_table.begin()) - 1;
+			local_epoch_id = (*epoch_table.begin()) - 1;
 		return Transaction(local_epoch_id, this, true);
 	}
-	label_t DB::AddVertexLabel()
-	{
-		return Labels->AddVertexLabel("");
-	}
+
 	label_t DB::AddVertexLabel(std::string_view label_name)
 	{
+		Memtable->AddVertexLabel();
 		return Labels->AddVertexLabel(label_name);
-	}
-	label_t DB::AddEdgeLabel(label_t src_label, label_t dst_label)
-	{
-		return Labels->AddEdgeLabel("",src_label,dst_label);
 	}
 	label_t DB::AddEdgeLabel(std::string_view edge_label_name,
 		std::string_view src_label_name, std::string_view dst_label_name)
 	{
-		return Labels->AddEdgeLabel(
+		auto x = Labels->AddEdgeLabel(
 			edge_label_name, src_label_name, dst_label_name);
+		Memtable->AddEdgeLabel(std::get<1>(x), std::get<2>(x));
+		return std::get<0>(x);
 	}
 
 	void DB::CompactLoop()

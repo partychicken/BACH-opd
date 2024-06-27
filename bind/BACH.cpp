@@ -14,17 +14,9 @@ namespace bach
 	{
 		return std::make_unique<BACH::Transaction>(db->BeginReadOnlyTransaction());
 	}
-	void DB::AddVertexLabel()
-	{
-		db->AddVertexLabel();
-	}
 	void DB::AddVertexLabel(std::string_view label)
 	{
 		db->AddVertexLabel(label);
-	}
-	void DB::AddEdgeLabel(label_t src_label, label_t dst_label)
-	{
-		db->AddEdgeLabel(src_label, dst_label);
 	}
 	void DB::AddEdgeLabel(std::string_view label,
 		std::string_view src_label, std::string_view dst_label)

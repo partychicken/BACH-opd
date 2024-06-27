@@ -16,6 +16,7 @@ namespace BACH
 		edge_property_t property;
 		edge_t last_version;
 	};
+	struct VertexEntry;
 	struct SizeEntry
 	{
 		size_t size = 0;

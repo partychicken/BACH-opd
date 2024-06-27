@@ -1,12 +1,14 @@
 #pragma once
 
 #include "DB.h"
+#include "BACH/utils/types.h"
 
 #ifndef TransactionOnce
 #define TransactionOnce
 
 namespace BACH
 {
+	class DB;
 	class Transaction
 	{
 	public:

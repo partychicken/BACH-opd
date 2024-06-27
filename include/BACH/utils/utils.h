@@ -103,7 +103,7 @@ namespace BACH
 				/ list_size;
 			return std::make_pair(chunk_id, list_id);
 		}
-		
+
 		inline vertex_pair_t make_vertex_pair(vertex_t src, vertex_t dst)
 		{
 			return ((vertex_pair_t)src << (sizeof(vertex_t) * 8)) | dst;
@@ -119,6 +119,12 @@ namespace BACH
 		inline edge_t unzip_pair_second(vertex_edge_pair_t x)
 		{
 			return (edge_t)(x & (((vertex_edge_pair_t)1 << (sizeof(vertex_t) * 8)) - 1));
+		}
+		inline size_t highbit(size_t x)
+		{
+			for (size_t i = 1; i < 64; ++i)
+				if (x >> i == 0)
+					return i - 1;
 		}
 	}
 }

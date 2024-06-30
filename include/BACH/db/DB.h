@@ -49,6 +49,7 @@ namespace BACH
 		friend class Transaction;
 		friend class MemoryManager;
 		friend class FileManager;
+		friend class LabelManager;
 		friend class SSTableParser;
 	};
 }

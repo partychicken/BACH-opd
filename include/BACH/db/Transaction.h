@@ -16,8 +16,8 @@ namespace BACH
 		~Transaction();
 
 		//vertex operation
-		vertex_t NewVertex(label_t label, std::string_view property);
-		std::string_view FindVertex(vertex_t vertex, label_t label);
+		vertex_t AddVertex(label_t label, std::string_view property);
+		std::shared_ptr<std::string> FindVertex(vertex_t vertex, label_t label);
 		void DelVertex(vertex_t vertex, label_t label);
 		vertex_t GetVertexNum(label_t label);
 

@@ -15,6 +15,7 @@ namespace BACH
 	{
 		vertex_t dst;
 		edge_property_t property;
+		time_t time;
 		edge_t last_version;
 	};
 	struct VertexEntry;
@@ -45,6 +46,11 @@ namespace BACH
 		ConcurrentArray<std::shared_ptr<VertexEntry>> VertexIndex;
 		std::shared_ptr<SizeEntry> now_size_info;
 		label_t src_label_id;
+		std::shared_mutex mutex;
+		EdgeLabelEntry(label_t src_label_id) :
+			src_label_id(src_label_id),
+			now_size_info(std::make_shared<SizeEntry>()),
+			mutex() {}
 	};
 }
 //#endif // !VERTEXENTRY

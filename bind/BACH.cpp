@@ -26,11 +26,11 @@ namespace bach
 	Transaction::Transaction(std::unique_ptr<BACH::Transaction> _txn) :
 		txn(std::move(_txn)) {}
 	Transaction::~Transaction() = default;
-	vertex_t Transaction::NewVertex(label_t label, std::string_view property)
+	vertex_t Transaction::AddVertex(label_t label, std::string_view property)
 	{
-		return txn->NewVertex(label, property);
+		return txn->AddVertex(label, property);
 	}
-	std::string_view Transaction::FindVertex(vertex_t vertex, label_t label)
+	std::shared_ptr<std::string> Transaction::FindVertex(vertex_t vertex, label_t label)
 	{
 		return txn->FindVertex(vertex, label);
 	}

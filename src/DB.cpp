@@ -64,8 +64,17 @@ namespace BACH
 				Compaction x(Files->CompactionList.front());
 				Files->CompactionList.pop();
 				lock.unlock();
-				//merge
-				//Files->MergeSSTable(x, epoch_id, deadtime);
+				if (x.Persistence != NULL)
+				{
+					//persistence
+					Memtable->MemTablePersistence(
+						x.label_id, x.Persistence, epoch_id.load());
+				}
+				else
+				{
+					//merge
+					//Files->MergeSSTable(x, epoch_id, deadtime);
+				}
 			}
 			else
 			{

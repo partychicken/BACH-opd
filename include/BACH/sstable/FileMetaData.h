@@ -15,10 +15,11 @@ namespace BACH
 		vertex_t vertex_id_b;
 		vertex_t vertex_id_e;
 		idx_t file_id;
-		idx_t refs = 0;
+		idx_t ref = 0;
+		bool deletion = false;
 		FileMetaData() = default;
-		FileMetaData(std::string_view _file_name, vertex_t size, 
-			std::unique_ptr<LabelManager> Labels):
+		FileMetaData(std::string_view _file_name, vertex_t size,
+			std::unique_ptr<LabelManager> Labels) :
 			file_name(_file_name)
 		{
 			int idx1 = file_name.find('_');
@@ -33,6 +34,11 @@ namespace BACH
 			vertex_id_e(vertex_id_e), file_id(file_id)
 		{
 			file_name = util::BuildSSTPath(label_name, level, vertex_id_b, file_id);
+		}
+		bool operator < (const FileMetaData& rhs) const
+		{
+			return vertex_id_b == rhs.vertex_id_b ?
+				file_id < rhs.file_id : vertex_id_b < rhs.vertex_id_b;
 		}
 	};
 }

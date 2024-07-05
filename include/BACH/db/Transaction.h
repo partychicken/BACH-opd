@@ -12,21 +12,20 @@ namespace BACH
 	class Transaction
 	{
 	public:
-		Transaction(time_t epoch, DB* db, bool _read_only);
+		Transaction(time_t epoch, DB* db,Version* _version, bool _read_only);
 		~Transaction();
 
 		//vertex operation
 		vertex_t AddVertex(label_t label, std::string_view property);
-		std::shared_ptr<std::string> FindVertex(vertex_t vertex, label_t label);
+		std::shared_ptr<std::string> GetVertex(vertex_t vertex, label_t label);
 		void DelVertex(vertex_t vertex, label_t label);
 		vertex_t GetVertexNum(label_t label);
 
 		//edge operation
 		void PutEdge(vertex_t src, vertex_t dst, label_t label,
-			edge_property_t property, bool delete_old = false,
-			bool tombstone = false);
+			edge_property_t property, bool delete_old = false);
 		bool DelEdge(vertex_t src, vertex_t dst, label_t label);
-		edge_property_t FindEdge(
+		edge_property_t GetEdge(
 			vertex_t src, vertex_t dst, label_t label);
 		std::shared_ptr<std::vector<std::pair<vertex_t, edge_property_t>>>
 			FindEdges(
@@ -36,6 +35,7 @@ namespace BACH
 	private:
 		time_t now_epoch;
 		DB* db;
+		Version* version;
 		bool read_only;
 	};
 }

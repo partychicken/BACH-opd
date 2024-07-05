@@ -40,6 +40,7 @@ namespace BACH
 		std::atomic<time_t> epoch_id;
 		std::shared_mutex epoch_table_mutex;
 		std::set<time_t> epoch_table;
+		Version* read_version, last_version, current_version;
 		std::vector<std::shared_ptr<std::thread>> compact_thread;
 		std::unique_ptr<LabelManager> Labels = NULL;
 		std::unique_ptr<MemoryManager> Memtable = NULL;

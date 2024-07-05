@@ -30,10 +30,15 @@ namespace BACH
 
 		vertex_t AddVertex(label_t label_id, std::string_view property,
 			time_t now_time);
-		std::shared_ptr<std::string> FindVertex(vertex_t vertex, label_t label,
+		std::shared_ptr<std::string> GetVertex(vertex_t vertex, label_t label,
 			time_t now_time);
 		void DelVertex(vertex_t vertex, label_t label, time_t now_time);
 
+		void PutEdge(vertex_t src, vertex_t dst, label_t label,
+			edge_property_t property, time_t now_time);
+		void DelEdge(vertex_t src, vertex_t dst, label_t label, time_t now_time);
+		edge_property_t GetEdge(vertex_t src, vertex_t dst, label_t label,
+			time_t now_time);
 
 		void MemTablePersistence(label_t label_id,
 			std::shared_ptr<SizeEntry> size_info, time_t now_time);
@@ -46,6 +51,7 @@ namespace BACH
 		DB* db;
 
 		void vertex_property_persistence(label_t label_id);
+		edge_t find_edge(vertex_t src, vertex_t dst, label_t label_id);
 
 		friend class FileManager;
 		friend class LabelManager;

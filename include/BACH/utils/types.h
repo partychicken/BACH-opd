@@ -19,6 +19,6 @@ namespace BACH
 	const idx_t NONEINDEX = UINT32_MAX;
 	const vertex_t MAXVERTEX = UINT32_MAX;
 	//constexpr static auto TIMEOUT = std::chrono::milliseconds(1);
-	const time_t TOMBSTONE = UINT64_MAX;
-	const edge_property_t NONE_PROPERTY = std::numeric_limits<double>::max();
+	const time_t MAXTIME = UINT64_MAX;
+	const edge_property_t TOMBSTONE = std::numeric_limits<double>::max();
 }

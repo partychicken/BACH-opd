@@ -26,6 +26,8 @@ namespace BACH
 		FileManager(DB* _db);
 		~FileManager() = default;
 
+		void AddCompaction(Compaction &compaction);
+
 		//std::shared_ptr<EdgeEntry> FindEdge(vertex_t src, vertex_t dst, label_t label, time_t now_epoch);
 		
 	private:

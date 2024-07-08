@@ -126,5 +126,10 @@ namespace BACH
 				if (x >> i == 0)
 					return i - 1;
 		}
+		template<typename T>
+		inline T GetDecodeFixed(const char* data)
+		{
+			return *(reinterpret_cast<const T*>(data));
+		}
 	}
 }

@@ -27,8 +27,10 @@ namespace BACH
 		~FileManager() = default;
 
 		void AddCompaction(Compaction &compaction);
-
-		//std::shared_ptr<EdgeEntry> FindEdge(vertex_t src, vertex_t dst, label_t label, time_t now_epoch);
+		std::pair<std::string, std::shared_ptr<FileMetaData>>
+			NewSSTable(label_t label_id, idx_t level,
+				vertex_t vertex_id_b, vertex_t vertex_id_e, time_t time);
+		void MergeSSTable(Compaction& compaction);
 		
 	private:
 		DB* db;

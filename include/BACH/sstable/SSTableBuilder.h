@@ -17,7 +17,7 @@ namespace BACH
 		explicit SSTableBuilder(std::shared_ptr<FileWriter> _fileWriter);
 		~SSTableBuilder() = default;
 		void AddFilter(idx_t keys_num, double false_positive);
-		void SetRange(vertex_t b, vertex_t e);
+		//void SetRange(vertex_t b, vertex_t e);
 		void FinishSrc();
 		void AddDst(vertex_t src, vertex_t dst);
 		void FinishDst();
@@ -27,7 +27,6 @@ namespace BACH
 		std::shared_ptr <FileWriter> writer;
 		std::vector <std::shared_ptr <BloomFilter>> filter;
 		std::vector <size_t> filter_offset;
-		std::vector <DstEntry> dst;
 		std::vector <vertex_t> src_index;
 		std::vector <time_t> min_t;
 		std::vector <time_t> max_t;

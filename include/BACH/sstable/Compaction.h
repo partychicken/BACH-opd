@@ -14,6 +14,6 @@ namespace BACH
 		vertex_t vertex_id_b;
 		vertex_t vertex_id_e;
 		idx_t chunk_id;
-		std::shared_ptr<SizeEntry> Persistence;
+		SizeEntry* Persistence;
 	};
 }

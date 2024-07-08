@@ -9,6 +9,7 @@
 #include "BACH/label/LabelManager.h"
 #include "BACH/property/PropertyFileBuilder.h"
 #include "BACH/property/PropertyFileParser.h"
+#include "BACH/sstable/SSTableBuilder.h"
 #include "BACH/utils/types.h"
 #include "BACH/utils/options.h"
 
@@ -40,22 +41,25 @@ namespace BACH
 		edge_property_t GetEdge(vertex_t src, vertex_t dst, label_t label,
 			time_t now_time);
 
-		void MemTablePersistence(label_t label_id,
-			std::shared_ptr<SizeEntry> size_info, time_t now_time);
+		void ClearDelTable(time_t time);
+		VersionEdit* MemTablePersistence(label_t label_id,
+			SizeEntry* size_info, time_t now_time, Version* basic_version);
 		void PersistenceAll();
 		vertex_t GetVertexNum(label_t label_id, time_t now_time) const;
 
 	private:
-		ConcurrentArray <std::shared_ptr <EdgeLabelEntry>> EdgeLabelIndex;
-		ConcurrentArray <std::shared_ptr <VertexLabelEntry>> VertexLabelIndex;
+		ConcurrentArray <EdgeLabelEntry*> EdgeLabelIndex;
+		ConcurrentArray <VertexLabelEntry*> VertexLabelIndex;
+		std::shared_mutex MemTableDelTableMutex;
+		std::map<time_t, std::vector<SizeEntry*>> MemTableDelTable;
 		DB* db;
 
 		void vertex_property_persistence(label_t label_id);
 		edge_t find_edge(vertex_t src, vertex_t dst, label_t label_id);
 
-		friend class FileManager;
-		friend class LabelManager;
-		friend class Transaction;
+		//friend class FileManager;
+		//friend class LabelManager;
+		//friend class Transaction;
 	};
 
 }

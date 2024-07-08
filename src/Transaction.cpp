@@ -7,7 +7,21 @@ namespace BACH
 		now_epoch(epoch), db(db), version(_version), read_only(_read_only) {}
 	Transaction::~Transaction()
 	{
-
+		if (read_only)
+		{
+			std::unique_lock<std::shared_mutex> rlock(db->read_epoch_table_mutex);
+			if (--db->read_epoch_table[now_epoch] == 0)
+			{
+				db->read_epoch_table.erase(now_epoch);
+				db->Memtable->ClearDelTable(now_epoch);
+			}
+			
+		}
+		else
+		{
+			std::unique_lock<std::shared_mutex> wlock(db->write_epoch_table_mutex);
+			db->write_epoch_table.erase(now_epoch);
+		}
 	}
 
 	vertex_t Transaction::AddVertex(label_t label, std::string_view property)
@@ -44,6 +58,5 @@ namespace BACH
 			return;
 		}
 		db->Memtable->PutEdge(src, dst, label, property, now_epoch);
-
 	}
 }

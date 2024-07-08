@@ -21,15 +21,13 @@ namespace BACH
 		DB& operator=(const DB&) = delete;
 		~DB();
 		DB(std::shared_ptr<Options> _options);
-		Transaction BeginTransaction();
-		Transaction BeginReadOnlyTransaction();
+		Transaction BeginWriteTransaction();
+		Transaction BeginReadTransaction();
 		//return the id of new vlabel
-		label_t AddVertexLabel(std::string_view label_name);
+		label_t AddVertexLabel(std::string label_name);
 		//return the id of new elabel
-		label_t AddEdgeLabel(std::string_view edge_label_name,
-			std::string_view src_label_name, std::string_view dst_label_name);
-		//compaction loop for background thread
-		void CompactLoop();
+		label_t AddEdgeLabel(std::string edge_label_name,
+			std::string src_label_name, std::string dst_label_name);
 		//compact all edge
 		void CompactAll();
 
@@ -38,14 +36,21 @@ namespace BACH
 	private:
 		std::shared_ptr<Options> options;
 		std::atomic<time_t> epoch_id;
-		std::shared_mutex epoch_table_mutex;
-		std::set<time_t> epoch_table;
-		Version* read_version, last_version, current_version;
+		std::shared_mutex write_epoch_table_mutex;
+		std::set<time_t> write_epoch_table;
+		std::shared_mutex read_epoch_table_mutex;
+		std::map<time_t, idx_t> read_epoch_table;
+		std::shared_mutex version_mutex;
+		Version* read_version = NULL, * last_version = NULL, * current_version = NULL;
 		std::vector<std::shared_ptr<std::thread>> compact_thread;
 		std::unique_ptr<LabelManager> Labels = NULL;
 		std::unique_ptr<MemoryManager> Memtable = NULL;
 		std::unique_ptr<FileManager> Files = NULL;
 		bool close = false;
+		//compaction loop for background thread
+		void CompactLoop();
+		void ProgressReadVersion();
+		void get_read_time();
 
 		friend class Transaction;
 		friend class MemoryManager;

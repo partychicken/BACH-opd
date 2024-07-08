@@ -48,7 +48,6 @@ namespace BACH
 					for (auto& k : j)
 						++k->ref;
 		}
-
 		~Version()
 		{
 			for (auto& i : FileIndex)
@@ -64,14 +63,34 @@ namespace BACH
 					}
 		}
 
+		idx_t GetFileID(label_t label, idx_t level, vertex_t src_b)
+		{
+			//binary search in FileIndex[label][level]
+			idx_t l = 0, r = FileIndex[label][level].size();
+
+			while (l < r)
+			{
+				idx_t mid = l + r >> 1;
+				if (FileIndex[label][level][mid]->vertex_id_b == src_b ?
+					FileIndex[label][level][mid]->file_id < NONEINDEX :
+					FileIndex[label][level][mid]->vertex_id_b < src_b)
+					l = mid + 1;
+				else
+					r = mid;
+			}
+			return l;
+
+		}
+
 		std::vector<          //label
 			std::vector<      //level
 			std::vector<
 			FileMetaData*>>> FileIndex;
-	private:
-		idx_t ref = 0;
 		Version* prev;
 		Version* next;
+		time_t epoch;
+	private:
+		idx_t ref = 0;
 		Options* option;
 	};
 

@@ -22,38 +22,51 @@ namespace BACH
 		close = true;
 		Files->CompactionCV.notify_all();
 	}
-	Transaction DB::BeginTransaction()
+	Transaction DB::BeginWriteTransaction()
 	{
-		std::unique_lock<std::shared_mutex> lock(epoch_table_mutex);
+		std::unique_lock<std::shared_mutex> lock(write_epoch_table_mutex);
 		time_t local_epoch_id = epoch_id.fetch_add(1, std::memory_order_relaxed);
-		epoch_table.insert(local_epoch_id);
-		return Transaction(local_epoch_id, this, false);
+		write_epoch_table.insert(local_epoch_id);
+		return Transaction(local_epoch_id, this, NULL, false);
 	}
-	Transaction DB::BeginReadOnlyTransaction()
+	Transaction DB::BeginReadTransaction()
 	{
 		time_t local_epoch_id;
-		std::shared_lock<std::shared_mutex> lock(epoch_table_mutex);
-		if (epoch_table.empty())
+		std::shared_lock<std::shared_mutex> wlock(write_epoch_table_mutex);
+		if (write_epoch_table.empty())
 			local_epoch_id = epoch_id.load(std::memory_order_acquire);
 		else
-			local_epoch_id = (*epoch_table.begin()) - 1;
-		return Transaction(local_epoch_id, this, true);
+			local_epoch_id = (*write_epoch_table.begin()) - 1;
+		std::unique_lock<std::shared_mutex> rlock(read_epoch_table_mutex);
+		if (read_epoch_table.find(local_epoch_id) == read_epoch_table.end())
+			read_epoch_table[local_epoch_id] = 1;
+		else
+			++read_epoch_table[local_epoch_id];
+		return Transaction(local_epoch_id, this, read_version, true);
 	}
 
-	label_t DB::AddVertexLabel(std::string_view label_name)
+	label_t DB::AddVertexLabel(std::string label_name)
 	{
 		Memtable->AddVertexLabel();
 		return Labels->AddVertexLabel(label_name);
 	}
-	label_t DB::AddEdgeLabel(std::string_view edge_label_name,
-		std::string_view src_label_name, std::string_view dst_label_name)
+	label_t DB::AddEdgeLabel(std::string edge_label_name,
+		std::string src_label_name, std::string dst_label_name)
 	{
 		auto x = Labels->AddEdgeLabel(
 			edge_label_name, src_label_name, dst_label_name);
 		Memtable->AddEdgeLabel(std::get<1>(x), std::get<2>(x));
 		return std::get<0>(x);
 	}
-
+	void DB::CompactAll()
+	{
+		Memtable->PersistenceAll();
+		//bool done;
+		//do
+		//{
+		//	done = true;
+		//}while (done);
+	}
 	void DB::CompactLoop()
 	{
 		while (true)
@@ -67,8 +80,8 @@ namespace BACH
 				if (x.Persistence != NULL)
 				{
 					//persistence
-					Memtable->MemTablePersistence(
-						x.label_id, x.Persistence, epoch_id.load());
+					Memtable->MemTablePersistence(x.label_id,
+						x.Persistence, epoch_id.load(), current_version);
 				}
 				else
 				{
@@ -86,13 +99,8 @@ namespace BACH
 			}
 		}
 	}
-	void DB::CompactAll()
+	void ProgressReadVersion()
 	{
-		Memtable->PersistenceAll();
-		//bool done;
-		//do
-		//{
-		//	done = true;
-		//}while (done);
+
 	}
 }

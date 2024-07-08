@@ -41,7 +41,8 @@ namespace BACH
 		std::shared_mutex read_epoch_table_mutex;
 		std::map<time_t, idx_t> read_epoch_table;
 		std::shared_mutex version_mutex;
-		Version* read_version = NULL, * last_version = NULL, * current_version = NULL;
+		std::shared_ptr<Version> read_version = NULL,
+			last_version = NULL, current_version = NULL;
 		std::vector<std::shared_ptr<std::thread>> compact_thread;
 		std::unique_ptr<LabelManager> Labels = NULL;
 		std::unique_ptr<MemoryManager> Memtable = NULL;

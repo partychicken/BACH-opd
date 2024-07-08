@@ -34,18 +34,18 @@ namespace BACH {
 			temp_file_metadata);
 	}
 
-    void FileManager::MergeSSTable(Compaction& compaction, time_t now_time) {
+    void FileManager::MergeSSTable(Compaction& compaction) {
         //把多个文件归并后生成一个新的文件，然后生成新的Version并将current_version指向这个新的version，然后旧的version如果ref为0就删除这个version并将这个version对应的文件的ref减1，如果文件ref为0则物理删除
         std::vector<SSTableParser> parsers;
         for (auto& file : compaction.file_list)
 		{
 			parsers.emplace_back(db, compaction.label_id,
 				std::make_shared<FileReader>(
-					db->options->STORAGE_DIR + "/" + file.file_name()),
+					db->options->STORAGE_DIR + "/" + file.file_name),
 				db->options, false);
 		}
         auto file_info = NewSSTable(compaction.label_id, compaction.target_level,
-			compaction.vertex_id_b, compaction.vertex_id_e,now_time);
+			compaction.vertex_id_b, compaction.vertex_id_e);
         std::string file_name = db->options->STORAGE_DIR + "/"
 			+ static_cast<std::string>(file_info.first);
         auto writer = std::make_shared<FileWriter>(file_name);

@@ -12,7 +12,7 @@ namespace BACH
 	class Transaction
 	{
 	public:
-		Transaction(time_t epoch, DB* db,Version* _version, bool _read_only);
+		Transaction(time_t epoch, DB* db, std::shared_ptr<Version> _version, bool _read_only);
 		~Transaction();
 
 		//vertex operation

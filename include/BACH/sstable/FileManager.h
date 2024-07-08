@@ -38,7 +38,7 @@ namespace BACH
 		std::condition_variable CompactionCV;
 		std::queue<Compaction> CompactionList;
 
-		std::shared_ptr<Version> current_version;
+		//std::shared_ptr<Version> current_version;
 		friend class DB;
 	};
 }

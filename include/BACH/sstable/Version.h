@@ -9,40 +9,36 @@ namespace BACH
 {
 	struct VersionEdit
 	{
-		std::vector<          //label
-			std::vector<      //level
-			std::vector<
-			FileMetaData*>>> EditFileList;
+		std::vector<FileMetaData*> EditFileList;
 	};
 	class Version
 	{
 	public:
-		Version(Version* _prev, VersionEdit& edit) :
+		Version(Version* _prev, VersionEdit* edit) :
 			prev(_prev), option(_prev->option)
 		{
 			FileIndex = prev->FileIndex;
-			for (auto& i : edit.EditFileList)
-				for (auto& j : i)
+			for (auto& i : edit->EditFileList)
+			{
+				if (i->deletion)
 				{
-					if (j.empty()) continue;
-					//idx_t file_cnt = FileIndex[(*j.begin())->level].size();
-					for (auto& k : j)
+					auto x = std::lower_bound(FileIndex[i->label][i->level].begin(),
+						FileIndex[i->label][i->level].end(), i);
+					if ((*x)->file_id != i->file_id ||
+						(*x)->vertex_id_b != i->vertex_id_b)
 					{
-						if (k->deletion)
-						{
-							auto x = std::lower_bound(FileIndex[k->label][k->level].begin(),
-								FileIndex[k->label][k->level].end(), k);
-							*x = FileIndex[k->label][k->level].back();
-							FileIndex[k->label][k->level].pop_back();
-						}
-						else
-						{
-							FileIndex[k->label][k->level].push_back(k);
-						}
+						//error
+						exit(-1);
 					}
-					sort(FileIndex[(*j.begin())->label][(*j.begin())->level].begin(),
-						FileIndex[(*j.begin())->label][(*j.begin())->level].end());
+					FileIndex[i->label][i->level].erase(x);
 				}
+				else
+				{
+					auto x = std::upper_bound(FileIndex[i->label][i->level].begin(),
+						FileIndex[i->label][i->level].end(), i);
+					FileIndex[i->label][i->level].insert(x, i);
+				}
+			}
 			for (auto& i : FileIndex)
 				for (auto& j : i)
 					for (auto& k : j)

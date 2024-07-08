@@ -202,7 +202,7 @@ namespace BACH
 		}
 	}
 	VersionEdit* MemoryManager::MemTablePersistence(label_t label_id,
-		SizeEntry* size_info, time_t now_time, Version* basic_version)
+		SizeEntry* size_info, time_t now_time, std::shared_ptr<Version> basic_version)
 	{
 		idx_t file_id = basic_version->GetFileID(
 			label_id, 0, size_info->begin_vertex_id);
@@ -211,7 +211,8 @@ namespace BACH
 		std::string file_name = temp_file_metadata->file_name;
 		auto fw = std::make_shared<FileWriter>(file_name, false);
 		auto sst = std::make_shared<SSTableBuilder>(fw);
-		size_info->begin_vertex_id;
+		sst->SetSrcRange(size_info->begin_vertex_id,
+			size_info->begin_vertex_id + size_info->entry.size() - 1);
 		for (vertex_t index = 0; index <= size_info->entry.size(); ++index)
 		{
 			sst->AddFilter(size_info->entry[index]->EdgeIndex.get_element_count(),
@@ -220,8 +221,6 @@ namespace BACH
 			{
 				if (x == 0)
 					continue;
-				//sst->AddDst(index, util::unzip_pair_first(x));
-				//std::cout << index << " " << x.first << std::endl;
 				bool tombstone = false;
 				for (auto v = util::unzip_pair_second(x); v != NONEINDEX;
 					v = size_info->entry[index]->EdgePool[v].last_version)
@@ -234,22 +233,19 @@ namespace BACH
 							tombstone = false;
 						else
 						{
-							sst->AddEdge(size_info->entry[index]->EdgePool[v]);
+							sst->AddEdge(index,
+								size_info->entry[index]->EdgePool[v].dst,
+								size_info->entry[index]->EdgePool[v].property);
 						}
 					}
 				}
-				sst_builder->FinishDst();
 			}
-			sst_builder->FinishSrc();
-			EdgeLabelIndex[label_id].VertexIndex[index].EdgePool.clear();
-			EdgeLabelIndex[label_id].VertexIndex[index].EdgeIndex = CPMA<spmae_settings<vertex_edge_pair_t>>();
-			EdgeLabelIndex[label_id].VertexIndex[index].DstPool.clear();
+			sst->ArrangeCurrentSrcInfo();
 		}
-		sst_builder->FinishSST();
-		ConvertToSSTable(label_id, size_info->vertex_id_b, size_info->vertex_id_e, sst);
-		//std::cout << file_name << std::endl;
-		db->Files->AddSSTable(file_info.second);
-		size_info->size = 0;
+		sst->ArrangeSSTableInfo();
+		auto vedit = new VersionEdit();
+		vedit->EditFileList.push_back(temp_file_metadata);
+		return vedit;
 	}
 
 	void MemoryManager::vertex_property_persistence(label_t label_id)

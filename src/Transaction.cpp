@@ -3,7 +3,7 @@
 namespace BACH
 {
 	Transaction::Transaction(time_t epoch, DB* db,
-		Version* _version, bool _read_only) :
+		std::shared_ptr<Version> _version, bool _read_only) :
 		now_epoch(epoch), db(db), version(_version), read_only(_read_only) {}
 	Transaction::~Transaction()
 	{

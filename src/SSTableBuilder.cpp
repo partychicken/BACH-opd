@@ -22,13 +22,13 @@ namespace BACH
 		now_min_t = TOMBSTONE;
 		now_max_t = 0;
 	}
-	void SSTableBuilder::AddEdge(vertex_t src, vertex_t dst, edge_property_t edge_property)
+	void SSTableBuilder::AddEdge(vertex_t index, vertex_t dst, edge_property_t edge_property)
 	{
         std::string temp_data;
 		util::PutFixed(temp_data, dst);
         util::PutFixed(temp_data, edge_property);
         writer->append(temp_data.data(), temp_data.size());
-		this->filter[src]->insert_pair(src, dst);
+		this->filter[index]->insert(dst);
 		this->src_edge_num ++;
 	}
 	void SSTableBuilder::ArrangeCurrentSrcInfo()

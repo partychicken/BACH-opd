@@ -42,8 +42,8 @@ namespace BACH
 			time_t now_time);
 
 		void ClearDelTable(time_t time);
-		VersionEdit* MemTablePersistence(label_t label_id,
-			SizeEntry* size_info, time_t now_time, Version* basic_version);
+		VersionEdit* MemTablePersistence(label_t label_id, SizeEntry* size_info,
+			time_t now_time, std::shared_ptr<Version> basic_version);
 		void PersistenceAll();
 		vertex_t GetVertexNum(label_t label_id, time_t now_time) const;
 

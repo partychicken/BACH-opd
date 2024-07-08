@@ -18,11 +18,10 @@ namespace BACH
 			hash_func_num = 32;
 		}
 	}
-	void BloomFilter::insert_pair(const vertex_t& src, const vertex_t& dst)
+	void BloomFilter::insert(const vertex_t& dst)
 	{
 		uint32_t bits_size = bits_array.size() * 8; // 位数组的长度
 		std::string s;
-		util::PutFixed(s, src);
 		util::PutFixed(s, dst);
 		uint32_t h = util::murmur_hash2(s.c_str(), s.size());
 		uint32_t delta = (h >> 17) | (h << 15); // 高17位和低15位交换
@@ -34,11 +33,10 @@ namespace BACH
 			h += delta;
 		}
 	}
-	bool BloomFilter::exists(const vertex_t& src, const vertex_t& dst)
+	bool BloomFilter::exists(const vertex_t& dst)
 	{
 		uint32_t bits_size = bits_array.size() * 8; // 位数组的长度
 		std::string s;
-		util::PutFixed(s, src);
 		util::PutFixed(s, dst);
 		uint32_t h = util::murmur_hash2(s.c_str(), s.size());
 		uint32_t delta = (h >> 17) | (h << 15);

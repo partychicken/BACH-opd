@@ -77,10 +77,11 @@ namespace BACH
 				Compaction x(Files->CompactionList.front());
 				Files->CompactionList.pop();
 				lock.unlock();
+				VersionEdit* edit;
 				if (x.Persistence != NULL)
 				{
 					//persistence
-					Memtable->MemTablePersistence(x.label_id,
+					edit = Memtable->MemTablePersistence(x.label_id,
 						x.Persistence, epoch_id.load(), current_version);
 				}
 				else
@@ -88,6 +89,9 @@ namespace BACH
 					//merge
 					//Files->MergeSSTable(x, epoch_id, deadtime);
 				}
+				std::unique_lock<std::shared_mutex> vlock(version_mutex);
+				last_version= current_version;
+				current_version=
 			}
 			else
 			{

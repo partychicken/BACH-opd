@@ -4,8 +4,7 @@
 #include <vector>
 #include "BloomFilter.h"
 #include "BACH/file/FileWriter.h"
-#include "BACH/memory/EdgeEntry.h"
-#include "BACH/sstable/DstEntry.h"
+#include "BACH/memory/VertexEntry.h"
 #include "BACH/utils/types.h"
 #include "BACH/utils/utils.h"
 

@@ -1,18 +1,14 @@
 #pragma once
 
 #include "DB.h"
-#include "BACH/utils/types.h"
-
-#ifndef TransactionOnce
-#define TransactionOnce
+#include "BACH/sstable/SSTableParser.h"
 
 namespace BACH
 {
-	class DB;
 	class Transaction
 	{
 	public:
-		Transaction(time_t epoch, DB* db, std::shared_ptr<Version> _version, bool _read_only);
+		Transaction(time_t epoch, DB* db, Version* _version, bool _read_only);
 		~Transaction();
 
 		//vertex operation
@@ -28,8 +24,7 @@ namespace BACH
 		edge_property_t GetEdge(
 			vertex_t src, vertex_t dst, label_t label);
 		std::shared_ptr<std::vector<std::pair<vertex_t, edge_property_t>>>
-			FindEdges(
-				label_t e_label, label_t s_label, label_t d_label, vertex_t src,
+			GetEdges(vertex_t src, label_t label,
 				bool (*func)(edge_property_t) = [](edge_property_t x) {return true; });
 
 	private:
@@ -39,5 +34,3 @@ namespace BACH
 		bool read_only;
 	};
 }
-
-#endif

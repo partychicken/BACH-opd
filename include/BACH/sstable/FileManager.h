@@ -8,7 +8,6 @@
 #include <queue>
 #include "BloomFilter.h"
 #include "Compaction.h"
-#include "Version.h"
 #include "BACH/db/DB.h"
 #include "BACH/file/FileWriter.h"
 #include "BACH/label/LabelManager.h"
@@ -26,18 +25,19 @@ namespace BACH
 		FileManager(DB* _db);
 		~FileManager() = default;
 
-		void AddCompaction(Compaction &compaction);
-		std::pair<std::string, std::shared_ptr<FileMetaData>>
-			NewSSTable(label_t label_id, idx_t level,
-				vertex_t vertex_id_b, vertex_t vertex_id_e, time_t time);
+		void AddCompaction(Compaction& compaction);
 		void MergeSSTable(Compaction& compaction);
-		
+		idx_t GetFileID(label_t label, idx_t level, vertex_t src_b);
+
 	private:
 		DB* db;
 		std::mutex CompactionCVMutex;
 		std::condition_variable CompactionCV;
 		std::queue<Compaction> CompactionList;
-
+		std::vector<      //label
+			std::vector<  //level
+			std::vector<  //src_b
+			idx_t>>> FileNumList;
 		//std::shared_ptr<Version> current_version;
 		friend class DB;
 	};

@@ -4,6 +4,7 @@
 
 #include <atomic>
 #include <memory>
+#include <shared_mutex>
 #include <vector>
 #include <PMA/CPMA.hpp>
 #include "BACH/utils/types.h"

@@ -3,8 +3,11 @@
 namespace BACH
 {
 	Transaction::Transaction(time_t epoch, DB* db,
-		std::shared_ptr<Version> _version, bool _read_only) :
-		now_epoch(epoch), db(db), version(_version), read_only(_read_only) {}
+		Version* _version, bool _read_only) :
+		now_epoch(epoch), db(db), version(_version), read_only(_read_only)
+	{
+		version->AddRef();
+	}
 	Transaction::~Transaction()
 	{
 		if (read_only)
@@ -15,12 +18,14 @@ namespace BACH
 				db->read_epoch_table.erase(now_epoch);
 				db->Memtable->ClearDelTable(now_epoch);
 			}
-			
+			version->DecRef();
 		}
 		else
 		{
 			std::unique_lock<std::shared_mutex> wlock(db->write_epoch_table_mutex);
 			db->write_epoch_table.erase(now_epoch);
+			wlock.unlock();
+			db->ProgressReadVersion();
 		}
 	}
 
@@ -47,7 +52,7 @@ namespace BACH
 	}
 	vertex_t Transaction::GetVertexNum(label_t label)
 	{
-		return db->Memtable->VertexLabelIndex.size();
+		return db->Memtable->GetVertexNum(label);
 	}
 
 	void Transaction::PutEdge(vertex_t src, vertex_t dst, label_t label,
@@ -58,5 +63,58 @@ namespace BACH
 			return;
 		}
 		db->Memtable->PutEdge(src, dst, label, property, now_epoch);
+	}
+	edge_property_t Transaction::GetEdge(
+		vertex_t src, vertex_t dst, label_t label)
+	{
+		edge_property_t x = db->Memtable->GetEdge(src, dst, label, now_epoch);
+		if (x != TOMBSTONE)
+			return x;
+		VersionIterator iter(version, label, src);
+		while (!iter.End())
+		{
+			auto fr = std::make_shared<FileReader>(
+				db->options->STORAGE_DIR + "/" + iter.GetFile()->file_name);
+			auto parser = std::make_shared<SSTableParser>(db, label, fr, db->options);
+			auto found = parser->GetEdge(src, dst);
+			if (found != TOMBSTONE)
+				return found;
+		}
+		return TOMBSTONE;
+	}
+	std::shared_ptr<std::vector<std::pair<vertex_t, edge_property_t>>>
+		Transaction::GetEdges(vertex_t src, label_t label,
+			bool (*func)(edge_property_t) = [](edge_property_t x) {return true; })
+	{
+		//<dst,index,property>
+		auto answer_temp = std::make_shared<std::vector<
+			std::tuple<vertex_t, vertex_t, edge_property_t>>>();
+		auto answer = std::make_shared<std::vector<
+			std::pair<vertex_t, edge_property_t>>>();
+		db->Memtable->GetEdges(src, label, now_epoch, answer_temp, func);
+		VersionIterator iter(version, label, src);
+		while (!iter.End())
+		{
+			auto fr = std::make_shared<FileReader>(
+				db->options->STORAGE_DIR + "/" + iter.GetFile()->file_name);
+			auto parser = std::make_shared<SSTableParser>(db, label, fr, db->options);
+			parser->GetEdges(src, answer_temp, func);
+		}
+		std::sort(answer_temp->begin(), answer_temp->end());
+		auto last = std::unique(answer_temp->begin(), answer_temp->end(),
+			[](const std::tuple<vertex_t, time_t, edge_property_t>& A,
+				const std::tuple<vertex_t, time_t, edge_property_t>& B)
+			{
+				return std::get<0>(A) == std::get<0>(B);
+			});
+		answer_temp->erase(last, answer_temp->end());
+		for (auto& i : *answer_temp)
+		{
+			if (std::get<2>(i) != TOMBSTONE)
+			{
+				(*answer).emplace_back(std::get<0>(i), std::get<2>(i));
+			}
+		}
+		return answer;
 	}
 }

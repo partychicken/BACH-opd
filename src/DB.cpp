@@ -1,4 +1,5 @@
 #include "BACH/db/DB.h"
+#include "BACH/db/Transaction.h"
 
 namespace BACH
 {
@@ -15,6 +16,7 @@ namespace BACH
 				[&] {CompactLoop(); }));
 			compact_thread[i]->detach();
 		}
+		read_version = current_version = new Version(options);
 	}
 	DB::~DB()
 	{
@@ -78,11 +80,13 @@ namespace BACH
 				Files->CompactionList.pop();
 				lock.unlock();
 				VersionEdit* edit;
+				time_t time = 0;
 				if (x.Persistence != NULL)
 				{
 					//persistence
 					edit = Memtable->MemTablePersistence(x.label_id,
-						x.Persistence, epoch_id.load(), current_version);
+						x.Persistence);
+					time = x.persistece_time;
 				}
 				else
 				{
@@ -90,8 +94,9 @@ namespace BACH
 					//Files->MergeSSTable(x, epoch_id, deadtime);
 				}
 				std::unique_lock<std::shared_mutex> vlock(version_mutex);
-				last_version= current_version;
-				current_version=
+				Version* tmp = current_version;
+				current_version = new Version(tmp, edit, time);
+				tmp->DecRef();
 			}
 			else
 			{
@@ -103,8 +108,23 @@ namespace BACH
 			}
 		}
 	}
-	void ProgressReadVersion()
+	void DB::ProgressReadVersion()
 	{
-
+		std::unique_lock<std::shared_mutex>lock(version_mutex);
+		while (read_version->next->epoch < get_read_time())
+		{
+			Version* tmp = read_version;
+			read_version = read_version->next;
+			read_version->AddRef();
+			tmp->DecRef();
+		}
+	}
+	time_t DB::get_read_time()
+	{
+		std::shared_lock<std::shared_mutex> wlock(write_epoch_table_mutex);
+		if (write_epoch_table.empty())
+			return epoch_id.load(std::memory_order_acquire);
+		else
+			return (*write_epoch_table.begin()) - 1;
 	}
 }

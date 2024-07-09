@@ -1,7 +1,9 @@
 #include <atomic>
 #include <map>
+#include <shared_mutex>
 #include <unordered_map>
 #include "BACH/utils/utils.h"
+#include "BACH/utils/ConcurrentArray.h"
 
 #pragma once
 

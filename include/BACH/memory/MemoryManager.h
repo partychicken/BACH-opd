@@ -40,12 +40,15 @@ namespace BACH
 		void DelEdge(vertex_t src, vertex_t dst, label_t label, time_t now_time);
 		edge_property_t GetEdge(vertex_t src, vertex_t dst, label_t label,
 			time_t now_time);
+		void GetEdges(vertex_t src, label_t label, time_t now_time,
+			std::shared_ptr<std::vector
+			<std::tuple<vertex_t, vertex_t, edge_property_t>>> answer,
+			bool (*func)(edge_property_t));
 
 		void ClearDelTable(time_t time);
-		VersionEdit* MemTablePersistence(label_t label_id, SizeEntry* size_info,
-			time_t now_time, std::shared_ptr<Version> basic_version);
+		VersionEdit* MemTablePersistence(label_t label_id, SizeEntry* size_info);
 		void PersistenceAll();
-		vertex_t GetVertexNum(label_t label_id, time_t now_time) const;
+		vertex_t GetVertexNum(label_t label_id) const;
 
 	private:
 		ConcurrentArray <EdgeLabelEntry*> EdgeLabelIndex;
@@ -55,6 +58,7 @@ namespace BACH
 		DB* db;
 
 		void vertex_property_persistence(label_t label_id);
+		void immute_memtable(SizeEntry*& size_info, label_t label);
 		edge_t find_edge(vertex_t src, vertex_t dst, label_t label_id);
 
 		//friend class FileManager;

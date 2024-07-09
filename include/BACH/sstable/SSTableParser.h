@@ -24,8 +24,10 @@ namespace BACH
 			std::shared_ptr<FileReader> _fileReader,
 			std::shared_ptr<Options> _options, bool if_read_filter = true);
 		~SSTableParser() = default;
-		std::shared_ptr<EdgeEntry> FindEdge(vertex_t src, vertex_t dst, time_t now_epoch);
-		SSTableParser::FindEdges(vertex_t src, bool (*func)(edge_property_t),std::shared_ptr<std::vector<std::pair<vertex_t, edge_property_t>>> answer);
+		edge_property_t GetEdge(vertex_t src, vertex_t dst);
+		void GetEdges(vertex_t src, std::shared_ptr<std::vector<
+			std::tuple<vertex_t, vertex_t, edge_property_t>>> answer,
+			bool (*func)(edge_property_t));
 		void GetEdgeRangeBySrcId(vertex_t src);
 		vertex_t GetSrcBegin()const { return src_b; }
 		vertex_t GetSrcEnd()const { return src_e; }
@@ -52,15 +54,15 @@ namespace BACH
 		bool read_filter;
 		//std::shared_ptr <BloomFilter> filter = NULL;
 		edge_t edge_cnt = 0;
-        size_t edge_msg_end_pos = 0;//end position
+		size_t edge_msg_end_pos = 0;//end position
 		size_t edge_allocation_end_pos = 0;
 		size_t filter_end_pos = 0;
-        size_t filter_allocation_end_pos = 0;
+		size_t filter_allocation_end_pos = 0;
 		vertex_t src_b = 0, src_e = 0;
 		vertex_t now_src_p = 0;
-        off_t file_size = 0;
+		off_t file_size = 0;
 		size_t src_edge_info_offset = 0;
-        edge_len_t src_edge_len = 0;
+		edge_len_t src_edge_len = 0;
 		std::shared_ptr<Buffer<EdgeEntry, edge_num_t>> edge_buffer = NULL;
 	};
 }

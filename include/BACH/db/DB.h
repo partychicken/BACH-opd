@@ -2,17 +2,14 @@
 
 #include <set>
 #include <tbb/concurrent_set.h>
-#include "Transaction.h"
 #include "BACH/label/LabelManager.h"
 #include "BACH/memory/MemoryManager.h"
 #include "BACH/sstable/FileManager.h"
+#include "BACh/sstable/Version.h"
 
 namespace BACH
 {
-	class LabelManager;
-	class FileManager;
-	class MemoryManager;
-	class SSTableParser;
+	class Transaction;
 	class DB
 	{
 	public:
@@ -33,30 +30,27 @@ namespace BACH
 
 		//void Persistence(std::string_view label, vertex_t merge_id);
 		//void TestMerge(Compaction& x, idx_t type);
-	private:
+
 		std::shared_ptr<Options> options;
+		std::unique_ptr<LabelManager> Labels = NULL;
+		std::unique_ptr<MemoryManager> Memtable = NULL;
+		std::unique_ptr<FileManager> Files = NULL;
+	private:
 		std::atomic<time_t> epoch_id;
 		std::shared_mutex write_epoch_table_mutex;
 		std::set<time_t> write_epoch_table;
 		std::shared_mutex read_epoch_table_mutex;
 		std::map<time_t, idx_t> read_epoch_table;
+		//deque + lock_free heap?
 		std::shared_mutex version_mutex;
-		std::shared_ptr<Version> read_version = NULL,
-			last_version = NULL, current_version = NULL;
+		Version* read_version = NULL, * current_version = NULL;
 		std::vector<std::shared_ptr<std::thread>> compact_thread;
-		std::unique_ptr<LabelManager> Labels = NULL;
-		std::unique_ptr<MemoryManager> Memtable = NULL;
-		std::unique_ptr<FileManager> Files = NULL;
 		bool close = false;
 		//compaction loop for background thread
 		void CompactLoop();
 		void ProgressReadVersion();
-		void get_read_time();
+		time_t get_read_time();
 
 		friend class Transaction;
-		friend class MemoryManager;
-		friend class FileManager;
-		friend class LabelManager;
-		friend class SSTableParser;
 	};
 }

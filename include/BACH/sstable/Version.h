@@ -14,9 +14,13 @@ namespace BACH
 	class Version
 	{
 	public:
-		Version(Version* _prev, VersionEdit* edit) :
-			prev(_prev), option(_prev->option)
+		Version(std::shared_ptr<Options> _option) :
+			prev(NULL), next(NULL), epoch(0), option(_option) {}
+		Version(Version* _prev, VersionEdit* edit, time_t time) :
+			prev(_prev), next(NULL), epoch(std::max(_prev->epoch, time)),
+			option(_prev->option)
 		{
+			prev->next = this;
 			FileIndex = prev->FileIndex;
 			for (auto& i : edit->EditFileList)
 			{
@@ -57,25 +61,34 @@ namespace BACH
 								+ k->file_name).c_str());
 						}
 					}
+			if (prev != NULL)
+				prev->next = next;
+			if (next != NULL)
+				next->prev = prev;
 		}
 
-		idx_t GetFileID(label_t label, idx_t level, vertex_t src_b)
+		//idx_t GetFileID(label_t label, idx_t level, vertex_t src_b)
+		//{
+		//	//binary search in FileIndex[label][level]
+		//	idx_t l = 0, r = FileIndex[label][level].size();
+		//	while (l < r)
+		//	{
+		//		idx_t mid = l + r >> 1;
+		//		if (FileIndex[label][level][mid]->vertex_id_b == src_b ?
+		//			FileIndex[label][level][mid]->file_id < NONEINDEX :
+		//			FileIndex[label][level][mid]->vertex_id_b < src_b)
+		//			l = mid + 1;
+		//		else
+		//			r = mid;
+		//	}
+		//	return l;
+		//}
+		void AddRef() { ++ref; }
+		void DecRef()
 		{
-			//binary search in FileIndex[label][level]
-			idx_t l = 0, r = FileIndex[label][level].size();
-
-			while (l < r)
-			{
-				idx_t mid = l + r >> 1;
-				if (FileIndex[label][level][mid]->vertex_id_b == src_b ?
-					FileIndex[label][level][mid]->file_id < NONEINDEX :
-					FileIndex[label][level][mid]->vertex_id_b < src_b)
-					l = mid + 1;
-				else
-					r = mid;
-			}
-			return l;
-
+			--ref;
+			if (ref == 0)
+				delete this;
 		}
 
 		std::vector<          //label
@@ -86,8 +99,75 @@ namespace BACH
 		Version* next;
 		time_t epoch;
 	private:
-		idx_t ref = 0;
-		Options* option;
+		idx_t ref = 1;
+		std::shared_ptr<Options> option;
+	};
+	class VersionIterator
+	{
+	public:
+		VersionIterator(Version* _version, label_t _label, vertex_t _src)
+			: version(_version), label(_label), src(_src)
+		{
+			if (!findsrc())
+				nextlevel();
+		}
+		~VersionIterator() = default;
+		FileMetaData* GetFile() const
+		{
+			if (end)
+				return NULL;
+			return version->FileIndex[label][level][idx];
+		}
+		bool End() const { return end; }
+		void next()
+		{
+			if (end)
+				return;
+			--idx;
+			if (version->FileIndex[label][level][idx]->vertex_id_b != src)
+				nextlevel();
+		}
+
+	private:
+		Version* version;
+		label_t label;
+		vertex_t src;
+		idx_t level = 0;
+		idx_t idx;
+		bool end = false;
+		void nextlevel()
+		{
+			++level;
+			while (level < version->FileIndex[label].size() && !findsrc())
+				++level;
+			if (level == version->FileIndex[label].size())
+				end = true;
+		}
+		bool findsrc()
+		{
+			if (version->FileIndex[label][level].empty())
+				return false;
+			//idx_t l = 0, r = version->FileIndex[label][level].size();
+			//while (l < r)
+			//{
+			//	idx_t mid = l + r >> 1;
+			//	if (version->FileIndex[label][level][mid]->vertex_id_b == src ?
+			//		version->FileIndex[label][level][mid]->file_id < NONEINDEX :
+			//		version->FileIndex[label][level][mid]->vertex_id_b < src)
+			//		l = mid + 1;
+			//	else
+			//		r = mid;
+			//}
+			//if (version->FileIndex[label][level][l]->vertex_id_b != src)
+			//	return false;
+			idx = std::lower_bound(version->FileIndex[label][level].begin(),
+				version->FileIndex[label][level].end(),
+				std::make_pair(src, NONEINDEX))
+				- version->FileIndex[label][level].begin();
+			if (version->FileIndex[label][level][idx]->vertex_id_b != src)
+				return false;
+			return true;
+		}
 	};
 
 }

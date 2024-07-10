@@ -172,83 +172,46 @@ namespace BACH
 			this->src_edge_len = (util::GetDecodeFixed<edge_num_t>(buffer + sizeof(edge_num_t)) - util::GetDecodeFixed<edge_num_t>(buffer)) * singel_edge_total_info_size;
 		}
 	}
-	void SSTableParser::BatchReadEdge()
+	void SSTableParser::ReadEdgeAllocationBuffer()
+    {  
+        this->edge_allocation_buffer_pos = 0;
+        
+        this->edge_allocation_buffer_len = min(this->options->READ_BUFFER_SIZE / edge_num_t, this->src_b - this->src_e + 1 - this->edge_allocation_now_pos);
+        this->edge_allocation_read_buffer = malloc(this->edge_allocation_buffer_len * edge_num_t);
+        if (!reader->fread(this->edge_allocation_read_buffer, this->edge_allocation_buffer_len * edge_num_t, this->edge_msg_end_pos + this->edge_allocation_now_pos * edge_num_t)) 
+        {
+            std::cout << "read fail" << std::endl; 
+        }
+    }
+    void SSTableParser::ReadEdgeMsgBuffer()
+    {
+        this->edge_msg_buffer_pos = 0;
+        this->edge_msg_buffer_len = min(this->options->READ_BUFFER_SIZE / singel_edge_total_info_size, this->edge_cnt - this->edge_msg_now_pos);
+        this->edge_msg_read_buffer = malloc(this->edge_msg_buffer_len * singel_edge_total_info_size);
+        if (!reader->fread(this->edge_msg_read_buffer, this->edge_msg_buffer_len * singel_edge_total_info_size))
+        {
+            std::cout << "read fail" << std::endl; 
+        }
+    }
+	bool SSTableParser::GetFirstEdge()
+    {
+        if (!this->edge_cnt) {
+            return false;
+        }
+        this->edge_allocation_now_pos = 0;
+        this->edge_msg_now_pos = 0;
+        if (this->edge_msg_now_pos != this->edge_cnt) {
+            this->ReadNewBuffer();
+        }
+        if (!this->GetNextEdge()) {
+            return false;
+        }
+        return true;
+    }
+	bool SSTableParser::GetNextEdge()
 	{
-		this->edge_buffer = std::make_shared<Buffer<EdgeEntry, edge_t>>(
-			reader, 0, this->edge_msg_end_pos, options, sizeof(edge_t) + sizeof(edge_property_t));
-	}
-	vertex_t SSTableParser::GetNowSrc()const
-	{
-		return this->now_src_p + this->src_b;
-	}
-	edge_t SSTableParser::GetNowVerCount()const
-	{
-		vertex_t now_index = dst_buffer->GetNowIndex();
-		if (now_index == src_index[now_src_p])
-		{
-			return 0;
-		}
-		return dst_buffer->GetNow().ver_index - last_ver_index;
-	}
-	std::shared_ptr<EdgeEntry> SSTableParser::GetNowEdge(bool force)const
-	{
-		if (!force)
-		{
-			edge_t now_index = edge_buffer->GetNowIndex();
-			if (now_index == dst_buffer->GetNow().ver_index)
-			{
-				return NULL;
-			}
-		}
-		return std::make_shared<EdgeEntry>(edge_buffer->GetNow());
-	}
-	void SSTableParser::Reset(bool reset_dst)
-	{
-		now_src_p = 0;
-		if (reset_dst)
-		{
-			dst_buffer->Reset();
-			last_ver_index = 0;
-		}
-	}
-	void SSTableParser::NextSrc()
-	{
-		++now_src_p;
-		if (now_src_p >= src_index.size())
-		{
-			now_src_p = MAXVERTEX - src_e;//return -1 when GetNowSrc()
-			return;
-		}
-		NextDst();
-	}
-	bool SSTableParser::NextDst()
-	{
-		edge_t now_index = dst_buffer->GetNowIndex();
-		if (now_index == src_index[now_src_p] - 1)
-		{
-			return false;
-		}
-		last_ver_index = dst_buffer->GetNow().ver_index;
-		dst_buffer->Next();
-		NextEdge();
-		return true;
-	}
-	bool SSTableParser::NextEdge(bool force)
-	{
-		edge_t now_index = edge_buffer->GetNowIndex();
-		if (!force)
-		{
-			if (now_index == dst_buffer->GetNow().ver_index - 1)
-			{
-				return false;
-			}
-		}
-		if (now_index < edge_cnt - 1)
-		{
-			edge_buffer->Next();
-			return true;
-		}
-		edge_buffer->Next();
-		return false;
+		if ((edge_num_t*)this->edge_allocation_buffer_pos != 0) {
+            // 太难写了！！！！！
+        }
 	}
 }

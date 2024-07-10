@@ -12,6 +12,8 @@
 #include "BACH/file/FileWriter.h"
 #include "BACH/label/LabelManager.h"
 #include "BACH/utils/options.h"
+#include "BACH/sstable/SSTableParser.h"
+#include "BACH/sstable/SSTableBuilder.h"
 
 namespace BACH
 {

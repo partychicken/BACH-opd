@@ -28,9 +28,7 @@ namespace BACH
 		void ReadEdgeAllocationBuffer();
 		void ReadEdgeMsgBuffer();
 		bool GetFirstEdge();
-		void GetNextEdge(vertex_t src, std::shared_ptr<std::vector<
-			std::tuple<vertex_t, vertex_t, edge_property_t>>> answer,
-			bool (*func)(edge_property_t));
+		bool GetNextEdge();
 		void GetEdgeRangeBySrcId(vertex_t src);
 		vertex_t GetSrcBegin()const { return src_b; }
 		vertex_t GetSrcEnd()const { return src_e; }

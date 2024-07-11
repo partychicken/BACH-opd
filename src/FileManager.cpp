@@ -49,7 +49,7 @@ namespace BACH {
 			new_file_src_end = max(new_file_src_end, parsers[i].GetSrcEnd());
 			if(parsers[i].GetFirstEdge())
 			{
-				q.push(parsers[i].GetNowEdgeSrc(),parsers[i].GetNowEdgeDst(),parsers[i].GetNowEdgeProp());
+				q.push(SingelEdgeInformation{parsers[i].GetNowEdgeSrc(), parsers[i].GetNowEdgeDst(), parsers[i].GetNowEdgeProp(), i});
 			}
 		}
 		auto label_id = compaction.label_id;
@@ -62,16 +62,19 @@ namespace BACH {
 		auto sst_builder = std::make_shared<SSTableBuilder>(fw);
 		sst_builder->SetSrcRange(new_file_src_begin,new_file_src_end);
 		// 归并
-		vertex_t now_vertex_id = new_file_src_begin;
-		for (auto i = q.size(); i < new_file_edge_num; i++) {
+		vertex_t now_src_vertex_id = new_file_src_begin;
+		edge_num_t already_written_in_edge_num = 0;
+		while (already_written_in_edge_num < new_file_edge_num) {
 			SingelEdgeInformation tmp = q.pop();
-			if(tmp.src_id != now_vertex_id) {
+			while(tmp.src_id != now_vertex_id) {
 				sst_builder->ArrangeCurrentSrcInfo();
+				now_src_vertex_id ++;
 			}
 			sst_builder->AddEdge(tmp.src_id,tmp.dst_id,tmp.prop);
+			already_written_in_edge_num ++;
 			if(!parsers[tmp.parser_id].GetNextEdge())
 			{
-				break;
+				continue;
 			}
 			q.push(SingelEdgeInformation{
 				parsers[tmp.parser_id].GetNowEdgeSrc(),
@@ -80,6 +83,11 @@ namespace BACH {
 				tmp.parser_id
 				});
 		}
+		while (now_src_vertex_id != new_file_src_end) {
+			sst_builder->ArrangeCurrentSrcInfo();
+			now_src_vertex_id ++;
+		}
+		sst_builder->ArrangeSSTableInfo();
 		while (true)
 		{
 			int file_list_len = compaction.file_list.size();

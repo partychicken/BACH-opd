@@ -13,7 +13,7 @@ namespace BACH
 		idx_t target_level;
 		vertex_t vertex_id_b;
 		vertex_t vertex_id_e;
-		//idx_t chunk_id;
+		idx_t file_id;
 		SizeEntry* Persistence;
 		time_t persistece_time;
 	};

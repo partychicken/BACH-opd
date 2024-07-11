@@ -1,7 +1,9 @@
 #include "BACH/sstable/FileManager.h"
-#include "queue"
+#include "BACH/db/DB.h"
 
 namespace BACH {
+	FileManager::FileManager(DB* _db) :db(_db) {}
+
 	void FileManager::AddCompaction(Compaction& compaction)
 	{
 		std::unique_lock<std::mutex> lock(CompactionCVMutex);
@@ -10,19 +12,19 @@ namespace BACH {
 	}
 
 	struct SingelEdgeInformation {
-		vertex_t src_id,dst_id;
+		vertex_t src_id, dst_id;
 		edge_property_t prop;
 		size_t parser_id;
 		friend bool operator < (SingelEdgeInformation a, SingelEdgeInformation b)
 		{
-			if(a.src_id == b.src_id) {
+			if (a.src_id == b.src_id) {
 				return a.dst_id > b.dst_id;
 			}
 			return a.src_id > b.src_id;
 		}
-	}
+	};
 
-	void FileManager::MergeSSTable(Compaction& compaction) {
+	VersionEdit* FileManager::MergeSSTable(Compaction& compaction) {
 		//把多个文件归并后生成一个新的文件，然后生成新的Version并将current_version指向这个新的version，然后旧的version如果ref为0就删除这个version并将这个version对应的文件的ref减1，如果文件ref为0则物理删除
 		std::vector<SSTableParser> parsers;
 		for (auto& file : compaction.file_list)
@@ -32,24 +34,24 @@ namespace BACH {
 					db->options->STORAGE_DIR + "/" + file.file_name),
 				db->options, false);
 		}
-		auto file_info = NewSSTable(compaction.label_id, compaction.target_level,
-			compaction.vertex_id_b, compaction.vertex_id_e);
+		auto file_info = new FileMetaData(compaction.label_id, compaction.target_level,
+			compaction.vertex_id_b, compaction.file_id,
+			db->Labels->GetEdgeLabel(compaction.label_id));
+
 		std::string file_name = db->options->STORAGE_DIR + "/"
-			+ static_cast<std::string>(file_info.first);
+			+ file_info->file_name;
 		auto writer = std::make_shared<FileWriter>(file_name);
-		auto dst_entry_buffer = std::make_shared<WriteBuffer<DstEntry, vertex_t>>(
-			file_name + ".temp", db->options);
 		auto new_file_edge_num = 0;
 		std::priority_queue<SingelEdgeInformation> q;
 		vertex_t new_file_src_begin = -1, new_file_src_end = 0;
 		for (auto i = 0; i < parsers.size(); i++)
 		{
 			new_file_edge_num += parsers[i].GetEdgeNum();
-			new_file_src_begin = min(new_file_src_begin, parsers[i].GetSrcBegin());
-			new_file_src_end = max(new_file_src_end, parsers[i].GetSrcEnd());
-			if(parsers[i].GetFirstEdge())
+			new_file_src_begin = std::min(new_file_src_begin, parsers[i].GetSrcBegin());
+			new_file_src_end = std::max(new_file_src_end, parsers[i].GetSrcEnd());
+			if (parsers[i].GetFirstEdge())
 			{
-				q.push(parsers[i].GetNowEdgeSrc(),parsers[i].GetNowEdgeDst(),parsers[i].GetNowEdgeProp());
+				q.emplace(parsers[i].GetNowEdgeSrc(), parsers[i].GetNowEdgeDst(), parsers[i].GetNowEdgeProp(), i);
 			}
 		}
 		auto label_id = compaction.label_id;
@@ -60,16 +62,17 @@ namespace BACH {
 		std::string file_name = temp_file_metadata->file_name;
 		auto fw = std::make_shared<FileWriter>(file_name, false);
 		auto sst_builder = std::make_shared<SSTableBuilder>(fw);
-		sst_builder->SetSrcRange(new_file_src_begin,new_file_src_end);
+		sst_builder->SetSrcRange(new_file_src_begin, new_file_src_end);
 		// 归并
 		vertex_t now_vertex_id = new_file_src_begin;
 		for (auto i = q.size(); i < new_file_edge_num; i++) {
-			SingelEdgeInformation tmp = q.pop();
-			if(tmp.src_id != now_vertex_id) {
+			SingelEdgeInformation tmp = q.top();
+			q.pop();
+			if (tmp.src_id != now_vertex_id) {
 				sst_builder->ArrangeCurrentSrcInfo();
 			}
-			sst_builder->AddEdge(tmp.src_id,tmp.dst_id,tmp.prop);
-			if(!parsers[tmp.parser_id].GetNextEdge())
+			sst_builder->AddEdge(tmp.src_id, tmp.dst_id, tmp.prop);
+			if (!parsers[tmp.parser_id].GetNextEdge())
 			{
 				break;
 			}
@@ -87,10 +90,14 @@ namespace BACH {
 				//有buffer，需要重改
 			}
 		}
-		// create new version
-		current_version = _new_version;
-		//check ref in version 
-		// if old version ref is 0 , execute delete_version in Version Class
+		VersionEdit* edit = new VersionEdit();
+		edit->EditFileList.push_back(*file_info);
+		for (auto& file : compaction.file_list)
+		{
+			file.deletion = true;
+			edit->EditFileList.push_back(file);
+		}
+		return edit;
 	}
 	idx_t FileManager::GetFileID(label_t label, idx_t level, vertex_t src_b)
 	{

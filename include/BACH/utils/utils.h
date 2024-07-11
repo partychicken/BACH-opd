@@ -125,6 +125,7 @@ namespace BACH
 			for (size_t i = 1; i < 64; ++i)
 				if (x >> i == 0)
 					return i - 1;
+			return 64;
 		}
 		template<typename T>
 		inline T GetDecodeFixed(const char* data)

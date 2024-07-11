@@ -56,7 +56,7 @@ namespace BACH
 	}
 
 	void Transaction::PutEdge(vertex_t src, vertex_t dst, label_t label,
-		edge_property_t property, bool delete_old = false)
+		edge_property_t property, bool delete_old)
 	{
 		if (read_only)
 		{
@@ -104,7 +104,7 @@ namespace BACH
 	}
 	std::shared_ptr<std::vector<std::pair<vertex_t, edge_property_t>>>
 		Transaction::GetEdges(vertex_t src, label_t label,
-			bool (*func)(edge_property_t) = [](edge_property_t x) {return true; })
+			bool (*func)(edge_property_t))
 	{
 		//<dst,index,property>
 		auto answer_temp = std::make_shared<std::vector<

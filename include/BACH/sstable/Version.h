@@ -3,13 +3,13 @@
 #include <algorithm>
 #include <list>
 #include <vector>
-#include "BACH/sstable/FileMetaData.h"
+#include "BACH/sstable/Compaction.h"
 
 namespace BACH
 {
 	struct VersionEdit
 	{
-		std::vector<FileMetaData*> EditFileList;
+		std::vector<FileMetaData> EditFileList;
 	};
 	class Version
 	{
@@ -67,22 +67,47 @@ namespace BACH
 				next->prev = prev;
 		}
 
-		//idx_t GetFileID(label_t label, idx_t level, vertex_t src_b)
-		//{
-		//	//binary search in FileIndex[label][level]
-		//	idx_t l = 0, r = FileIndex[label][level].size();
-		//	while (l < r)
-		//	{
-		//		idx_t mid = l + r >> 1;
-		//		if (FileIndex[label][level][mid]->vertex_id_b == src_b ?
-		//			FileIndex[label][level][mid]->file_id < NONEINDEX :
-		//			FileIndex[label][level][mid]->vertex_id_b < src_b)
-		//			l = mid + 1;
-		//		else
-		//			r = mid;
-		//	}
-		//	return l;
-		//}
+		Compaction* GetCompaction(VersionEdit* edit)
+		{
+			label_t label=-1;
+			idx_t level = -1;
+			vertex_t src_b = -1;
+			for (auto i : edit->EditFileList)
+				if (!i->deletion)
+				{
+					label = i->label;
+					level = i->level;
+					src_b = i->vertex_id_b;
+					break;
+				}
+			vertex_t num = util::ClacFileSize(
+				option->MERGE_NUM, level) * option->MERGE_NUM;
+			vertex_t tmp = src_b / num;
+			auto iter1 = std::lower_bound(FileIndex[label][level].begin(),
+				FileIndex[label][level].end(),
+				std::make_pair(tmp * num, (idx_t)0));
+			auto iter2 = std::lower_bound(FileIndex[label][level].begin(),
+				FileIndex[label][level].end(),
+				std::make_pair((tmp + 1) * num, (idx_t)0));
+			size_t cnt = 0;
+			for (auto i = iter1; i != iter2; ++i)
+				if (!(*i)->merging)
+					cnt += (*i)->file_size;
+			if (cnt < option->MEM_TABLE_MAX_SIZE * util::ClacFileSize(
+				option->MERGE_NUM, level))
+				return NULL;
+			Compaction* c = new Compaction();
+			c->vertex_id_b = tmp * num;
+			c->vertex_id_e = (tmp + 1) * num - 1;
+			c->label_id = label;
+			c->target_level = level + 1;
+			for (auto i = iter1; i != iter2; ++i)
+			{
+				c->file_list.push_back(**i);
+				(*i)->merging = true;
+			}
+			return c;
+		}
 		void AddRef() { ++ref; }
 		void DecRef()
 		{

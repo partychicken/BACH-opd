@@ -173,45 +173,45 @@ namespace BACH
 		}
 	}
 	void SSTableParser::ReadEdgeAllocationBuffer()
-    {  
-        this->edge_allocation_buffer_pos = 0;
-        
-        this->edge_allocation_buffer_len = min(this->options->READ_BUFFER_SIZE / edge_num_t, this->src_b - this->src_e + 1 - this->edge_allocation_now_pos);
-        this->edge_allocation_read_buffer = malloc(this->edge_allocation_buffer_len * edge_num_t);
-        if (!reader->fread(this->edge_allocation_read_buffer, this->edge_allocation_buffer_len * edge_num_t, this->edge_msg_end_pos + this->edge_allocation_now_pos * edge_num_t)) 
-        {
-            std::cout << "read fail" << std::endl; 
-        }
-    }
-    void SSTableParser::ReadEdgeMsgBuffer()
-    {
-        this->edge_msg_buffer_pos = 0;
-        this->edge_msg_buffer_len = min(this->options->READ_BUFFER_SIZE / singel_edge_total_info_size, this->edge_cnt - this->edge_msg_now_pos);
-        this->edge_msg_read_buffer = malloc(this->edge_msg_buffer_len * singel_edge_total_info_size);
-        if (!reader->fread(this->edge_msg_read_buffer, this->edge_msg_buffer_len * singel_edge_total_info_size))
-        {
-            std::cout << "read fail" << std::endl; 
-        }
-    }
+	{
+		this->edge_allocation_buffer_pos = 0;
+
+		this->edge_allocation_buffer_len = std::min(this->options->READ_BUFFER_SIZE, this->src_b - this->src_e + 1 - this->edge_allocation_now_pos);
+		this->edge_allocation_read_buffer = (char*)malloc(this->edge_allocation_buffer_len);
+		if (!reader->fread(this->edge_allocation_read_buffer, this->edge_allocation_buffer_len, this->edge_msg_end_pos + this->edge_allocation_now_pos))
+		{
+			std::cout << "read fail" << std::endl;
+		}
+	}
+	void SSTableParser::ReadEdgeMsgBuffer()
+	{
+		this->edge_msg_buffer_pos = 0;
+		this->edge_msg_buffer_len = std::min(this->options->READ_BUFFER_SIZE / singel_edge_total_info_size, this->edge_cnt - this->edge_msg_now_pos);
+		this->edge_msg_read_buffer = (char*)malloc(this->edge_msg_buffer_len * singel_edge_total_info_size);
+		if (!reader->fread(this->edge_msg_read_buffer, this->edge_msg_buffer_len * singel_edge_total_info_size))
+		{
+			std::cout << "read fail" << std::endl;
+		}
+	}
 	bool SSTableParser::GetFirstEdge()
-    {
-        if (!this->edge_cnt) {
-            return false;
-        }
-        this->edge_allocation_now_pos = 0;
-        this->edge_msg_now_pos = 0;
-        if (this->edge_msg_now_pos != this->edge_cnt) {
-            this->ReadNewBuffer();
-        }
-        if (!this->GetNextEdge()) {
-            return false;
-        }
-        return true;
-    }
+	{
+		if (!this->edge_cnt) {
+			return false;
+		}
+		this->edge_allocation_now_pos = 0;
+		this->edge_msg_now_pos = 0;
+		if (this->edge_msg_now_pos != this->edge_cnt) {
+			this->ReadNewBuffer();
+		}
+		if (!this->GetNextEdge()) {
+			return false;
+		}
+		return true;
+	}
 	bool SSTableParser::GetNextEdge()
 	{
 		if ((edge_num_t*)this->edge_allocation_buffer_pos != 0) {
-            // 太难写了！！！！！
-        }
+			// 太难写了！！！！！
+		}
 	}
 }

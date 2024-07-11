@@ -61,8 +61,8 @@ namespace BACH
 		std::shared_mutex mutex;
 		EdgeLabelEntry(label_t src_label_id, size_t list_num) :
 			query_counter(list_num),
-			src_label_id(src_label_id),
 			now_size_info(new SizeEntry(0, NULL)),
+			src_label_id(src_label_id),
 			mutex() {}
 	};
 }

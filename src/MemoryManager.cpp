@@ -1,4 +1,5 @@
 #include "BACH/memory/MemoryManager.h"
+#include "BACH/db/DB.h"
 
 namespace BACH
 {
@@ -182,7 +183,12 @@ namespace BACH
 			}
 		}
 	}
-
+	//1: leveling 2:tiering
+	size_t MemoryManager::GetMergeType(label_t label_id,
+		vertex_t src_b, vertex_t src_e)
+	{
+		return EdgeLabelIndex[label_id]->query_counter.GetCompactionType(src_e,src_e);
+	}
 	time_t MemoryManager::GetVertexDelTime(label_t edge_label_id, vertex_t src) const
 	{
 		std::shared_lock<std::shared_mutex> table_lock(

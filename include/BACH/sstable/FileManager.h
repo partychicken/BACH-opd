@@ -8,7 +8,6 @@
 #include <queue>
 #include "BloomFilter.h"
 #include "Compaction.h"
-#include "BACH/db/DB.h"
 #include "BACH/file/FileWriter.h"
 #include "BACH/label/LabelManager.h"
 #include "BACH/utils/options.h"
@@ -28,7 +27,7 @@ namespace BACH
 		~FileManager() = default;
 
 		void AddCompaction(Compaction& compaction);
-		void MergeSSTable(Compaction& compaction);
+		VersionEdit* MergeSSTable(Compaction& compaction);
 		idx_t GetFileID(label_t label, idx_t level, vertex_t src_b);
 
 	private:

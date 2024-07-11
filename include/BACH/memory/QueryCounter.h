@@ -19,11 +19,11 @@ namespace BACH
 			deletion.push_back(0);
 			recent_read.push_back(0);
 			recent_write.push_back(0);
-			query_list.emplace_back(list_num);
+			query_list.push_back(
+				std::make_shared<FixedDoubleBitList<1>>(list_num));
 		}
 		void AddRead(vertex_t src)
 		{
-			read.add_at(src + 1, 1);
 			add_recent_query(src, 0);
 		}
 		void AddWrite(vertex_t src)
@@ -75,5 +75,5 @@ namespace BACH
 				break;
 			}
 		}
-	}
+	};
 }

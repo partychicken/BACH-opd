@@ -62,7 +62,7 @@ namespace BACH
 	}
 	void DB::CompactAll()
 	{
-		Memtable->PersistenceAll();
+		//Memtable->PersistenceAll();
 		//bool done;
 		//do
 		//{
@@ -81,6 +81,7 @@ namespace BACH
 				lock.unlock();
 				VersionEdit* edit;
 				time_t time = 0;
+				x.file_id = Files->GetFileID(x.label_id, x.target_level, x.vertex_id_b);
 				if (x.Persistence != NULL)
 				{
 					//persistence
@@ -90,12 +91,32 @@ namespace BACH
 				}
 				else
 				{
-					//merge
-					//Files->MergeSSTable(x, epoch_id, deadtime);
+					//choose merge type
+					switch (Memtable->GetMergeType(x.label_id, x.vertex_id_b, x.vertex_id_e))
+					{
+					case 1:
+						break;
+					case 2:
+						std::shared_lock<std::shared_mutex> lock(version_mutex);
+						auto iter = std::lower_bound(
+							current_version->FileIndex[x.label_id][x.target_level].begin(),
+							current_version->FileIndex[x.label_id][x.target_level].end(),
+							std::make_pair(x.vertex_id_b, NONEINDEX));
+						while ((*iter)->vertex_id_b == x.vertex_id_b)
+							if ((*iter)->merging == false)
+							{
+								(*iter)->merging = true;
+								x.file_list.push_back(*iter);
+								break;
+							}
+						break;
+					}
+					Files->MergeSSTable(x);
 				}
 				std::unique_lock<std::shared_mutex> vlock(version_mutex);
 				Version* tmp = current_version;
 				current_version = new Version(tmp, edit, time);
+				Files->CompactionList.push(*current_version->GetCompaction(edit));
 				tmp->DecRef();
 			}
 			else

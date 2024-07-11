@@ -14,14 +14,6 @@ namespace BACH
 		this->src_b = src_b;
         this->src_e = src_e;
 	}
-	void SSTableBuilder::FinishSrc()
-	{
-		src_index.push_back(src_cnt);
-		min_t.push_back(now_min_t);
-		max_t.push_back(now_max_t);
-		now_min_t = TOMBSTONE;
-		now_max_t = 0;
-	}
 	void SSTableBuilder::AddEdge(vertex_t index, vertex_t dst, edge_property_t edge_property)
 	{
         std::string temp_data;
@@ -42,7 +34,7 @@ namespace BACH
         for (auto num : this->edge_allocation_list) 
         {
             edge_num_prefix_sum += num;
-            writer->append(&edge_num_prefix_sum, edge_num_t);
+			writer->append((char*)(&edge_num_prefix_sum), sizeof(edge_num_t));
         }
 		for (auto& i : this->filter)
 		{

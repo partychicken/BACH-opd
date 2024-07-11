@@ -52,7 +52,7 @@ namespace BACH
 		{
 			++cnt;
 			size_t num = util::highbit(cnt);
-			if ((1 << num) == cnt)
+			if ((1LL << num) == cnt)
 			{
 				newblock(num);
 			}

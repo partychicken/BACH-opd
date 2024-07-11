@@ -5,11 +5,11 @@
 #include <string_view>
 #include "VertexLabelIdEntry.h"
 #include "VertexEntry.h"
-#include "BACH/db/DB.h"
 #include "BACH/label/LabelManager.h"
 #include "BACH/property/PropertyFileBuilder.h"
 #include "BACH/property/PropertyFileParser.h"
 #include "BACH/sstable/SSTableBuilder.h"
+#include "BACH/sstable/Version.h"
 #include "BACH/utils/types.h"
 #include "BACH/utils/options.h"
 
@@ -46,7 +46,8 @@ namespace BACH
 			<std::tuple<vertex_t, vertex_t, edge_property_t>>> answer,
 			bool (*func)(edge_property_t));
 
-		time_t GetVertexDelTime(label_t edge_label_id,vertex_t src) const;
+		size_t GetMergeType(label_t label_id, vertex_t src_b, vertex_t src_e);
+		time_t GetVertexDelTime(label_t edge_label_id, vertex_t src) const;
 		void ClearDelTable(time_t time);
 		VersionEdit* MemTablePersistence(label_t label_id, SizeEntry* size_info);
 		//void PersistenceAll();
@@ -57,7 +58,7 @@ namespace BACH
 		std::shared_mutex MemTableDelTableMutex;
 		std::map<time_t, std::vector<SizeEntry*>> MemTableDelTable;
 		DB* db;
-		
+
 
 		void vertex_property_persistence(label_t label_id);
 		void immute_memtable(SizeEntry*& size_info, label_t label);

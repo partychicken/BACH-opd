@@ -14,7 +14,8 @@ namespace BACH
 	}
 	void MemoryManager::AddEdgeLabel(label_t src_label, label_t dst_label)
 	{
-		EdgeLabelIndex.push_back(new EdgeLabelEntry(src_label));
+		EdgeLabelIndex.push_back(new EdgeLabelEntry(
+			src_label, db->options->QUERY_LIST_SIZE));
 	}
 
 	vertex_t MemoryManager::AddVertex(label_t label_id,
@@ -36,6 +37,7 @@ namespace BACH
 				}
 				EdgeLabelIndex[i]->VertexIndex.push_back(
 					new VertexEntry(EdgeLabelIndex[i]->now_size_info));
+				EdgeLabelIndex[i]->query_counter.AddVertex();
 			}
 		}
 		VertexLabelIndex[label_id]->property_size += property.size();
@@ -90,13 +92,17 @@ namespace BACH
 			}
 		}
 	}
+	//删除起点后的垃圾回收？
 
 	void MemoryManager::PutEdge(vertex_t src, vertex_t dst, label_t label,
 		edge_property_t property, time_t now_time)
 	{
-		//std::shared_lock<std::shared_mutex> label_lock(EdgeLabelIndex[label]->mutex);
 		std::shared_lock<std::shared_mutex> table_lock(EdgeLabelIndex[label]->vertex_mutex[src]);
 		auto src_entry = EdgeLabelIndex[label]->VertexIndex[src];
+		if (property == TOMBSTONE)
+			EdgeLabelIndex[label]->query_counter.AddDeletion(src);
+		else
+			EdgeLabelIndex[label]->query_counter.AddWrite(src);
 		std::unique_lock<std::shared_mutex> src_lock(src_entry->mutex);
 
 		edge_t found = find_edge(src, dst, label);
@@ -119,6 +125,10 @@ namespace BACH
 				immute_memtable(src_entry->size_info, label);
 			}
 	}
+	vertex_t MemoryManager::GetVertexNum(label_t label_id) const
+	{
+		return VertexLabelIndex[label_id]->total_vertex;
+	}
 	void MemoryManager::DelEdge(vertex_t src, vertex_t dst,
 		label_t label, time_t now_time)
 	{
@@ -129,6 +139,7 @@ namespace BACH
 	{
 		std::shared_lock<std::shared_mutex> table_lock(EdgeLabelIndex[label]->vertex_mutex[src]);
 		auto src_entry = EdgeLabelIndex[label]->VertexIndex[src];
+		EdgeLabelIndex[label]->query_counter.AddRead(src);
 		table_lock.unlock();
 		while (src_entry != NULL)
 		{
@@ -151,6 +162,7 @@ namespace BACH
 	{
 		std::shared_lock<std::shared_mutex> table_lock(EdgeLabelIndex[label]->vertex_mutex[src]);
 		auto src_entry = EdgeLabelIndex[label]->VertexIndex[src];
+		EdgeLabelIndex[label]->query_counter.AddRead(src);
 		table_lock.unlock();
 		while (src_entry != NULL)
 		{
@@ -171,6 +183,12 @@ namespace BACH
 		}
 	}
 
+	time_t MemoryManager::GetVertexDelTime(label_t edge_label_id, vertex_t src) const
+	{
+		std::shared_lock<std::shared_mutex> table_lock(
+			EdgeLabelIndex[edge_label_id]->vertex_mutex[src]);
+		return EdgeLabelIndex[edge_label_id]->VertexIndex[src]->deadtime;
+	}
 	void MemoryManager::ClearDelTable(time_t time)
 	{
 		std::unique_lock<std::shared_mutex> lock(MemTableDelTableMutex);

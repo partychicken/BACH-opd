@@ -6,20 +6,20 @@ namespace bach
 	DB::DB(std::shared_ptr<BACH::Options> _options) :
 		db(std::make_unique<BACH::DB>(_options)) {}
 	DB::~DB() = default;
-	Transaction DB::BeginTransaction()
+	Transaction DB::BeginWriteTransaction()
 	{
-		return std::make_unique<BACH::Transaction>(db->BeginTransaction());
+		return std::make_unique<BACH::Transaction>(db->BeginWriteTransaction());
 	}
-	Transaction DB::BeginReadOnlyTransaction()
+	Transaction DB::BeginReadTransaction()
 	{
-		return std::make_unique<BACH::Transaction>(db->BeginReadOnlyTransaction());
+		return std::make_unique<BACH::Transaction>(db->BeginReadTransaction());
 	}
-	void DB::AddVertexLabel(std::string_view label)
+	void DB::AddVertexLabel(std::string label)
 	{
 		db->AddVertexLabel(label);
 	}
-	void DB::AddEdgeLabel(std::string_view label,
-		std::string_view src_label, std::string_view dst_label)
+	void DB::AddEdgeLabel(std::string label,
+		std::string src_label, std::string dst_label)
 	{
 		db->AddEdgeLabel(label, src_label, dst_label);
 	}
@@ -30,31 +30,9 @@ namespace bach
 	{
 		return txn->AddVertex(label, property);
 	}
-	std::shared_ptr<std::string> Transaction::FindVertex(vertex_t vertex, label_t label)
+	std::shared_ptr<std::string> Transaction::GetVertex(vertex_t vertex, label_t label)
 	{
-		return txn->FindVertex(vertex, label);
-	}
-	void Transaction::PutEdge(vertex_t src, vertex_t dst,
-		label_t label, edge_property_t property, bool delete_old)
-	{
-		txn->PutEdge(src, dst, label, property);
-	}
-	edge_property_t Transaction::FindEdge(
-		vertex_t src, vertex_t dst, label_t label)
-	{
-		return txn->FindEdge(src, dst, label);
-	}
-	std::shared_ptr<std::vector<std::pair<vertex_t, edge_property_t>>>
-		Transaction::FindEdges(
-			label_t e_label, label_t s_label, label_t d_label, vertex_t src,
-			bool (*func)(edge_property_t))
-	{
-		return txn->FindEdges(e_label, s_label, d_label, src, func);
-	}
-	bool Transaction::DelEdge(vertex_t src, vertex_t dst,
-		label_t label)
-	{
-		return txn->DelEdge(src, dst, label);
+		return txn->GetVertex(vertex, label);
 	}
 	void Transaction::DelVertex(vertex_t vertex, label_t label)
 	{
@@ -63,5 +41,26 @@ namespace bach
 	vertex_t Transaction::GetVertexNum(label_t label)
 	{
 		return txn->GetVertexNum(label);
+	}
+
+	void Transaction::PutEdge(vertex_t src, vertex_t dst,
+		label_t label, edge_property_t property, bool delete_old)
+	{
+		txn->PutEdge(src, dst, label, property);
+	}
+	void Transaction::DelEdge(vertex_t src, vertex_t dst, label_t label)
+	{
+		txn->DelEdge(src, dst, label);
+	}
+	edge_property_t Transaction::GetEdge(
+		vertex_t src, vertex_t dst, label_t label)
+	{
+		return txn->GetEdge(src, dst, label);
+	}
+	std::shared_ptr<std::vector<std::pair<vertex_t, edge_property_t>>>
+		Transaction::GetEdges(vertex_t src, label_t label,
+			bool (*func)(edge_property_t) = [](edge_property_t x) {return true; })
+	{
+		return txn->GetEdges(src, label, func);
 	}
 }

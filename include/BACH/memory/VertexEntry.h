@@ -7,6 +7,7 @@
 #include <shared_mutex>
 #include <vector>
 #include <PMA/CPMA.hpp>
+#include "QueryCounter.h"
 #include "BACH/utils/types.h"
 #include "BACH/utils/ConcurrentArray.h"
 
@@ -53,11 +54,13 @@ namespace BACH
 	struct EdgeLabelEntry
 	{
 		ConcurrentArray<VertexEntry*> VertexIndex;
+		QueryCounter query_counter;
 		SizeEntry* now_size_info;
 		label_t src_label_id;
 		ConcurrentArray<std::shared_mutex> vertex_mutex;
 		std::shared_mutex mutex;
-		EdgeLabelEntry(label_t src_label_id) :
+		EdgeLabelEntry(label_t src_label_id, size_t list_num) :
+			query_counter(list_num),
 			src_label_id(src_label_id),
 			now_size_info(new SizeEntry(0, NULL)),
 			mutex() {}

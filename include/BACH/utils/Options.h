@@ -18,6 +18,7 @@ namespace BACH
 		size_t READ_BUFFER_SIZE = 1024 * 1024;
 		size_t WRITE_BUFFER_SIZE = 1024 * 1024;
 		size_t NUM_OF_COMPACTION_THREAD = 1;
+		size_t QUERY_LIST_SIZE = 160;
 		bool DELETE_UNUSED_FILE = true;
 		double FALSE_POSITIVE = 0.01;
 	};

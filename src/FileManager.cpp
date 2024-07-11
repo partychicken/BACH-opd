@@ -91,13 +91,7 @@ namespace BACH {
 			now_src_vertex_id ++;
 		}
 		sst_builder->ArrangeSSTableInfo();
-		while (true)
-		{
-			int file_list_len = compaction.file_list.size();
-			for (int i = 0; i < file_list_len; i++) {
-				//有buffer，需要重改
-			}
-		}
+
 		VersionEdit* edit = new VersionEdit();
 		edit->EditFileList.push_back(*file_info);
 		for (auto& file : compaction.file_list)

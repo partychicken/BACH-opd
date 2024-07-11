@@ -43,11 +43,11 @@ namespace bach
 	public:
 		DB(std::shared_ptr<BACH::Options> _options);
 		~DB();
-		Transaction BeginTransaction();
-		Transaction BeginReadOnlyTransaction();
-		void AddVertexLabel(std::string_view label_name);
-		void AddEdgeLabel(std::string_view label_name,
-			std::string_view src_label_name, std::string_view dst_label_name);
+		Transaction BeginWriteTransaction();
+		Transaction BeginReadTransaction();
+		void AddVertexLabel(std::string label_name);
+		void AddEdgeLabel(std::string label_name,
+			std::string src_label_name, std::string dst_label_name);
 	private:
 		const std::unique_ptr<BACH::DB> db;
 	};
@@ -57,19 +57,19 @@ namespace bach
 		Transaction(std::unique_ptr<BACH::Transaction> _txn);
 		~Transaction();
 		vertex_t AddVertex(label_t label, std::string_view property);
-		std::shared_ptr<std::string> FindVertex(vertex_t vertex, label_t label);
+		std::shared_ptr<std::string> GetVertex(vertex_t vertex, label_t label);
 		void DelVertex(vertex_t vertex, label_t label);
-
-		void PutEdge(vertex_t src, vertex_t dst,
-			label_t label, edge_property_t property, bool delete_old = false);
-		bool DelEdge(vertex_t src, vertex_t dst,
-			label_t label);
-		edge_property_t FindEdge(
-			vertex_t src, vertex_t dst, label_t label);
-		std::shared_ptr<std::vector<std::pair<vertex_t, edge_property_t>>> FindEdges(
-			label_t e_label, label_t s_label, label_t d_label, vertex_t src,
-			bool (*func)(edge_property_t) = [](edge_property_t x) {return true; });
 		vertex_t GetVertexNum(label_t label);
+
+		void PutEdge(vertex_t src, vertex_t dst, label_t label,
+			edge_property_t property, bool delete_old = false);
+		void DelEdge(vertex_t src, vertex_t dst, label_t label);
+		edge_property_t GetEdge(
+			vertex_t src, vertex_t dst, label_t label);
+		std::shared_ptr<std::vector<std::pair<vertex_t, edge_property_t>>>
+			GetEdges(vertex_t src, label_t label,
+				bool (*func)(edge_property_t) = [](edge_property_t x) {return true; });
+
 	private:
 		const std::unique_ptr<BACH::Transaction> txn;
 	};

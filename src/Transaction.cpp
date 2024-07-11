@@ -62,11 +62,31 @@ namespace BACH
 		{
 			return;
 		}
+		//if (db->Memtable->GetVertexDelTime(label, src) < now_epoch)
+		//{
+		//	std::cout<<"add edge from a deleted vertex!\n";
+		//}
 		db->Memtable->PutEdge(src, dst, label, property, now_epoch);
+	}
+	void Transaction::DelEdge(vertex_t src, vertex_t dst, label_t label)
+	{
+		if (read_only)
+		{
+			return;
+		}
+		//if (db->Memtable->GetVertexDelTime(label, src) < now_epoch)
+		//{
+		//	std::cout << "delete edge from a deleted vertex!\n";
+		//}
+		db->Memtable->DelEdge(src, dst, label, now_epoch);
 	}
 	edge_property_t Transaction::GetEdge(
 		vertex_t src, vertex_t dst, label_t label)
 	{
+		//if (db->Memtable->GetVertexDelTime(label, src) < now_epoch)
+		//{
+		//	std::cout << "find edge from a deleted vertex!\n";
+		//}
 		edge_property_t x = db->Memtable->GetEdge(src, dst, label, now_epoch);
 		if (x != TOMBSTONE)
 			return x;
@@ -102,8 +122,8 @@ namespace BACH
 		}
 		std::sort(answer_temp->begin(), answer_temp->end());
 		auto last = std::unique(answer_temp->begin(), answer_temp->end(),
-			[](const std::tuple<vertex_t, time_t, edge_property_t>& A,
-				const std::tuple<vertex_t, time_t, edge_property_t>& B)
+			[](const std::tuple<vertex_t, vertex_t, edge_property_t>& A,
+				const std::tuple<vertex_t, vertex_t, edge_property_t>& B)
 			{
 				return std::get<0>(A) == std::get<0>(B);
 			});

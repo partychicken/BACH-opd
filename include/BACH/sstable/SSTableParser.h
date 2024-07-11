@@ -25,26 +25,19 @@ namespace BACH
 			std::shared_ptr<Options> _options, bool if_read_filter = true);
 		~SSTableParser() = default;
 		edge_property_t GetEdge(vertex_t src, vertex_t dst);
-		void GetEdges(vertex_t src, std::shared_ptr<std::vector<
+		void ReadEdgeAllocationBuffer();
+		void ReadEdgeMsgBuffer();
+		bool GetFirstEdge();
+		void GetNextEdge(vertex_t src, std::shared_ptr<std::vector<
 			std::tuple<vertex_t, vertex_t, edge_property_t>>> answer,
 			bool (*func)(edge_property_t));
 		void GetEdgeRangeBySrcId(vertex_t src);
 		vertex_t GetSrcBegin()const { return src_b; }
 		vertex_t GetSrcEnd()const { return src_e; }
 		edge_t GetEdgeNum()const { return edge_cnt; }
-		void BatchReadEdge();
-		vertex_t GetNowSrc()const;
-		vertex_t GetSrcIndex(vertex_t src)const { return src_index[src - src_b]; };
-		std::shared_ptr<DstEntry> GetNowDst()const;
-		edge_t GetNowVerCount()const;
-		std::shared_ptr<EdgeEntry> GetNowEdge(bool force = false)const;
-		void Reset(bool reset_dst = true);
-		void NextSrc();
-		bool NextDst();
-		bool NextEdge(bool force = false);
-		void BatchQuery(time_t now_time, edge_property_t edge_property,
-			std::shared_ptr<sul::dynamic_bitset<>> answer_bitset,
-			std::shared_ptr<sul::dynamic_bitset<>> filter_bitset);
+		vertex_t GetNowEdgeSrc()const {return now_edge_src; }	
+		vertex_t GetNowEdgeDst()const {return now_edge_dst; }	
+		edge_property_t GetNowEdgeProp()const {return now_edge_prop; }	
 
 	private:
 		DB* db;
@@ -59,10 +52,16 @@ namespace BACH
 		size_t filter_end_pos = 0;
 		size_t filter_allocation_end_pos = 0;
 		vertex_t src_b = 0, src_e = 0;
-		vertex_t now_src_p = 0;
+		vertex_t now_src = 0;
 		off_t file_size = 0;
 		size_t src_edge_info_offset = 0;
 		edge_len_t src_edge_len = 0;
-		std::shared_ptr<Buffer<EdgeEntry, edge_num_t>> edge_buffer = NULL;
+		char* edge_allocation_read_buffer = NULL;
+		char* edge_msg_read_buffer = NULL;
+		size_t edge_allocation_buffer_pos = 0, edge_msg_buffer_pos = 0;
+		size_t edge_allocation_now_pos = 0, edge_msg_now_pos = 0;
+		size_t edge_allocation_buffer_len = 0, edge_msg_buffer_len = 0;
+		vertex_t now_edge_src,now_edge_dst;
+		edge_property_t now_edge_prop;
 	};
 }

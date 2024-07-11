@@ -9,6 +9,19 @@ namespace BACH {
 		CompactionCV.notify_one();
 	}
 
+	struct SingelEdgeInformation {
+		vertex_t src_id,dst_id;
+		edge_property_t prop;
+		size_t parser_id;
+		friend bool operator < (SingelEdgeInformation a, SingelEdgeInformation b)
+		{
+			if(a.src_id == b.src_id) {
+				return a.dst_id > b.dst_id;
+			}
+			return a.src_id > b.src_id;
+		}
+	}
+
 	void FileManager::MergeSSTable(Compaction& compaction) {
 		//把多个文件归并后生成一个新的文件，然后生成新的Version并将current_version指向这个新的version，然后旧的version如果ref为0就删除这个version并将这个version对应的文件的ref减1，如果文件ref为0则物理删除
 		std::vector<SSTableParser> parsers;
@@ -26,19 +39,46 @@ namespace BACH {
 		auto writer = std::make_shared<FileWriter>(file_name);
 		auto dst_entry_buffer = std::make_shared<WriteBuffer<DstEntry, vertex_t>>(
 			file_name + ".temp", db->options);
-		for (auto& parser : parsers)
+		auto new_file_edge_num = 0;
+		std::priority_queue<SingelEdgeInformation> q;
+		vertex_t new_file_src_begin = -1, new_file_src_end = 0;
+		for (auto i = 0; i < parsers.size(); i++)
 		{
-			parser.BatchReadEdge();
-			//现在假设每个文件中都读出了一部分数据，数据格式为(src_vertex_id,dst_vertex_id,edge_property)的三元组
-			//因此BatchReadEdge需要在读取部分CSR块后转成三元组形式
-			//或者是一种部分CSR块的形式
+			new_file_edge_num += parsers[i].GetEdgeNum();
+			new_file_src_begin = min(new_file_src_begin, parsers[i].GetSrcBegin());
+			new_file_src_end = max(new_file_src_end, parsers[i].GetSrcEnd());
+			if(parsers[i].GetFirstEdge())
+			{
+				q.push(parsers[i].GetNowEdgeSrc(),parsers[i].GetNowEdgeDst(),parsers[i].GetNowEdgeProp());
+			}
 		}
+		auto label_id = compaction.label_id;
+		idx_t file_id = db->Files->GetFileID(
+			label_id, compaction.target_level, compaction.vertex_id_b);
+		auto temp_file_metadata = new FileMetaData(label_id,
+			compaction.target_level, compaction.vertex_id_b, file_id, db->Labels->GetEdgeLabel(label_id));
+		std::string file_name = temp_file_metadata->file_name;
+		auto fw = std::make_shared<FileWriter>(file_name, false);
+		auto sst_builder = std::make_shared<SSTableBuilder>(fw);
+		sst_builder->SetSrcRange(new_file_src_begin,new_file_src_end);
 		// 归并
-		priority_queue<unsigned long>q;
-		for (auto& parser : parsers)
-		{
-			//todo()! 返回第一条边并生成三元组tuple
-			q.push(_tuple);
+		vertex_t now_vertex_id = new_file_src_begin;
+		for (auto i = q.size(); i < new_file_edge_num; i++) {
+			SingelEdgeInformation tmp = q.pop();
+			if(tmp.src_id != now_vertex_id) {
+				sst_builder->ArrangeCurrentSrcInfo();
+			}
+			sst_builder->AddEdge(tmp.src_id,tmp.dst_id,tmp.prop);
+			if(!parsers[tmp.parser_id].GetNextEdge())
+			{
+				break;
+			}
+			q.push(SingelEdgeInformation{
+				parsers[tmp.parser_id].GetNowEdgeSrc(),
+				parsers[tmp.parser_id].GetNowEdgeDst(),
+				parsers[tmp.parser_id].GetNowEdgeProp(),
+				tmp.parser_id
+				});
 		}
 		while (true)
 		{

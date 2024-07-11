@@ -44,14 +44,14 @@ namespace BACH {
 		auto new_file_edge_num = 0;
 		std::priority_queue<SingelEdgeInformation> q;
 		vertex_t new_file_src_begin = -1, new_file_src_end = 0;
-		for (auto i = 0; i < parsers.size(); i++)
+		for (int i = 0; i < parsers.size(); i++)
 		{
 			new_file_edge_num += parsers[i].GetEdgeNum();
 			new_file_src_begin = std::min(new_file_src_begin, parsers[i].GetSrcBegin());
 			new_file_src_end = std::max(new_file_src_end, parsers[i].GetSrcEnd());
 			if (parsers[i].GetFirstEdge())
 			{
-				q.push(SingelEdgeInformation{parsers[i].GetNowEdgeSrc(), parsers[i].GetNowEdgeDst(), parsers[i].GetNowEdgeProp(), i});
+				q.push(SingelEdgeInformation{parsers[i].GetNowEdgeSrc(), parsers[i].GetNowEdgeDst(), parsers[i].GetNowEdgeProp(), (size_t)i});
 			}
 		}
 		auto label_id = compaction.label_id;
@@ -67,8 +67,9 @@ namespace BACH {
 		vertex_t now_src_vertex_id = new_file_src_begin;
 		edge_num_t already_written_in_edge_num = 0;
 		while (already_written_in_edge_num < new_file_edge_num) {
-			SingelEdgeInformation tmp = q.pop();
-			while(tmp.src_id != now_vertex_id) {
+			SingelEdgeInformation tmp = q.top();
+			q.pop();
+			while(tmp.src_id != now_src_vertex_id) {
 				sst_builder->ArrangeCurrentSrcInfo();
 				now_src_vertex_id ++;
 			}

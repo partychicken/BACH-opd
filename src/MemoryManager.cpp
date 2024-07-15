@@ -48,6 +48,7 @@ namespace BACH
 			vertex_property_persistence(label_id);
 		}
 		lock.unlock();
+		return vertex_id;
 	}
 	std::shared_ptr<std::string> MemoryManager::GetVertex(vertex_t vertex, label_t label,
 		time_t now_time)
@@ -267,7 +268,7 @@ namespace BACH
 		}
 		sst->ArrangeSSTableInfo();
 		auto vedit = new VersionEdit();
-		vedit->EditFileList.push_back(temp_file_metadata);
+		vedit->EditFileList.push_back(*temp_file_metadata);
 		return vedit;
 	}
 

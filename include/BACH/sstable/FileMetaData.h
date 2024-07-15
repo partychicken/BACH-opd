@@ -36,9 +36,4 @@ namespace BACH
 			file_name = util::BuildSSTPath(label_name, level, vertex_id_b, file_id);
 		}
 	};
-	bool operator < (FileMetaData* lhs, const std::pair<vertex_t, idx_t>& rhs)
-	{
-		return lhs->vertex_id_b == rhs.first ?
-			lhs->file_id < rhs.second : lhs->vertex_id_b < rhs.first;
-	}
 }

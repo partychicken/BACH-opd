@@ -52,11 +52,11 @@ namespace BACH
 		{
 			++cnt;
 			size_t num = util::highbit(cnt);
-			if ((1LL << num) == cnt)
+			if (((size_t)1 << num) == cnt)
 			{
 				newblock(num);
 			}
-			array[num][cnt - (1 << num)] = x;
+			array[num][cnt - ((size_t)1 << num)] = x;
 		}
 		size_t size() const
 		{

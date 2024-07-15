@@ -95,7 +95,7 @@ namespace BACH
 		{
 			auto fr = std::make_shared<FileReader>(
 				db->options->STORAGE_DIR + "/" + iter.GetFile()->file_name);
-			auto parser = std::make_shared<SSTableParser>(db, label, fr, db->options);
+			auto parser = std::make_shared<SSTableParser>(label, fr, db->options);
 			auto found = parser->GetEdge(src, dst);
 			if (found != TOMBSTONE)
 				return found;
@@ -117,7 +117,7 @@ namespace BACH
 		{
 			auto fr = std::make_shared<FileReader>(
 				db->options->STORAGE_DIR + "/" + iter.GetFile()->file_name);
-			auto parser = std::make_shared<SSTableParser>(db, label, fr, db->options);
+			auto parser = std::make_shared<SSTableParser>(label, fr, db->options);
 			parser->GetEdges(src, answer_temp, func);
 		}
 		std::sort(answer_temp->begin(), answer_temp->end());

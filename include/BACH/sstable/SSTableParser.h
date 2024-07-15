@@ -6,7 +6,6 @@
 #include <string_view>
 #include "BloomFilter.h"
 #include "Buffer.h"
-#include "BACH/db/DB.h"
 #include "BACH/file/FileReader.h"
 #include "BACH/utils/utils.h"
 #include "BACH/utils/options.h"
@@ -16,11 +15,10 @@
 
 namespace BACH
 {
-	class DB;
 	class SSTableParser
 	{
 	public:
-		explicit SSTableParser(DB* _db, label_t _label,
+		explicit SSTableParser(label_t _label,
 			std::shared_ptr<FileReader> _fileReader,
 			std::shared_ptr<Options> _options, bool if_read_filter = true);
 		~SSTableParser() = default;
@@ -41,7 +39,6 @@ namespace BACH
 		edge_property_t GetNowEdgeProp()const {return now_edge_prop; }	
 
 	private:
-		DB* db;
 		label_t label;
 		std::shared_ptr<FileReader> reader;
 		std::shared_ptr<Options> options;

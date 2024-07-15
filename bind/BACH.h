@@ -1,5 +1,6 @@
 #include <string>
 #include <memory>
+#include <math.h>
 #include <vector>
 
 #pragma once
@@ -7,7 +8,9 @@
 namespace BACH
 {
 	using vertex_t = uint32_t;
-	using idx_t = int32_t;
+	using idx_t = uint32_t;
+	using label_t = uint16_t;
+	using edge_property_t = double_t;
 #ifndef OPTION
 #define OPTION
 	struct Options
@@ -20,7 +23,7 @@ namespace BACH
 		size_t READ_BUFFER_SIZE = 1024 * 1024;
 		size_t WRITE_BUFFER_SIZE = 1024 * 1024;
 		size_t NUM_OF_COMPACTION_THREAD = 1;
-		bool DELETE_UNUSED_FILE = true;
+		size_t QUERY_LIST_SIZE = 160;
 		double FALSE_POSITIVE = 0.01;
 	};
 #else
@@ -32,12 +35,11 @@ namespace BACH
 
 namespace bach
 {
-	using label_t = uint16_t;
-	using vertex_t = uint32_t;
-	using edge_property_t = double_t;
+	using vertex_t = BACH::vertex_t;
+	using label_t = BACH::label_t;
+	using edge_property_t = BACH::edge_property_t;
 
 	class Transaction;
-
 	class DB
 	{
 	public:

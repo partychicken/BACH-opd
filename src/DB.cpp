@@ -101,17 +101,18 @@ namespace BACH
 						auto iter = std::lower_bound(
 							current_version->FileIndex[x.label_id][x.target_level].begin(),
 							current_version->FileIndex[x.label_id][x.target_level].end(),
-							std::make_pair(x.vertex_id_b, NONEINDEX));
+							std::make_pair(x.vertex_id_b, NONEINDEX),
+							FileCompareWithPair);
 						while ((*iter)->vertex_id_b == x.vertex_id_b)
 							if ((*iter)->merging == false)
 							{
 								(*iter)->merging = true;
-								x.file_list.push_back(*iter);
+								x.file_list.push_back(**iter);
 								break;
 							}
 						break;
 					}
-					Files->MergeSSTable(x);
+					edit = Files->MergeSSTable(x);
 				}
 				std::unique_lock<std::shared_mutex> vlock(version_mutex);
 				Version* tmp = current_version;

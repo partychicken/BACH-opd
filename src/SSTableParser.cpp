@@ -2,10 +2,9 @@
 
 namespace BACH
 {
-	SSTableParser::SSTableParser(DB* _db, label_t _label,
+	SSTableParser::SSTableParser(label_t _label,
 		std::shared_ptr<FileReader> _fileReader,
 		std::shared_ptr<Options> _options, bool if_read_filter) :
-		db(_db),
 		label(_label),
 		reader(_fileReader),
 		options(_options),
@@ -70,7 +69,7 @@ namespace BACH
 		// query 如果布隆过滤器长度为0直接证明没有src的边
 		if (!len)
 		{
-			return NULL;
+			return TOMBSTONE;
 		}
 
 		// 得到布隆过滤器的位置和长度之后在存放布隆过滤器信息的数组中拿到相应的布隆过滤器data
@@ -82,14 +81,14 @@ namespace BACH
 		}
 		filter->create_from_data(func_num, filter_data);
 		if (!filter->exists(src))
-			return NULL;
+			return TOMBSTONE;
 
 		GetEdgeRangeBySrcId(src);
 
 		// 批量读边，检查是否存在src->dst这条边
 		auto singel_read_max_len = this->options->READ_BUFFER_SIZE / singel_edge_total_info_size * singel_edge_total_info_size;
-		auto read_num = (this->src_edge_len - 1) / singel_read_max_len + 1;
-		for (auto i = 1; i <= read_num; i++)
+		edge_len_t read_num = (this->src_edge_len - 1) / singel_read_max_len + 1;
+		for (edge_len_t i = 1; i <= read_num; i++)
 		{
 			size_t len = (i != read_num) ? singel_read_max_len : this->src_edge_len % singel_read_max_len;
 			char buffer[len];
@@ -98,7 +97,7 @@ namespace BACH
 			}
 			size_t offset = 0;
 			this->src_edge_info_offset += len;
-			for (auto j = 0; j < len / singel_edge_total_info_size; j++)
+			for (size_t j = 0; j < len / singel_edge_total_info_size; j++)
 			{
 				auto vertex_id = util::GetDecodeFixed<vertex_t>(buffer + offset);
 				if (vertex_id == dst) {
@@ -108,7 +107,7 @@ namespace BACH
 			}
 		}
 
-		return NULL;
+		return TOMBSTONE;
 	}
 	// 在一个文件中批量查找以src为起点的所有边，边属性的条件过滤函数以参数形式放入，过滤之后的边信息放在answer指向的vector中
 	void SSTableParser::GetEdges(vertex_t src, std::shared_ptr<std::vector<
@@ -122,18 +121,18 @@ namespace BACH
 		}
 
 		// 批量读边，将边属性过滤后的边放入answer中
-		auto singel_read_max_len = this->options->READ_BUFFER_SIZE / singel_edge_total_info_size * singel_edge_total_info_size;
-		auto read_num = (this->src_edge_len - 1) / singel_read_max_len + 1;
-		for (auto i = 1; i <= read_num; i++)
+		size_t singel_read_max_len = this->options->READ_BUFFER_SIZE / singel_edge_total_info_size * singel_edge_total_info_size;
+		edge_len_t read_num = (this->src_edge_len - 1) / singel_read_max_len + 1;
+		for (edge_len_t i = 1; i <= read_num; i++)
 		{
-			auto len = (i != read_num) ? singel_read_max_len : this->src_edge_len % singel_read_max_len;
+			size_t len = (i != read_num) ? singel_read_max_len : this->src_edge_len % singel_read_max_len;
 			char buffer[len];
 			if (!reader->fread(buffer, this->src_edge_info_offset, len)) {
 				std::cout << "read fail" << std::endl;
 			}
 			size_t offset = 0;
 			this->src_edge_info_offset += len;
-			for (auto j = 0; j < len / singel_edge_total_info_size; j++)
+			for (size_t j = 0; j < len / singel_edge_total_info_size; j++)
 			{
 				auto edge_property = util::GetDecodeFixed<edge_property_t>(buffer + offset + sizeof(vertex_t));
 				if (edge_property == TOMBSTONE || func(edge_property)) {
@@ -175,8 +174,8 @@ namespace BACH
 	void SSTableParser::ReadEdgeAllocationBuffer()
     {  
         this->edge_allocation_buffer_pos = 0;
-        this->edge_allocation_buffer_len = min(this->options->READ_BUFFER_SIZE / sizeof(edge_num_t), this->src_b - this->src_e + 1 - this->edge_allocation_now_pos);
-        this->edge_allocation_read_buffer = malloc(this->edge_allocation_buffer_len * sizeof(edge_num_t));
+        this->edge_allocation_buffer_len = std::min(this->options->READ_BUFFER_SIZE / sizeof(edge_num_t), this->src_b - this->src_e + 1 - this->edge_allocation_now_pos);
+		this->edge_allocation_read_buffer = (char*)malloc(this->edge_allocation_buffer_len * sizeof(edge_num_t));
         if (!reader->fread(this->edge_allocation_read_buffer, this->edge_allocation_buffer_len * sizeof(edge_num_t), this->edge_msg_end_pos + this->edge_allocation_now_pos * sizeof(edge_num_t))) 
         {
             std::cout << "read fail" << std::endl; 
@@ -185,8 +184,8 @@ namespace BACH
     void SSTableParser::ReadEdgeMsgBuffer()
     {
         this->edge_msg_buffer_pos = 0;
-        this->edge_msg_buffer_len = min(this->options->READ_BUFFER_SIZE / singel_edge_total_info_size, this->edge_cnt - this->edge_msg_now_pos);
-        this->edge_msg_read_buffer = malloc(this->edge_msg_buffer_len * singel_edge_total_info_size);
+        this->edge_msg_buffer_len = std::min(this->options->READ_BUFFER_SIZE / singel_edge_total_info_size, this->edge_cnt - this->edge_msg_now_pos);
+        this->edge_msg_read_buffer = (char*)malloc(this->edge_msg_buffer_len * singel_edge_total_info_size);
         if (!reader->fread(this->edge_msg_read_buffer, this->edge_msg_buffer_len * singel_edge_total_info_size))
         {
             std::cout << "read fail" << std::endl; 

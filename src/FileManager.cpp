@@ -29,22 +29,16 @@ namespace BACH {
 		std::vector<SSTableParser> parsers;
 		for (auto& file : compaction.file_list)
 		{
-			parsers.emplace_back(db, compaction.label_id,
+			parsers.emplace_back(compaction.label_id,
 				std::make_shared<FileReader>(
 					db->options->STORAGE_DIR + "/" + file.file_name),
 				db->options, false);
 		}
-		auto file_info = new FileMetaData(compaction.label_id, compaction.target_level,
-			compaction.vertex_id_b, compaction.file_id,
-			db->Labels->GetEdgeLabel(compaction.label_id));
 
-		std::string file_name = db->options->STORAGE_DIR + "/"
-			+ file_info->file_name;
-		auto writer = std::make_shared<FileWriter>(file_name);
-		auto new_file_edge_num = 0;
+		edge_num_t new_file_edge_num = 0;
 		std::priority_queue<SingelEdgeInformation> q;
 		vertex_t new_file_src_begin = -1, new_file_src_end = 0;
-		for (int i = 0; i < parsers.size(); i++)
+		for (size_t i = 0; i < parsers.size(); i++)
 		{
 			new_file_edge_num += parsers[i].GetEdgeNum();
 			new_file_src_begin = std::min(new_file_src_begin, parsers[i].GetSrcBegin());
@@ -60,7 +54,8 @@ namespace BACH {
 		auto temp_file_metadata = new FileMetaData(label_id,
 			compaction.target_level, compaction.vertex_id_b, file_id, db->Labels->GetEdgeLabel(label_id));
 		std::string file_name = temp_file_metadata->file_name;
-		auto fw = std::make_shared<FileWriter>(file_name, false);
+		auto fw = std::make_shared<FileWriter>(db->options->STORAGE_DIR + "/"
+			+ file_name);
 		auto sst_builder = std::make_shared<SSTableBuilder>(fw);
 		sst_builder->SetSrcRange(new_file_src_begin, new_file_src_end);
 		// 归并
@@ -99,7 +94,7 @@ namespace BACH {
 			}
 		}
 		VersionEdit* edit = new VersionEdit();
-		edit->EditFileList.push_back(*file_info);
+		edit->EditFileList.push_back(*temp_file_metadata);
 		for (auto& file : compaction.file_list)
 		{
 			file.deletion = true;

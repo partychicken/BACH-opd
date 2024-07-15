@@ -73,12 +73,25 @@ namespace BACH
 		}
 
 		inline std::string BuildSSTPath(std::string_view label,
-			uint32_t level, vertex_t first_vertex, uint32_t id)
+			uint32_t level, vertex_t first_vertex, idx_t id)
 		{
 			return static_cast<std::string>(label) + "_"
 				+ std::to_string(level) + "_"
 				+ std::to_string(first_vertex) + "_"
 				+ std::to_string(id) + ".sst";
+		}
+		inline idx_t GetFileIdBySSTPath(std::string sst_path)
+		{
+			idx_t file_id = 0;
+			idx_t x = 1;
+			for(auto i = sst_path.size(); i > 0; i++)
+			{	
+				if(sst_path[i] == '_')
+				break;
+				file_id = file_id + x * (sst_path[i] - '0');
+				x *= 10;
+			}
+			return file_id;
 		}
 		template<typename A, typename B>
 		inline A fast_pow(A a, B b)

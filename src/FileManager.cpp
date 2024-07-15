@@ -15,24 +15,27 @@ namespace BACH {
 		vertex_t src_id, dst_id;
 		edge_property_t prop;
 		size_t parser_id;
+		idx_t file_id;
 		friend bool operator < (SingelEdgeInformation a, SingelEdgeInformation b)
 		{
 			if (a.src_id == b.src_id) {
-				return a.dst_id > b.dst_id;
+				return a.dst_id != b.dst_id ? a.dst_id > b.dst_id : a.file_id < b.file_id ;
 			}
 			return a.src_id > b.src_id;
 		}
 	};
 
+	//把多个文件归并后生成一个新的文件，然后生成新的Version并将current_version指向这个新的version，然后旧的version如果ref为0就删除这个version并将这个version对应的文件的ref减1，如果文件ref为0则物理删除
 	VersionEdit* FileManager::MergeSSTable(Compaction& compaction) {
-		//把多个文件归并后生成一个新的文件，然后生成新的Version并将current_version指向这个新的version，然后旧的version如果ref为0就删除这个version并将这个version对应的文件的ref减1，如果文件ref为0则物理删除
 		std::vector<SSTableParser> parsers;
+		std::vector<idx_t> file_ids;
 		for (auto& file : compaction.file_list)
 		{
 			parsers.emplace_back(compaction.label_id,
 				std::make_shared<FileReader>(
 					db->options->STORAGE_DIR + "/" + file.file_name),
 				db->options, false);
+			file_ids.push_back(file.file_id);
 		}
 
 		edge_num_t new_file_edge_num = 0;
@@ -45,7 +48,7 @@ namespace BACH {
 			new_file_src_end = std::max(new_file_src_end, parsers[i].GetSrcEnd());
 			if (parsers[i].GetFirstEdge())
 			{
-				q.push(SingelEdgeInformation{parsers[i].GetNowEdgeSrc(), parsers[i].GetNowEdgeDst(), parsers[i].GetNowEdgeProp(), (size_t)i});
+				q.push(SingelEdgeInformation{parsers[i].GetNowEdgeSrc(), parsers[i].GetNowEdgeDst(), parsers[i].GetNowEdgeProp(), (size_t)i, file_ids[i]});
 			}
 		}
 		auto label_id = compaction.label_id;
@@ -59,8 +62,10 @@ namespace BACH {
 		auto sst_builder = std::make_shared<SSTableBuilder>(fw);
 		sst_builder->SetSrcRange(new_file_src_begin, new_file_src_end);
 		// 归并
+		// 归并的时候如果碰到两个或者多个相同的边，只保留file_id最大的边；墓碑标记不能消掉，除非新生成的文件在最后一层了
 		vertex_t now_src_vertex_id = new_file_src_begin;
 		edge_num_t already_written_in_edge_num = 0;
+		vertex_t last_src_id = -1, last_dst_id = -1;
 		while (already_written_in_edge_num < new_file_edge_num) {
 			SingelEdgeInformation tmp = q.top();
 			q.pop();
@@ -68,7 +73,11 @@ namespace BACH {
 				sst_builder->ArrangeCurrentSrcInfo();
 				now_src_vertex_id ++;
 			}
-			sst_builder->AddEdge(tmp.src_id,tmp.dst_id,tmp.prop);
+			if(last_src_id != tmp.src_id || last_dst_id != tmp.dst_id){
+				sst_builder->AddEdge(tmp.src_id,tmp.dst_id,tmp.prop);
+				last_src_id = tmp.src_id;
+				last_dst_id = tmp.dst_id;
+			}
 			already_written_in_edge_num ++;
 			if(!parsers[tmp.parser_id].GetNextEdge())
 			{
@@ -78,7 +87,8 @@ namespace BACH {
 				parsers[tmp.parser_id].GetNowEdgeSrc(),
 				parsers[tmp.parser_id].GetNowEdgeDst(),
 				parsers[tmp.parser_id].GetNowEdgeProp(),
-				tmp.parser_id
+				tmp.parser_id,
+				file_ids[tmp.parser_id]
 				});
 		}
 		while (now_src_vertex_id != new_file_src_end) {

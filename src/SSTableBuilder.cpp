@@ -1,9 +1,11 @@
 #include "BACH/sstable/SSTableBuilder.h"
+#include "BACH/db/DB.h"
 
 namespace BACH
 {
-	SSTableBuilder::SSTableBuilder(std::shared_ptr<FileWriter> _fileWriter) :
-		writer(_fileWriter)
+	SSTableBuilder::SSTableBuilder(std::shared_ptr<FileWriter> _fileWriter,std::shared_ptr<Options> _options) :
+		writer(_fileWriter),
+		options(_options)
 	{}
 	void SSTableBuilder::AddFilter(idx_t keys_num, double false_positive)
 	{
@@ -20,13 +22,20 @@ namespace BACH
 		util::PutFixed(temp_data, dst);
         util::PutFixed(temp_data, edge_property);
         writer->append(temp_data.data(), temp_data.size());
-		this->filter[index]->insert(dst);
+		//this->filter[index]->insert(dst);
+		this->edge_dst_id_list.push_back(dst);
 		this->src_edge_num ++;
 	}
 	void SSTableBuilder::ArrangeCurrentSrcInfo()
 	{
 		edge_allocation_list.push_back(this->src_edge_num);
         this->src_edge_num = 0;
+		this->AddFilter(this->edge_dst_id_list.size(),this->options->FALSE_POSITIVE);
+		for(auto dst_id : this->edge_dst_id_list) 
+		{
+			this->filter.back()->insert(dst_id);
+		}
+		this->edge_dst_id_list.clear();
 	}
 	void SSTableBuilder::ArrangeSSTableInfo()
 	{   
@@ -55,4 +64,3 @@ namespace BACH
 		writer->flush();
 	}
 }
-// query 文件写入是大批量一次性写入更快吗？这样需要额外将vector转成长字符串的花销

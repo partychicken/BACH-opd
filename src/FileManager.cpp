@@ -59,7 +59,7 @@ namespace BACH {
 		std::string file_name = temp_file_metadata->file_name;
 		auto fw = std::make_shared<FileWriter>(db->options->STORAGE_DIR + "/"
 			+ file_name);
-		auto sst_builder = std::make_shared<SSTableBuilder>(fw);
+		auto sst_builder = std::make_shared<SSTableBuilder>(fw,db->options);
 		sst_builder->SetSrcRange(new_file_src_begin, new_file_src_end);
 		// 归并
 		// 归并的时候如果碰到两个或者多个相同的边，只保留file_id最大的边；墓碑标记不能消掉，除非新生成的文件在最后一层了

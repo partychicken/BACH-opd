@@ -95,7 +95,7 @@ namespace BACH
 			}
 		}
 	}
-	//É¾³ýÆðµãºóµÄÀ¬»ø»ØÊÕ£¿
+	//É¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Õ£ï¿½
 
 	void MemoryManager::PutEdge(vertex_t src, vertex_t dst, label_t label,
 		edge_property_t property, time_t now_time)
@@ -226,7 +226,7 @@ namespace BACH
 			0, size_info->begin_vertex_id, file_id, db->Labels->GetEdgeLabel(label_id));
 		std::string file_name = temp_file_metadata->file_name;
 		auto fw = std::make_shared<FileWriter>(db->options->STORAGE_DIR + "/" + file_name, false);
-		auto sst = std::make_shared<SSTableBuilder>(fw);
+		auto sst = std::make_shared<SSTableBuilder>(fw,db->options);
 		sst->SetSrcRange(size_info->begin_vertex_id,
 			size_info->begin_vertex_id + size_info->entry.size() - 1);
 		for (vertex_t index = 0; index < size_info->entry.size(); ++index)

@@ -8,7 +8,12 @@ namespace BACH
 	class Transaction
 	{
 	public:
-		Transaction(time_t epoch, DB* db, Version* _version, bool _read_only);
+		Transaction() = delete;
+		Transaction& operator=(const Transaction&) = delete;
+		Transaction(const Transaction& txn) = delete;
+		Transaction(time_t _write_epoch, time_t _read_epoch,
+			DB* db, Version* _version);
+		Transaction(Transaction&& txn);
 		~Transaction();
 
 		//vertex operation
@@ -28,9 +33,10 @@ namespace BACH
 				bool (*func)(edge_property_t) = [](edge_property_t x) {return true; });
 
 	private:
-		time_t now_epoch;
+		time_t write_epoch;
+		time_t read_epoch;
 		DB* db;
 		Version* version;
-		bool read_only;
+		bool valid = true;
 	};
 }

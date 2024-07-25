@@ -19,7 +19,7 @@ namespace BACH {
 		friend bool operator < (SingelEdgeInformation a, SingelEdgeInformation b)
 		{
 			if (a.src_id == b.src_id) {
-				return a.dst_id != b.dst_id ? a.dst_id > b.dst_id : a.file_id < b.file_id ;
+				return a.dst_id != b.dst_id ? a.dst_id > b.dst_id : a.file_id < b.file_id;
 			}
 			return a.src_id > b.src_id;
 		}
@@ -48,7 +48,7 @@ namespace BACH {
 			new_file_src_end = std::max(new_file_src_end, parsers[i].GetSrcEnd());
 			if (parsers[i].GetFirstEdge())
 			{
-				q.push(SingelEdgeInformation{parsers[i].GetNowEdgeSrc(), parsers[i].GetNowEdgeDst(), parsers[i].GetNowEdgeProp(), (size_t)i, file_ids[i]});
+				q.push(SingelEdgeInformation{ parsers[i].GetNowEdgeSrc(), parsers[i].GetNowEdgeDst(), parsers[i].GetNowEdgeProp(), (size_t)i, file_ids[i] });
 			}
 		}
 		auto label_id = compaction.label_id;
@@ -69,17 +69,17 @@ namespace BACH {
 		while (already_written_in_edge_num < new_file_edge_num) {
 			SingelEdgeInformation tmp = q.top();
 			q.pop();
-			while(tmp.src_id != now_src_vertex_id) {
+			while (tmp.src_id != now_src_vertex_id) {
 				sst_builder->ArrangeCurrentSrcInfo();
-				now_src_vertex_id ++;
+				now_src_vertex_id++;
 			}
-			if(last_src_id != tmp.src_id || last_dst_id != tmp.dst_id){
-				sst_builder->AddEdge(tmp.src_id,tmp.dst_id,tmp.prop);
+			if (last_src_id != tmp.src_id || last_dst_id != tmp.dst_id) {
+				sst_builder->AddEdge(tmp.src_id, tmp.dst_id, tmp.prop);
 				last_src_id = tmp.src_id;
 				last_dst_id = tmp.dst_id;
 			}
-			already_written_in_edge_num ++;
-			if(!parsers[tmp.parser_id].GetNextEdge())
+			already_written_in_edge_num++;
+			if (!parsers[tmp.parser_id].GetNextEdge())
 			{
 				continue;
 			}
@@ -93,7 +93,7 @@ namespace BACH {
 		}
 		while (now_src_vertex_id != new_file_src_end) {
 			sst_builder->ArrangeCurrentSrcInfo();
-			now_src_vertex_id ++;
+			now_src_vertex_id++;
 		}
 		sst_builder->ArrangeSSTableInfo();
 
@@ -114,7 +114,7 @@ namespace BACH {
 		if (FileNumList[label].size() <= level)
 			FileNumList[label].resize(level + 1);
 		if (FileNumList[label][level].size() <= x)
-			FileNumList[label][level].resize(x + 1);
+			FileNumList[label][level].resize(x + 1, 0);
 		return FileNumList[label][level][x]++;
 	}
 }

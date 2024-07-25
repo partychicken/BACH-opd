@@ -8,6 +8,8 @@ namespace BACH
 		prev(_prev), next(NULL), epoch(std::max(_prev->epoch, time)),
 		option(_prev->option)
 	{
+		version_name = _prev->version_name + 1;
+		std::cout << "version " << version_name << " created!" << std::endl;
 		prev->next = this;
 		FileIndex = prev->FileIndex;
 		for (auto& i : edit->EditFileList)
@@ -26,6 +28,10 @@ namespace BACH
 			}
 			else
 			{
+				while (FileIndex.size() <= i.label)
+					FileIndex.emplace_back();
+				while (FileIndex[i.label].size() <= i.level)
+					FileIndex[i.label].emplace_back();
 				auto x = std::upper_bound(FileIndex[i.label][i.level].begin(),
 					FileIndex[i.label][i.level].end(), &i, FileCompare);
 				auto f = new FileMetaData(i);
@@ -50,6 +56,7 @@ namespace BACH
 							+ k->file_name).c_str());
 					}
 				}
+		std::cout << "version " << version_name << " deleted!" << std::endl;
 		if (prev != NULL)
 			prev->next = next;
 		if (next != NULL)
@@ -61,7 +68,7 @@ namespace BACH
 		label_t label = -1;
 		idx_t level = -1;
 		vertex_t src_b = -1;
-		for (auto i : edit->EditFileList)
+		for (auto &i : edit->EditFileList)
 			if (!i.deletion)
 			{
 				label = i.label;
@@ -99,19 +106,29 @@ namespace BACH
 		}
 		return c;
 	}
-	void Version::AddRef() { ++ref; }
+	void Version::AddRef()
+	{
+		++ref;
+		std::cout << "version " << version_name << " ref++, now is " << ref << std::endl;
+	}
 	void Version::DecRef()
 	{
 		--ref;
-		if (ref == 0)
+		std::cout << "version " << version_name << " ref--, now is " << ref << std::endl;
+		bool FALSE = false;
+		if (ref == 0 && deleting.compare_exchange_weak(FALSE, true, std::memory_order_relaxed))
 			delete this;
 	}
 
 	VersionIterator::VersionIterator(Version* _version, label_t _label, vertex_t _src)
 		: version(_version), label(_label), src(_src)
 	{
-		if (!findsrc())
-			nextlevel();
+		if (version->FileIndex.size() <= label)
+		{
+			end = true;
+			return;
+		}
+		nextlevel();
 	}
 	FileMetaData* VersionIterator::GetFile() const
 	{
@@ -130,7 +147,6 @@ namespace BACH
 
 	void VersionIterator::nextlevel()
 	{
-		++level;
 		while (level < version->FileIndex[label].size() && !findsrc())
 			++level;
 		if (level == version->FileIndex[label].size())
@@ -153,11 +169,13 @@ namespace BACH
 		//}
 		//if (version->FileIndex[label][level][l]->vertex_id_b != src)
 		//	return false;
-		idx = std::lower_bound(version->FileIndex[label][level].begin(),
+		auto x = std::lower_bound(version->FileIndex[label][level].begin(),
 			version->FileIndex[label][level].end(),
 			std::make_pair(src, NONEINDEX),
-			FileCompareWithPair)
-			- version->FileIndex[label][level].begin();
+			FileCompareWithPair);
+		if (x == version->FileIndex[label][level].end())
+			return false;
+		idx = x - version->FileIndex[label][level].begin();
 		if (version->FileIndex[label][level][idx]->vertex_id_b != src)
 			return false;
 		return true;

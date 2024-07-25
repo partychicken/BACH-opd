@@ -18,8 +18,8 @@ namespace BACH
 		DB& operator=(const DB&) = delete;
 		~DB();
 		DB(std::shared_ptr<Options> _options);
-		Transaction BeginWriteTransaction();
-		Transaction BeginReadTransaction();
+		Transaction BeginTransaction();
+		Transaction BeginReadOnlyTransaction();
 		//return the id of new vlabel
 		label_t AddVertexLabel(std::string label_name);
 		//return the id of new elabel

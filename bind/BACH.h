@@ -45,8 +45,8 @@ namespace bach
 	public:
 		DB(std::shared_ptr<BACH::Options> _options);
 		~DB();
-		Transaction BeginWriteTransaction();
-		Transaction BeginReadTransaction();
+		Transaction BeginTransaction();
+		Transaction BeginReadOnlyTransaction();
 		void AddVertexLabel(std::string label_name);
 		void AddEdgeLabel(std::string label_name,
 			std::string src_label_name, std::string dst_label_name);

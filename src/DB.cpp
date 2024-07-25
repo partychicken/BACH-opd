@@ -17,6 +17,7 @@ namespace BACH
 			compact_thread[i]->detach();
 		}
 		read_version = current_version = new Version(options);
+		read_version->AddRef();
 	}
 	DB::~DB()
 	{
@@ -24,14 +25,23 @@ namespace BACH
 		close = true;
 		Files->CompactionCV.notify_all();
 	}
-	Transaction DB::BeginWriteTransaction()
+	Transaction DB::BeginTransaction()
 	{
 		std::unique_lock<std::shared_mutex> lock(write_epoch_table_mutex);
-		time_t local_epoch_id = epoch_id.fetch_add(1, std::memory_order_relaxed);
-		write_epoch_table.insert(local_epoch_id);
-		return Transaction(local_epoch_id, this, NULL, false);
+		time_t local_write_epoch_id = epoch_id.fetch_add(1, std::memory_order_relaxed);
+		write_epoch_table.insert(local_write_epoch_id);
+		time_t local_read_epoch_id;
+		local_read_epoch_id = (*write_epoch_table.begin()) - 1;
+		std::unique_lock<std::shared_mutex> rlock(read_epoch_table_mutex);
+		if (read_epoch_table.find(local_read_epoch_id) == read_epoch_table.end())
+			read_epoch_table[local_read_epoch_id] = 1;
+		else
+			++read_epoch_table[local_read_epoch_id];
+		std::shared_lock<std::shared_mutex>versionlock(version_mutex);
+		return Transaction(local_write_epoch_id, local_read_epoch_id, this,
+			read_version);
 	}
-	Transaction DB::BeginReadTransaction()
+	Transaction DB::BeginReadOnlyTransaction()
 	{
 		time_t local_epoch_id;
 		std::shared_lock<std::shared_mutex> wlock(write_epoch_table_mutex);
@@ -44,7 +54,8 @@ namespace BACH
 			read_epoch_table[local_epoch_id] = 1;
 		else
 			++read_epoch_table[local_epoch_id];
-		return Transaction(local_epoch_id, this, read_version, true);
+		std::shared_lock<std::shared_mutex>versionlock(version_mutex);
+		return Transaction(MAXTIME, local_epoch_id, this, read_version);
 	}
 
 	label_t DB::AddVertexLabel(std::string label_name)
@@ -85,7 +96,7 @@ namespace BACH
 				if (x.Persistence != NULL)
 				{
 					//persistence
-					edit = Memtable->MemTablePersistence(x.label_id,
+					edit = Memtable->MemTablePersistence(x.label_id, x.file_id,
 						x.Persistence);
 					time = x.persistece_time;
 				}
@@ -98,6 +109,8 @@ namespace BACH
 						break;
 					case 2:
 						std::shared_lock<std::shared_mutex> lock(version_mutex);
+						if (current_version->FileIndex[x.label_id].size() <= x.target_level)
+							break;
 						auto iter = std::lower_bound(
 							current_version->FileIndex[x.label_id][x.target_level].begin(),
 							current_version->FileIndex[x.label_id][x.target_level].end(),
@@ -117,7 +130,9 @@ namespace BACH
 				std::unique_lock<std::shared_mutex> vlock(version_mutex);
 				Version* tmp = current_version;
 				current_version = new Version(tmp, edit, time);
-				Files->CompactionList.push(*current_version->GetCompaction(edit));
+				auto compact = current_version->GetCompaction(edit);
+				if (compact != NULL)
+					Files->CompactionList.push(*compact);
 				tmp->DecRef();
 			}
 			else
@@ -133,7 +148,8 @@ namespace BACH
 	void DB::ProgressReadVersion()
 	{
 		std::unique_lock<std::shared_mutex>lock(version_mutex);
-		while (read_version->next->epoch < get_read_time())
+		while (read_version->next != NULL &&
+			read_version->next->epoch < get_read_time())
 		{
 			Version* tmp = read_version;
 			read_version = read_version->next;

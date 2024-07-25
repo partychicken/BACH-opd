@@ -58,6 +58,15 @@ namespace BACH
 			}
 			array[num][cnt - ((size_t)1 << num)] = x;
 		}
+		void emplace_back_default()
+		{
+			++cnt;
+			size_t num = util::highbit(cnt);
+			if (((size_t)1 << num) == cnt)
+			{
+				newblock(num);
+			}
+		}
 		size_t size() const
 		{
 			return cnt;

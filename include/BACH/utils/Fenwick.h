@@ -44,6 +44,8 @@ namespace BACH
 		}
 		T range_query(size_t l, size_t r)
 		{
+			if (r >= tree.size())
+				r = tree.size() - 1;
 			return query(r) - query(l - 1);
 		}
 

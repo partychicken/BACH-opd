@@ -39,6 +39,7 @@ namespace BACH
 				EdgeLabelIndex[i]->VertexIndex.push_back(
 					new VertexEntry(EdgeLabelIndex[i]->now_size_info));
 				EdgeLabelIndex[i]->query_counter.AddVertex();
+				EdgeLabelIndex[i]->vertex_mutex.emplace_back_default();
 			}
 		}
 		VertexLabelIndex[label_id]->property_size += property.size();
@@ -188,7 +189,7 @@ namespace BACH
 	size_t MemoryManager::GetMergeType(label_t label_id,
 		vertex_t src_b, vertex_t src_e)
 	{
-		return EdgeLabelIndex[label_id]->query_counter.GetCompactionType(src_e,src_e);
+		return EdgeLabelIndex[label_id]->query_counter.GetCompactionType(src_e, src_e);
 	}
 	time_t MemoryManager::GetVertexDelTime(label_t edge_label_id, vertex_t src) const
 	{
@@ -219,18 +220,16 @@ namespace BACH
 		}
 	}
 	VersionEdit* MemoryManager::MemTablePersistence(label_t label_id,
-		SizeEntry* size_info)
+		idx_t file_id, SizeEntry* size_info)
 	{
-		idx_t file_id = db->Files->GetFileID(
-			label_id, 0, size_info->begin_vertex_id);
 		auto temp_file_metadata = new FileMetaData(label_id,
 			0, size_info->begin_vertex_id, file_id, db->Labels->GetEdgeLabel(label_id));
 		std::string file_name = temp_file_metadata->file_name;
-		auto fw = std::make_shared<FileWriter>(file_name, false);
+		auto fw = std::make_shared<FileWriter>(db->options->STORAGE_DIR + "/" + file_name, false);
 		auto sst = std::make_shared<SSTableBuilder>(fw);
 		sst->SetSrcRange(size_info->begin_vertex_id,
 			size_info->begin_vertex_id + size_info->entry.size() - 1);
-		for (vertex_t index = 0; index <= size_info->entry.size(); ++index)
+		for (vertex_t index = 0; index < size_info->entry.size(); ++index)
 		{
 			sst->AddFilter(size_info->entry[index]->EdgeIndex.get_element_count(),
 				db->options->FALSE_POSITIVE);
@@ -238,7 +237,6 @@ namespace BACH
 			{
 				if (x == 0)
 					continue;
-				bool tombstone = false;
 				auto v = util::unzip_pair_second(x);
 				if (size_info->entry[index]->EdgePool[v].property == TOMBSTONE)
 					continue;
@@ -246,7 +244,8 @@ namespace BACH
 					sst->AddEdge(index,
 						util::unzip_pair_first(x),
 						size_info->entry[index]->EdgePool[v].property);
-				/*for (auto v = util::unzip_pair_second(x); v != NONEINDEX;
+				/*bool tombstone = false;
+				for (auto v = util::unzip_pair_second(x); v != NONEINDEX;
 					v = size_info->entry[index]->EdgePool[v].last_version)
 				{
 					if (size_info->entry[index]->EdgePool[v].property == TOMBSTONE)
@@ -302,13 +301,7 @@ namespace BACH
 			locks[i - size_info->begin_vertex_id] =
 				std::unique_lock<std::shared_mutex>(
 					EdgeLabelIndex[label]->vertex_mutex[i]);
-			max_time = std::max(max_time,
-				EdgeLabelIndex[label]->VertexIndex[i]->EdgePool.back().time);
 		}
-		std::unique_lock<std::shared_mutex>lock(MemTableDelTableMutex);
-		if (MemTableDelTable.find(max_time) == MemTableDelTable.end())
-			MemTableDelTable[max_time] = std::vector<SizeEntry*>();
-		MemTableDelTable[max_time].push_back(size_info);
 		auto new_size_info = new SizeEntry(
 			size_info->begin_vertex_id, size_info);
 		if (size_info == EdgeLabelIndex[label]->now_size_info)
@@ -323,8 +316,18 @@ namespace BACH
 				new VertexEntry(new_size_info,
 					EdgeLabelIndex[label]->VertexIndex[i]);
 		}
+		for (auto& i : size_info->entry)
+			if (i->EdgePool.size() > 0)
+			{
+				max_time = std::max(max_time, i->EdgePool.back().time);
+			}
+		std::unique_lock<std::shared_mutex>lock(MemTableDelTableMutex);
+		if (MemTableDelTable.find(max_time) == MemTableDelTable.end())
+			MemTableDelTable[max_time] = std::vector<SizeEntry*>();
+		MemTableDelTable[max_time].push_back(size_info);
 		Compaction x;
 		x.label_id = label;
+		x.target_level = 0;
 		x.Persistence = size_info;
 		x.persistece_time = max_time;
 		db->Files->AddCompaction(x);

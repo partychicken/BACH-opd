@@ -29,8 +29,11 @@ namespace BACH
 		Version* prev;
 		Version* next;
 		time_t epoch;
+
+		idx_t version_name=0;
 	private:
 		idx_t ref = 1;
+		std::atomic<bool> deleting = false;
 		std::shared_ptr<Options> option;
 	};
 	class VersionIterator

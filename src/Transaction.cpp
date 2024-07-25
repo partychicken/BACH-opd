@@ -2,53 +2,64 @@
 
 namespace BACH
 {
-	Transaction::Transaction(time_t epoch, DB* db,
-		Version* _version, bool _read_only) :
-		now_epoch(epoch), db(db), version(_version), read_only(_read_only)
+	Transaction::Transaction(time_t _write_epoch, time_t _read_epoch,
+		DB* db, Version* _version) :
+		write_epoch(_write_epoch), read_epoch(_read_epoch), db(db), version(_version)
 	{
+		std::cout<<"Transaction using version: "<<version->version_name <<" created\n";
 		version->AddRef();
+	}
+	Transaction::Transaction(Transaction&& txn) :
+		write_epoch(txn.write_epoch), read_epoch(txn.read_epoch),
+		db(txn.db), version(txn.version)
+	{
+		std::cout << "Transaction using version: " << version->version_name << " copyed\n";
+		txn.valid = false;
 	}
 	Transaction::~Transaction()
 	{
-		if (read_only)
+		if (valid)
 		{
-			std::unique_lock<std::shared_mutex> rlock(db->read_epoch_table_mutex);
-			if (--db->read_epoch_table[now_epoch] == 0)
+			std::cout << "Transaction using version: " << version->version_name << " deleted\n";
 			{
-				db->read_epoch_table.erase(now_epoch);
-				db->Memtable->ClearDelTable(now_epoch);
+				std::unique_lock<std::shared_mutex> rlock(db->read_epoch_table_mutex);
+				if (--db->read_epoch_table[read_epoch] == 0)
+				{
+					db->read_epoch_table.erase(read_epoch);
+					db->Memtable->ClearDelTable(read_epoch);
+				}
+				version->DecRef();
 			}
-			version->DecRef();
-		}
-		else
-		{
-			std::unique_lock<std::shared_mutex> wlock(db->write_epoch_table_mutex);
-			db->write_epoch_table.erase(now_epoch);
-			wlock.unlock();
-			db->ProgressReadVersion();
+			if (write_epoch == MAXTIME)
+			{
+				std::unique_lock<std::shared_mutex> wlock(db->write_epoch_table_mutex);
+				db->write_epoch_table.erase(write_epoch);
+				wlock.unlock();
+				db->ProgressReadVersion();
+			}
 		}
 	}
 
 	vertex_t Transaction::AddVertex(label_t label, std::string_view property)
 	{
-		if (read_only)
+		if (write_epoch == MAXTIME)
 		{
 			return MAXVERTEX;
 		}
-		return db->Memtable->AddVertex(label, property, now_epoch);
+		return db->Memtable->AddVertex(label, property, write_epoch);
 	}
 	std::shared_ptr<std::string> Transaction::GetVertex(
 		vertex_t vertex, label_t label)
 	{
-		return db->Memtable->GetVertex(vertex, label, now_epoch);
+		return db->Memtable->GetVertex(vertex, label, read_epoch);
 	}
 	void Transaction::DelVertex(vertex_t vertex, label_t label)
 	{
-		if (read_only)
+		if (write_epoch == MAXTIME)
 		{
 			return;
 		}
-		db->Memtable->DelVertex(vertex, label, now_epoch);
+		db->Memtable->DelVertex(vertex, label, write_epoch);
 	}
 	vertex_t Transaction::GetVertexNum(label_t label)
 	{
@@ -58,7 +69,7 @@ namespace BACH
 	void Transaction::PutEdge(vertex_t src, vertex_t dst, label_t label,
 		edge_property_t property, bool delete_old)
 	{
-		if (read_only)
+		if (write_epoch == MAXTIME)
 		{
 			return;
 		}
@@ -66,11 +77,11 @@ namespace BACH
 		//{
 		//	std::cout<<"add edge from a deleted vertex!\n";
 		//}
-		db->Memtable->PutEdge(src, dst, label, property, now_epoch);
+		db->Memtable->PutEdge(src, dst, label, property, write_epoch);
 	}
 	void Transaction::DelEdge(vertex_t src, vertex_t dst, label_t label)
 	{
-		if (read_only)
+		if (write_epoch == MAXTIME)
 		{
 			return;
 		}
@@ -78,7 +89,7 @@ namespace BACH
 		//{
 		//	std::cout << "delete edge from a deleted vertex!\n";
 		//}
-		db->Memtable->DelEdge(src, dst, label, now_epoch);
+		db->Memtable->DelEdge(src, dst, label, write_epoch);
 	}
 	edge_property_t Transaction::GetEdge(
 		vertex_t src, vertex_t dst, label_t label)
@@ -87,7 +98,7 @@ namespace BACH
 		//{
 		//	std::cout << "find edge from a deleted vertex!\n";
 		//}
-		edge_property_t x = db->Memtable->GetEdge(src, dst, label, now_epoch);
+		edge_property_t x = db->Memtable->GetEdge(src, dst, label, read_epoch);
 		if (x != TOMBSTONE)
 			return x;
 		VersionIterator iter(version, label, src);
@@ -111,7 +122,7 @@ namespace BACH
 			std::tuple<vertex_t, vertex_t, edge_property_t>>>();
 		auto answer = std::make_shared<std::vector<
 			std::pair<vertex_t, edge_property_t>>>();
-		db->Memtable->GetEdges(src, label, now_epoch, answer_temp, func);
+		db->Memtable->GetEdges(src, label, read_epoch, answer_temp, func);
 		VersionIterator iter(version, label, src);
 		while (!iter.End())
 		{

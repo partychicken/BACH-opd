@@ -6,13 +6,13 @@ namespace bach
 	DB::DB(std::shared_ptr<BACH::Options> _options) :
 		db(std::make_unique<BACH::DB>(_options)) {}
 	DB::~DB() = default;
-	Transaction DB::BeginWriteTransaction()
+	Transaction DB::BeginTransaction()
 	{
-		return std::make_unique<BACH::Transaction>(db->BeginWriteTransaction());
+		return std::make_unique<BACH::Transaction>(db->BeginTransaction());
 	}
-	Transaction DB::BeginReadTransaction()
+	Transaction DB::BeginReadOnlyTransaction()
 	{
-		return std::make_unique<BACH::Transaction>(db->BeginReadTransaction());
+		return std::make_unique<BACH::Transaction>(db->BeginReadOnlyTransaction());
 	}
 	void DB::AddVertexLabel(std::string label)
 	{

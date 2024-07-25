@@ -49,7 +49,8 @@ namespace BACH
 		size_t GetMergeType(label_t label_id, vertex_t src_b, vertex_t src_e);
 		time_t GetVertexDelTime(label_t edge_label_id, vertex_t src) const;
 		void ClearDelTable(time_t time);
-		VersionEdit* MemTablePersistence(label_t label_id, SizeEntry* size_info);
+		VersionEdit* MemTablePersistence(label_t label_id,
+			idx_t file_id, SizeEntry* size_info);
 		//void PersistenceAll();
 
 	private:

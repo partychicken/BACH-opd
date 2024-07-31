@@ -32,17 +32,6 @@ namespace BACH {
 		if (fd == -1) {
 			return false;
 		}
-
-		/*if(count==36)
-		{
-			char buffer[count + 20];
-			auto cnt1 = pread(fd, buffer, count + 20, offset - 10);
-			std::cout << cnt1 << std::endl;
-			for (int i=0;i<count+20;++i)
-				std::cout << std::setfill('0') << std::setw(2)
-				<< std::hex << (unsigned int)(unsigned char)buffer[i] << std::dec;
-			std::cout << std::endl;
-		}*/
 		auto cnt = pread(fd, buf, count, offset);
 		if (cnt != count) {
 			return false;
@@ -51,7 +40,6 @@ namespace BACH {
 	}
 
 	bool FileReader::rread(void* buf, int32_t count, int32_t offset) const {
-		//std::cout<<"rs" << sb.st_size << " " << offset << std::endl;
 		return fread(buf, count, sb.st_size - offset);
 	}
 }

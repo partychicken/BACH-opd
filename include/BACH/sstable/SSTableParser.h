@@ -34,9 +34,9 @@ namespace BACH
 		vertex_t GetSrcBegin()const { return src_b; }
 		vertex_t GetSrcEnd()const { return src_e; }
 		edge_t GetEdgeNum()const { return edge_cnt; }
-		vertex_t GetNowEdgeSrc()const {return now_edge_src; }	
-		vertex_t GetNowEdgeDst()const {return now_edge_dst; }	
-		edge_property_t GetNowEdgeProp()const {return now_edge_prop; }	
+		vertex_t GetNowEdgeSrc()const { return now_edge_src; }
+		vertex_t GetNowEdgeDst()const { return now_edge_dst; }
+		edge_property_t GetNowEdgeProp()const { return now_edge_prop; }
 
 	private:
 		label_t label;
@@ -59,7 +59,7 @@ namespace BACH
 		size_t edge_allocation_buffer_pos = 0, edge_msg_buffer_pos = 0;
 		size_t edge_allocation_now_pos = 0, edge_msg_now_pos = 0;
 		size_t edge_allocation_buffer_len = 0, edge_msg_buffer_len = 0;
-		vertex_t now_edge_src,now_edge_dst;
+		vertex_t now_edge_src, now_edge_dst;
 		edge_property_t now_edge_prop;
 	};
 }

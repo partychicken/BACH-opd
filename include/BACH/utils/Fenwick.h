@@ -23,6 +23,7 @@ namespace BACH
 		}
 		void push_back(T x)
 		{
+			std::unique_lock<std::mutex>lock(write_lock);
 			size_t end = tree.size() - lowbit(tree.size());
 			size_t pos = tree.size() - 1;
 			while (pos > end)
@@ -44,6 +45,10 @@ namespace BACH
 		}
 		T range_query(size_t l, size_t r)
 		{
+			if (l >= r)
+				return T();
+			if (l >= tree.size())
+				l = tree.size() - 1;
 			if (r >= tree.size())
 				r = tree.size() - 1;
 			return query(r) - query(l - 1);
@@ -51,6 +56,7 @@ namespace BACH
 
 	private:
 		ConcurrentArray<T> tree;
+		std::mutex write_lock;
 		size_t lowbit(size_t x)
 		{
 			return x & (-x);

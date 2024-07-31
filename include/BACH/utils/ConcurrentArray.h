@@ -1,8 +1,10 @@
 #pragma once
 
+#include <iostream>
 #include <algorithm>
 #include <vector>
 #include <memory>
+#include <mutex>
 #include <BACH/utils/utils.h>
 
 namespace BACH
@@ -30,42 +32,44 @@ namespace BACH
 		}
 		T& operator[](size_t index)
 		{
-			index += 1;
-			size_t num = util::highbit(index);
-			if (num >= array.size())
+			if (index >= cnt)
 			{
 				std::cout << "out of range" << std::endl;
 			}
+			index += 1;
+			size_t num = util::highbit(index);
 			return array[num][index - (1 << num)];
 		}
 		const T& operator[](size_t index) const
 		{
-			index += 1;
-			size_t num = util::highbit(index);
-			if (num >= array.size())
+			if (index >= cnt)
 			{
 				std::cout << "out of range" << std::endl;
 			}
+			index += 1;
+			size_t num = util::highbit(index);
 			return array[num][index - (1 << num)];
 		}
 		void push_back(const T& x)
 		{
-			++cnt;
-			size_t num = util::highbit(cnt);
-			if (((size_t)1 << num) == cnt)
+			std::unique_lock<std::mutex> lock(write_lock);
+			size_t num = util::highbit(cnt + 1);
+			if (((size_t)1 << num) == cnt + 1)
 			{
 				newblock(num);
 			}
-			array[num][cnt - ((size_t)1 << num)] = x;
+			array[num][cnt - ((size_t)1 << num) + 1] = x;
+			++cnt;
 		}
 		void emplace_back_default()
 		{
-			++cnt;
-			size_t num = util::highbit(cnt);
-			if (((size_t)1 << num) == cnt)
+			std::unique_lock<std::mutex> lock(write_lock);
+			size_t num = util::highbit(cnt + 1);
+			if (((size_t)1 << num) == cnt + 1)
 			{
 				newblock(num);
 			}
+			++cnt;
 		}
 		size_t size() const
 		{
@@ -90,5 +94,6 @@ namespace BACH
 	private:
 		std::vector<T*> array;
 		size_t cnt = 0;
+		std::mutex write_lock;
 	};
 }

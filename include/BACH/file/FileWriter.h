@@ -8,7 +8,7 @@ namespace BACH
 {
 	class FileWriter final {
 	private:
-		static constexpr int32_t BUFFER_SIZE = 4096 * 16; //默认以 64 KB为单位进行批量写
+		static constexpr int32_t BUFFER_SIZE = 1024 * 64; //默认以 64 KB为单位进行批量写
 		int32_t buffer_offset = 0; // 缓冲区的offset，即下一条数据的写入位置
 		char buffer[BUFFER_SIZE]{}; // 缓冲区
 

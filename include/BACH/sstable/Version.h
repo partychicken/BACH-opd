@@ -21,6 +21,7 @@ namespace BACH
 		Compaction* GetCompaction(VersionEdit* edit);
 		void AddRef();
 		void DecRef();
+		void AddSizeEntry(SizeEntry* x);
 
 		std::vector<          //label
 			std::vector<      //level
@@ -29,12 +30,12 @@ namespace BACH
 		Version* prev;
 		Version* next;
 		time_t epoch;
-
-		idx_t version_name=0;
 	private:
-		idx_t ref = 1;
+		std::atomic<idx_t> ref = 2;
 		std::atomic<bool> deleting = false;
+		SizeEntry* size_entry = NULL;
 		std::shared_ptr<Options> option;
+		friend class VersionIterator;
 	};
 	class VersionIterator
 	{
@@ -48,7 +49,7 @@ namespace BACH
 		Version* version;
 		label_t label;
 		vertex_t src;
-		idx_t level = 0;
+		idx_t level = -1;
 		idx_t idx = 0;
 		bool end = false;
 		void nextlevel();

@@ -4,6 +4,11 @@ namespace BACH
 {
 	BloomFilter::BloomFilter(idx_t keys_num, double false_positive)
 	{
+		if (keys_num == 0)
+		{
+			bits_per_key = 0;
+			return;
+		}
 		int32_t bits_num = -1 * static_cast<int32_t>(std::log(false_positive) * keys_num / 0.4804530139182014);
 		bits_array.resize((bits_num + 7) / 8);
 		bits_num = static_cast<int>(bits_array.size()) * 8; // ×¢Òâ´Ë´¦

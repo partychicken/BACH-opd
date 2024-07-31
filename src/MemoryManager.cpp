@@ -95,7 +95,6 @@ namespace BACH
 			}
 		}
 	}
-	//ɾ��������������գ�
 
 	void MemoryManager::PutEdge(vertex_t src, vertex_t dst, label_t label,
 		edge_property_t property, time_t now_time)
@@ -106,9 +105,10 @@ namespace BACH
 			EdgeLabelIndex[label]->query_counter.AddDeletion(src);
 		else
 			EdgeLabelIndex[label]->query_counter.AddWrite(src);
-		std::unique_lock<std::shared_mutex> src_lock(src_entry->mutex);
+		table_lock.unlock();
 
-		edge_t found = find_edge(src, dst, label);
+		std::unique_lock<std::shared_mutex> src_lock(src_entry->mutex);
+		edge_t found = find_edge(src, dst, src_entry);
 		if (found != NONEINDEX)
 		{
 			src_entry->EdgeIndex.remove(
@@ -117,14 +117,14 @@ namespace BACH
 		src_entry->EdgePool.emplace_back(dst, property, now_time, found);
 		src_entry->EdgeIndex.insert(
 			util::make_vertex_edge_pair(dst, src_entry->EdgePool.size() - 1));
-
+		src_entry->size_info->max_time = std::max(now_time,
+			src_entry->size_info->max_time);
 		src_entry->size_info->size += sizeof(EdgeEntry);
 		bool FALSE = false;
 		if (src_entry->size_info->size >= db->options->MEM_TABLE_MAX_SIZE)
 			if (src_entry->size_info->immutable.compare_exchange_weak(
 				FALSE, true, std::memory_order_acq_rel))
 			{
-				table_lock.unlock();
 				immute_memtable(src_entry->size_info, label);
 			}
 	}
@@ -147,7 +147,7 @@ namespace BACH
 		while (src_entry != NULL)
 		{
 			std::shared_lock<std::shared_mutex> src_lock(src_entry->mutex);
-			edge_t found = find_edge(src, dst, label);
+			edge_t found = find_edge(src, dst, src_entry);
 			while (found != NONEINDEX)
 			{
 				if (src_entry->EdgePool[found].time <= now_time)
@@ -156,7 +156,7 @@ namespace BACH
 			}
 			src_entry = src_entry->next;
 		}
-		return TOMBSTONE;
+		return NOTFOUND;
 	}
 	void MemoryManager::GetEdges(vertex_t src, label_t label, time_t now_time,
 		std::shared_ptr<std::vector<
@@ -170,19 +170,14 @@ namespace BACH
 		while (src_entry != NULL)
 		{
 			std::shared_lock<std::shared_mutex> src_lock(src_entry->mutex);
-			for (idx_t i = 0; i < src_entry->EdgePool.size(); ++i)
+			for (auto& i : src_entry->EdgePool)
 			{
-				if (src_entry->EdgePool[i].time > now_time)
+				if (i.time > now_time)
 					continue;
-				if (src_entry->EdgePool[i].property == TOMBSTONE
-					|| func(src_entry->EdgePool[i].property))
-				{
-					//(*answer_bitset)[ver_index->DstPool[i]] = true;
-					answer->emplace_back(src_entry->EdgePool[i].dst,
-						answer->size(),
-						src_entry->EdgePool[i].property);
-				}
+				if (i.property == TOMBSTONE || func(i.property))
+					answer->emplace_back(i.dst, answer->size(), i.property);
 			}
+			src_entry = src_entry->next;
 		}
 	}
 	//1: leveling 2:tiering
@@ -197,28 +192,6 @@ namespace BACH
 			EdgeLabelIndex[edge_label_id]->vertex_mutex[src]);
 		return EdgeLabelIndex[edge_label_id]->VertexIndex[src]->deadtime;
 	}
-	void MemoryManager::ClearDelTable(time_t time)
-	{
-		std::unique_lock<std::shared_mutex> lock(MemTableDelTableMutex);
-		auto v = MemTableDelTable.find(time);
-		if (v != MemTableDelTable.end())
-		{
-			for (auto& del_table : v->second)
-			{
-				auto last = del_table->last;
-				for (auto& memtable : last->entry)
-				{
-					memtable->next = NULL;
-				}
-				for (auto& verentry : del_table->entry)
-				{
-					delete verentry;
-				}
-				delete del_table;
-			}
-			MemTableDelTable.erase(v);
-		}
-	}
 	VersionEdit* MemoryManager::MemTablePersistence(label_t label_id,
 		idx_t file_id, SizeEntry* size_info)
 	{
@@ -226,23 +199,21 @@ namespace BACH
 			0, size_info->begin_vertex_id, file_id, db->Labels->GetEdgeLabel(label_id));
 		std::string file_name = temp_file_metadata->file_name;
 		auto fw = std::make_shared<FileWriter>(db->options->STORAGE_DIR + "/" + file_name, false);
-		auto sst = std::make_shared<SSTableBuilder>(fw,db->options);
+		auto sst = std::make_shared<SSTableBuilder>(fw, db->options);
 		sst->SetSrcRange(size_info->begin_vertex_id,
 			size_info->begin_vertex_id + size_info->entry.size() - 1);
 		for (vertex_t index = 0; index < size_info->entry.size(); ++index)
 		{
-			sst->AddFilter(size_info->entry[index]->EdgeIndex.get_element_count(),
-				db->options->FALSE_POSITIVE);
 			for (auto x : size_info->entry[index]->EdgeIndex)
 			{
 				if (x == 0)
 					continue;
 				auto v = util::unzip_pair_second(x);
-				if (size_info->entry[index]->EdgePool[v].property == TOMBSTONE)
+				if (size_info->entry[index]->EdgePool[v].property == TOMBSTONE
+					&& size_info->entry[index]->EdgePool[v].last_version != NONEINDEX)
 					continue;
 				else
-					sst->AddEdge(index,
-						util::unzip_pair_first(x),
+					sst->AddEdge(index, util::unzip_pair_first(x),
 						size_info->entry[index]->EdgePool[v].property);
 				/*bool tombstone = false;
 				for (auto v = util::unzip_pair_second(x); v != NONEINDEX;
@@ -267,6 +238,7 @@ namespace BACH
 		}
 		sst->ArrangeSSTableInfo();
 		auto vedit = new VersionEdit();
+		temp_file_metadata->file_size = fw->file_size();
 		vedit->EditFileList.push_back(*temp_file_metadata);
 		return vedit;
 	}
@@ -293,7 +265,6 @@ namespace BACH
 	void MemoryManager::immute_memtable(SizeEntry*& size_info, label_t label)
 	{
 		std::unique_lock<std::shared_mutex>locks[db->options->MERGE_NUM];
-		time_t max_time = 0;
 		for (vertex_t i = size_info->begin_vertex_id;
 			i <= size_info->begin_vertex_id + size_info->entry.size() - 1;
 			++i)
@@ -316,25 +287,16 @@ namespace BACH
 				new VertexEntry(new_size_info,
 					EdgeLabelIndex[label]->VertexIndex[i]);
 		}
-		for (auto& i : size_info->entry)
-			if (i->EdgePool.size() > 0)
-			{
-				max_time = std::max(max_time, i->EdgePool.back().time);
-			}
-		std::unique_lock<std::shared_mutex>lock(MemTableDelTableMutex);
-		if (MemTableDelTable.find(max_time) == MemTableDelTable.end())
-			MemTableDelTable[max_time] = std::vector<SizeEntry*>();
-		MemTableDelTable[max_time].push_back(size_info);
 		Compaction x;
 		x.label_id = label;
 		x.target_level = 0;
+		x.vertex_id_b = size_info->begin_vertex_id;
 		x.Persistence = size_info;
-		x.persistece_time = max_time;
 		db->Files->AddCompaction(x);
 	}
-	edge_t MemoryManager::find_edge(vertex_t src, vertex_t dst, label_t label_id)
+	edge_t MemoryManager::find_edge(vertex_t src, vertex_t dst, VertexEntry* entry)
 	{
-		auto edge_index_iter = EdgeLabelIndex[label_id]->VertexIndex[src]->EdgeIndex.
+		auto edge_index_iter = entry->EdgeIndex.
 			lower_bound(util::make_vertex_edge_pair(dst, 0));
 		if (util::unzip_pair_first(*edge_index_iter) != dst)
 			return NONEINDEX;

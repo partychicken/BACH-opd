@@ -6,31 +6,25 @@ namespace BACH
 		DB* db, Version* _version) :
 		write_epoch(_write_epoch), read_epoch(_read_epoch), db(db), version(_version)
 	{
-		std::cout<<"Transaction using version: "<<version->version_name <<" created\n";
 		version->AddRef();
 	}
 	Transaction::Transaction(Transaction&& txn) :
 		write_epoch(txn.write_epoch), read_epoch(txn.read_epoch),
 		db(txn.db), version(txn.version)
 	{
-		std::cout << "Transaction using version: " << version->version_name << " copyed\n";
 		txn.valid = false;
 	}
 	Transaction::~Transaction()
 	{
 		if (valid)
 		{
-			std::cout << "Transaction using version: " << version->version_name << " deleted\n";
 			{
 				std::unique_lock<std::shared_mutex> rlock(db->read_epoch_table_mutex);
 				if (--db->read_epoch_table[read_epoch] == 0)
-				{
 					db->read_epoch_table.erase(read_epoch);
-					db->Memtable->ClearDelTable(read_epoch);
-				}
 				version->DecRef();
 			}
-			if (write_epoch == MAXTIME)
+			if (write_epoch != MAXTIME)
 			{
 				std::unique_lock<std::shared_mutex> wlock(db->write_epoch_table_mutex);
 				db->write_epoch_table.erase(write_epoch);
@@ -94,12 +88,8 @@ namespace BACH
 	edge_property_t Transaction::GetEdge(
 		vertex_t src, vertex_t dst, label_t label)
 	{
-		//if (db->Memtable->GetVertexDelTime(label, src) < now_epoch)
-		//{
-		//	std::cout << "find edge from a deleted vertex!\n";
-		//}
 		edge_property_t x = db->Memtable->GetEdge(src, dst, label, read_epoch);
-		if (x != TOMBSTONE)
+		if (!std::isnan(x))
 			return x;
 		VersionIterator iter(version, label, src);
 		while (!iter.End())
@@ -108,8 +98,9 @@ namespace BACH
 				db->options->STORAGE_DIR + "/" + iter.GetFile()->file_name);
 			auto parser = std::make_shared<SSTableParser>(label, fr, db->options);
 			auto found = parser->GetEdge(src, dst);
-			if (found != TOMBSTONE)
+			if (!std::isnan(found))
 				return found;
+			iter.next();
 		}
 		return TOMBSTONE;
 	}
@@ -130,6 +121,7 @@ namespace BACH
 				db->options->STORAGE_DIR + "/" + iter.GetFile()->file_name);
 			auto parser = std::make_shared<SSTableParser>(label, fr, db->options);
 			parser->GetEdges(src, answer_temp, func);
+			iter.next();
 		}
 		std::sort(answer_temp->begin(), answer_temp->end());
 		auto last = std::unique(answer_temp->begin(), answer_temp->end(),
@@ -139,13 +131,9 @@ namespace BACH
 				return std::get<0>(A) == std::get<0>(B);
 			});
 		answer_temp->erase(last, answer_temp->end());
-		for (auto& i : *answer_temp)
-		{
-			if (std::get<2>(i) != TOMBSTONE)
-			{
-				(*answer).emplace_back(std::get<0>(i), std::get<2>(i));
-			}
-		}
+		for (auto i = answer_temp->begin(); i != last; i++)
+			if (std::get<2>(*i) != TOMBSTONE)
+				(*answer).emplace_back(std::get<0>(*i), std::get<2>(*i));
 		return answer;
 	}
 }

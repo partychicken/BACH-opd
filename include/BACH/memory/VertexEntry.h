@@ -20,19 +20,7 @@ namespace BACH
 		time_t time;
 		edge_t last_version;
 	};
-	struct VertexEntry;
-	struct SizeEntry
-	{
-		vertex_t begin_vertex_id;
-		size_t size = 0;
-		std::vector<VertexEntry*> entry;
-		SizeEntry* last;
-		std::atomic<bool> immutable;
-		time_t deletion_time = MAXTIME;
-		SizeEntry(vertex_t _begin_vertex_id, SizeEntry* _last) :
-			begin_vertex_id(_begin_vertex_id), last(_last), immutable(false)
-		{}
-	};
+	struct SizeEntry;
 	struct VertexEntry
 	{
 		CPMA<spmae_settings<vertex_edge_pair_t>>EdgeIndex;
@@ -41,15 +29,18 @@ namespace BACH
 		std::shared_mutex mutex;
 		time_t deadtime = MAXTIME;
 		VertexEntry* next;
-		VertexEntry(SizeEntry* size_info,
-			VertexEntry* _next = NULL) :
-			mutex(), next(_next)
-		{
-			this->size_info = size_info;
-			size_info->entry.push_back(this);
-			if (_next != NULL)
-				deadtime = _next->deadtime;
-		}
+		VertexEntry(SizeEntry* size_info, VertexEntry* _next = NULL);
+	};
+	struct SizeEntry
+	{
+		vertex_t begin_vertex_id;
+		size_t size = 0;
+		std::vector<VertexEntry*> entry;
+		SizeEntry* last = NULL;
+		std::atomic<bool> immutable;
+		time_t max_time = 0;
+		SizeEntry(vertex_t _begin_vertex_id, SizeEntry* next);
+		void delete_entry();
 	};
 	struct EdgeLabelEntry
 	{
@@ -59,11 +50,7 @@ namespace BACH
 		label_t src_label_id;
 		ConcurrentArray<std::shared_mutex> vertex_mutex;
 		std::shared_mutex mutex;
-		EdgeLabelEntry(label_t src_label_id, size_t list_num) :
-			query_counter(list_num),
-			now_size_info(new SizeEntry(0, NULL)),
-			src_label_id(src_label_id),
-			mutex() {}
+		EdgeLabelEntry(label_t src_label_id, size_t list_num);
 	};
 }
 //#endif // !VERTEXENTRY

@@ -50,7 +50,7 @@ namespace BACH
 		}
 
 	private:
-		std::vector<std::shared_ptr<FixedDoubleBitList<1>>> query_list;
+		ConcurrentArray<std::shared_ptr<FixedDoubleBitList<1>>> query_list;
 		Fenwick<size_t> recent_read, recent_write;
 		Fenwick<size_t> write, deletion;
 		size_t list_num;

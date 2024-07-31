@@ -48,7 +48,6 @@ namespace BACH
 
 		size_t GetMergeType(label_t label_id, vertex_t src_b, vertex_t src_e);
 		time_t GetVertexDelTime(label_t edge_label_id, vertex_t src) const;
-		void ClearDelTable(time_t time);
 		VersionEdit* MemTablePersistence(label_t label_id,
 			idx_t file_id, SizeEntry* size_info);
 		//void PersistenceAll();
@@ -56,14 +55,12 @@ namespace BACH
 	private:
 		ConcurrentArray <EdgeLabelEntry*> EdgeLabelIndex;
 		ConcurrentArray <VertexLabelEntry*> VertexLabelIndex;
-		std::shared_mutex MemTableDelTableMutex;
-		std::map<time_t, std::vector<SizeEntry*>> MemTableDelTable;
 		DB* db;
 
 
 		void vertex_property_persistence(label_t label_id);
 		void immute_memtable(SizeEntry*& size_info, label_t label);
-		edge_t find_edge(vertex_t src, vertex_t dst, label_t label_id);
+		edge_t find_edge(vertex_t src, vertex_t dst, VertexEntry* entry);
 
 		//friend class FileManager;
 		//friend class LabelManager;

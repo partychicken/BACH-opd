@@ -8,8 +8,6 @@ namespace BACH
 		prev(_prev), next(NULL), epoch(std::max(_prev->epoch, time)),
 		option(_prev->option)
 	{
-		version_name = _prev->version_name + 1;
-		std::cout << "version " << version_name << " created!" << std::endl;
 		prev->next = this;
 		FileIndex = prev->FileIndex;
 		for (auto& i : edit->EditFileList)
@@ -41,26 +39,28 @@ namespace BACH
 		for (auto& i : FileIndex)
 			for (auto& j : i)
 				for (auto& k : j)
-					++k->ref;
+					k->ref.fetch_add(1, std::memory_order_relaxed);
 	}
 	Version::~Version()
 	{
+		if (size_entry != NULL)
+			size_entry->delete_entry();
 		for (auto& i : FileIndex)
 			for (auto& j : i)
 				for (auto& k : j)
 				{
-					--k->ref;
-					if (k->ref == 0)
+					k->ref.fetch_add(-1, std::memory_order_relaxed);
+					if (k->ref.load() == 0)
 					{
 						unlink((option->STORAGE_DIR + "/"
 							+ k->file_name).c_str());
 					}
 				}
-		std::cout << "version " << version_name << " deleted!" << std::endl;
-		if (prev != NULL)
-			prev->next = next;
 		if (next != NULL)
+		{
 			next->prev = prev;
+			next->DecRef();
+		}
 	}
 
 	Compaction* Version::GetCompaction(VersionEdit* edit)
@@ -68,7 +68,7 @@ namespace BACH
 		label_t label = -1;
 		idx_t level = -1;
 		vertex_t src_b = -1;
-		for (auto &i : edit->EditFileList)
+		for (auto& i : edit->EditFileList)
 			if (!i.deletion)
 			{
 				label = i.label;
@@ -108,16 +108,18 @@ namespace BACH
 	}
 	void Version::AddRef()
 	{
-		++ref;
-		std::cout << "version " << version_name << " ref++, now is " << ref << std::endl;
+		ref.fetch_add(1, std::memory_order_relaxed);
 	}
 	void Version::DecRef()
 	{
-		--ref;
-		std::cout << "version " << version_name << " ref--, now is " << ref << std::endl;
+		ref.fetch_add(-1, std::memory_order_relaxed);
 		bool FALSE = false;
-		if (ref == 0 && deleting.compare_exchange_weak(FALSE, true, std::memory_order_relaxed))
+		if (ref.load() == 0 && deleting.compare_exchange_weak(FALSE, true, std::memory_order_relaxed))
 			delete this;
+	}
+	void Version::AddSizeEntry(SizeEntry* x)
+	{
+		size_entry = x;
 	}
 
 	VersionIterator::VersionIterator(Version* _version, label_t _label, vertex_t _src)
@@ -140,15 +142,23 @@ namespace BACH
 	{
 		if (end)
 			return;
-		--idx;
-		if (version->FileIndex[label][level][idx]->vertex_id_b != src)
+		if (idx == 0 || version->FileIndex[label][level][--idx]->vertex_id_b != src)
 			nextlevel();
 	}
 
 	void VersionIterator::nextlevel()
 	{
+		++level;
+		vertex_t num = util::ClacFileSize(version->option->MERGE_NUM, level);
+		vertex_t tmp = src / num;
+		src = tmp * num;
 		while (level < version->FileIndex[label].size() && !findsrc())
+		{
 			++level;
+			num = util::ClacFileSize(version->option->MERGE_NUM, level);
+			tmp = src / num;
+			src = tmp * num;
+		}
 		if (level == version->FileIndex[label].size())
 			end = true;
 	}
@@ -169,14 +179,16 @@ namespace BACH
 		//}
 		//if (version->FileIndex[label][level][l]->vertex_id_b != src)
 		//	return false;
+		vertex_t num = util::ClacFileSize(version->option->MERGE_NUM, level);
+		vertex_t tmp = src / num;
 		auto x = std::lower_bound(version->FileIndex[label][level].begin(),
 			version->FileIndex[label][level].end(),
-			std::make_pair(src, NONEINDEX),
+			std::make_pair(tmp * num + 1, 0),
 			FileCompareWithPair);
-		if (x == version->FileIndex[label][level].end())
+		if (x == version->FileIndex[label][level].begin())
 			return false;
-		idx = x - version->FileIndex[label][level].begin();
-		if (version->FileIndex[label][level][idx]->vertex_id_b != src)
+		idx = x - version->FileIndex[label][level].begin() - 1;
+		if (version->FileIndex[label][level][idx]->vertex_id_b != tmp * num)
 			return false;
 		return true;
 	}

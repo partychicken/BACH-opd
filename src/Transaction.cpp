@@ -97,6 +97,8 @@ namespace BACH
 			auto fr = std::make_shared<FileReader>(
 				db->options->STORAGE_DIR + "/" + iter.GetFile()->file_name);
 			auto parser = std::make_shared<SSTableParser>(label, fr, db->options);
+			//std::cout << "get edge " + std::to_string(src) + "to" + std::to_string(dst)
+			//	+ " from file " + iter.GetFile()->file_name + "\n";
 			auto found = parser->GetEdge(src, dst);
 			if (!std::isnan(found))
 				return found;

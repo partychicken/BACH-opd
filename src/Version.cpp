@@ -8,6 +8,8 @@ namespace BACH
 		prev(_prev), next(NULL), epoch(std::max(_prev->epoch, time)),
 		option(_prev->option)
 	{
+		version_name = _prev->version_name + 1;
+		//std::cout << "version: " << version_name << " created\n";
 		prev->next = this;
 		FileIndex = prev->FileIndex;
 		for (auto& i : edit->EditFileList)
@@ -40,9 +42,17 @@ namespace BACH
 			for (auto& j : i)
 				for (auto& k : j)
 					k->ref.fetch_add(1, std::memory_order_relaxed);
+		//auto x = this;
+		//while (x != NULL)
+		//{
+		//	std::cout << x->epoch;
+		//	x = x->prev;
+		//}
+		//std::cout << std::endl;
 	}
 	Version::~Version()
 	{
+		//std::cout << "version: " << version_name << " deleted\n";
 		if (size_entry != NULL)
 			size_entry->delete_entry();
 		for (auto& i : FileIndex)
@@ -52,6 +62,7 @@ namespace BACH
 					k->ref.fetch_add(-1, std::memory_order_relaxed);
 					if (k->ref.load() == 0)
 					{
+						//std::cout << "delete file: " << k->file_name << std::endl;
 						unlink((option->STORAGE_DIR + "/"
 							+ k->file_name).c_str());
 					}
@@ -65,17 +76,9 @@ namespace BACH
 
 	Compaction* Version::GetCompaction(VersionEdit* edit)
 	{
-		label_t label = -1;
-		idx_t level = -1;
-		vertex_t src_b = -1;
-		for (auto& i : edit->EditFileList)
-			if (!i.deletion)
-			{
-				label = i.label;
-				level = i.level;
-				src_b = i.vertex_id_b;
-				break;
-			}
+		label_t label = edit->EditFileList.begin()->label;
+		idx_t level = edit->EditFileList.begin()->level;
+		vertex_t src_b = edit->EditFileList.begin()->vertex_id_b;
 		vertex_t num = util::ClacFileSize(
 			option->MERGE_NUM, level) * option->MERGE_NUM;
 		vertex_t tmp = src_b / num;
@@ -99,20 +102,25 @@ namespace BACH
 		c->vertex_id_e = (tmp + 1) * num - 1;
 		c->label_id = label;
 		c->target_level = level + 1;
+		//std::cout << "-------\n";
 		for (auto i = iter1; i != iter2; ++i)
-		{
-			c->file_list.push_back(**i);
-			(*i)->merging = true;
-		}
+			if (!(*i)->merging)
+			{
+				c->file_list.push_back(**i);
+				(*i)->merging = true;
+				//std::cout<<"add file "<<(*i)->file_name<<" to compaction\n";
+			}
 		return c;
 	}
 	void Version::AddRef()
 	{
 		ref.fetch_add(1, std::memory_order_relaxed);
+		//std::cout << "version: " << version_name << " ref++, now is:" << ref.load() << "\n";
 	}
 	void Version::DecRef()
 	{
 		ref.fetch_add(-1, std::memory_order_relaxed);
+		//std::cout << "version: " << version_name << " ref--, now is:" << ref.load() << "\n";
 		bool FALSE = false;
 		if (ref.load() == 0 && deleting.compare_exchange_weak(FALSE, true, std::memory_order_relaxed))
 			delete this;

@@ -24,6 +24,7 @@ namespace BACH
 		}
 		for (auto& verentry : entry)
 		{
+			verentry->mutex.lock();
 			delete verentry;
 		}
 		delete this;

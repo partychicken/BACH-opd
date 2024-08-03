@@ -137,10 +137,15 @@ namespace BACH
 				std::unique_lock<std::shared_mutex> version_lock(version_mutex);
 				Version* tmp = current_version;
 				tmp->AddSizeEntry(x.Persistence);
+				//std::cout << "create file: " << edit->EditFileList.begin()->file_name << std::endl;
 				current_version = new Version(tmp, edit, time);
 				auto compact = current_version->GetCompaction(edit);
 				if (compact != NULL)
-					Files->AddCompaction(*compact);		
+				{
+					//std::cout<<"get compaction for version: "<<current_version->version_name<<"\n";
+
+					Files->AddCompaction(*compact);
+				}
 				tmp->DecRef();
 				version_lock.unlock();
 				ProgressReadVersion();

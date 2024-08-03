@@ -30,6 +30,8 @@ namespace BACH
 		Version* prev;
 		Version* next;
 		time_t epoch;
+
+		idx_t version_name = 0;
 	private:
 		std::atomic<idx_t> ref = 2;
 		std::atomic<bool> deleting = false;

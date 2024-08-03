@@ -12,7 +12,7 @@ namespace BACH {
 		{
 			std::cout << "cannot open file " << file_path << std::endl;
 		}
-		if (fd != -1)
+		else 
 		{
 			fstat(fd, &sb);
 		}

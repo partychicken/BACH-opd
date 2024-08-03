@@ -14,7 +14,6 @@ namespace BACH
 		size_t MEM_TABLE_MAX_SIZE = 4 * 1024;
 		size_t VERTEX_PROPERTY_MAX_SIZE = 64 * 1024 * 1024;
 		vertex_t MERGE_NUM = 32;
-		vertex_t MIN_MERGE_NUM = 20;
 		size_t READ_BUFFER_SIZE = 1024 * 1024;
 		size_t WRITE_BUFFER_SIZE = 1024 * 1024;
 		size_t NUM_OF_COMPACTION_THREAD = 1;

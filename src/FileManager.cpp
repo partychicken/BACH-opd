@@ -32,10 +32,9 @@ namespace BACH {
 		for (auto& file : compaction.file_list)
 		{
 			//std::cout << "parse file: " << file.file_name << "\n";
+			auto reader = db->ReaderCaches->find(file.file_name);
 			parsers.emplace_back(compaction.label_id,
-				std::make_shared<FileReader>(
-					db->options->STORAGE_DIR + "/" + file.file_name),
-				db->options, false);
+				reader, db->options, false);
 			file_ids.push_back(file.file_id);
 		}
 

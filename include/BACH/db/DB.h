@@ -2,6 +2,7 @@
 
 #include <set>
 #include <tbb/concurrent_set.h>
+#include "BACH/file/FileReaderCache.h"
 #include "BACH/label/LabelManager.h"
 #include "BACH/memory/MemoryManager.h"
 #include "BACH/sstable/FileManager.h"
@@ -32,9 +33,10 @@ namespace BACH
 		//void TestMerge(Compaction& x, idx_t type);
 
 		std::shared_ptr<Options> options;
-		std::unique_ptr<LabelManager> Labels = NULL;
-		std::unique_ptr<MemoryManager> Memtable = NULL;
-		std::unique_ptr<FileManager> Files = NULL;
+		std::unique_ptr<LabelManager> Labels;
+		std::unique_ptr<MemoryManager> Memtable;
+		std::unique_ptr<FileManager> Files;
+		std::unique_ptr<FileReaderCache> ReaderCaches;
 	private:
 		std::atomic<time_t> epoch_id;
 		std::shared_mutex write_epoch_table_mutex;

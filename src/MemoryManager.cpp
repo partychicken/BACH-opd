@@ -67,11 +67,11 @@ namespace BACH
 			else
 			{
 				idx_t file_no = VertexLabelIndex[label]->FileIndex.lowerbound(vertex);
-				std::string file_name = db->options->STORAGE_DIR + "/"
-					+ static_cast<std::string>(db->Labels->GetVertexLabel(label)) + "_"
-					+ std::to_string(file_no) + ".property";
+				auto reader = db->ReaderCaches->find(static_cast<std::string>(
+					db->Labels->GetVertexLabel(label)) + "_"
+					+ std::to_string(file_no) + ".property");
 				auto parser = std::make_shared<PropertyFileParser>(
-					std::make_shared<FileReader>(file_name));
+					reader);
 				return parser->GetProperty(vertex - file_no);
 			}
 		}

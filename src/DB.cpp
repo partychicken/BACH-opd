@@ -10,6 +10,8 @@ namespace BACH
 		Labels = std::make_unique<LabelManager>();
 		Memtable = std::make_unique<MemoryManager>(this);
 		Files = std::make_unique<FileManager>(this);
+		ReaderCaches = std::make_unique<FileReaderCache>(
+			options->MAX_FILE_READER_CACHE_SIZE, options->STORAGE_DIR + "/");
 		for (idx_t i = 0; i < _options->NUM_OF_COMPACTION_THREAD; ++i)
 		{
 			compact_thread.push_back(std::make_shared<std::thread>(

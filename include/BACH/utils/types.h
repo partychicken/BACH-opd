@@ -18,6 +18,8 @@ namespace BACH
 	using vertex_edge_pair_t = uint64_t;
 	using edge_property_t = double_t;
 	using idx_t = uint32_t;
+	using identify_t = uint32_t;
+	using ref_t = uint64_t;
 	using time_t = uint64_t;
 	using filter_t = uint64_t;
 	const unsigned long singel_filter_allocation_size = sizeof(size_t) + sizeof(idx_t);

@@ -7,6 +7,7 @@
 
 namespace BACH
 {
+	class DB;
 	struct VersionEdit
 	{
 		std::vector<FileMetaData> EditFileList;
@@ -14,7 +15,7 @@ namespace BACH
 	class Version
 	{
 	public:
-		Version(std::shared_ptr<Options> _option);
+		Version(DB* _db);
 		Version(Version* _prev, VersionEdit* edit, time_t time);
 		~Version();
 
@@ -36,7 +37,7 @@ namespace BACH
 		std::atomic<idx_t> ref = 2;
 		std::atomic<bool> deleting = false;
 		SizeEntry* size_entry = NULL;
-		std::shared_ptr<Options> option;
+		DB* db;
 		friend class VersionIterator;
 	};
 	class VersionIterator

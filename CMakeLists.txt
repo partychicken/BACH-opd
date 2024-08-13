@@ -25,10 +25,10 @@ target_link_libraries(bach PRIVATE CPMA)
 set(BUILD_TEST OFF)
 set(DEBUG ON)
 
-set(CMAKE_CXX_FLAGS "-O3 ${CMAKE_CXX_FLAGS}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 
 if(DEBUG)
-	set(CMAKE_CXX_FLAGS "-Werror -g -Wall ${CMAKE_CXX_FLAGS}")
+	set(CMAKE_CXX_FLAGS " -g -Wall ${CMAKE_CXX_FLAGS}")
 	target_link_options(bach PRIVATE -lprofiler -ltcmalloc)
 endif()
 

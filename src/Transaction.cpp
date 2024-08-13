@@ -94,10 +94,12 @@ namespace BACH
 		VersionIterator iter(version, label, src);
 		while (!iter.End())
 		{
-			auto fr = db->ReaderCaches->find(iter.GetFile()->file_name);
-			auto parser = std::make_shared<SSTableParser>(label, fr, db->options);
+			auto fr = db->ReaderCaches->find(iter.GetFile());
+			auto parser = std::make_shared<SSTableParser>(
+				label, fr, db->options, iter.GetFile()->identify);
 			//std::cout << "get edge " + std::to_string(src) + "to" + std::to_string(dst)
 			//	+ " from file " + iter.GetFile()->file_name + "\n";
+			//std::printf("get filereader %x for file %s\n", fr, iter.GetFile()->file_name.data());
 			auto found = parser->GetEdge(src, dst);
 			if (!std::isnan(found))
 				return found;
@@ -118,8 +120,9 @@ namespace BACH
 		VersionIterator iter(version, label, src);
 		while (!iter.End())
 		{
-			auto fr = db->ReaderCaches->find(iter.GetFile()->file_name);
-			auto parser = std::make_shared<SSTableParser>(label, fr, db->options);
+			auto fr = db->ReaderCaches->find(iter.GetFile());
+			auto parser = std::make_shared<SSTableParser>(
+				label, fr, db->options, iter.GetFile()->identify);
 			parser->GetEdges(src, answer_temp, func);
 			iter.next();
 		}

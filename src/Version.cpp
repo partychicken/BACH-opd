@@ -1,12 +1,13 @@
 #include "BACH/sstable/Version.h"
+#include "BACH/db/DB.h"
 
 namespace BACH
 {
-	Version::Version(std::shared_ptr<Options> _option) :
-		prev(NULL), next(NULL), epoch(0), option(_option) {}
+	Version::Version(DB* _db) :
+		prev(NULL), next(NULL), epoch(0), db(_db) {}
 	Version::Version(Version* _prev, VersionEdit* edit, time_t time) :
 		prev(_prev), next(NULL), epoch(std::max(_prev->epoch, time)),
-		option(_prev->option)
+		db(_prev->db)
 	{
 		version_name = _prev->version_name + 1;
 		//std::cout << "version: " << version_name << " created\n";
@@ -63,8 +64,16 @@ namespace BACH
 					if (k->ref.load() == 0)
 					{
 						//std::cout << "delete file: " << k->file_name << std::endl;
-						unlink((option->STORAGE_DIR + "/"
+						unlink((db->options->STORAGE_DIR + "/"
 							+ k->file_name).c_str());
+						//if (k->reader != NULL)
+						//{
+						//	k->reader->file_data = NULL;
+						//}
+						if (k->reader_pos != -1)
+							k->death = true;
+						else
+							delete k;
 					}
 				}
 		if (next != NULL)
@@ -80,7 +89,7 @@ namespace BACH
 		idx_t level = edit->EditFileList.begin()->level;
 		vertex_t src_b = edit->EditFileList.begin()->vertex_id_b;
 		vertex_t num = util::ClacFileSize(
-			option->MERGE_NUM, level) * option->MERGE_NUM;
+			db->options->MERGE_NUM, level) * db->options->MERGE_NUM;
 		vertex_t tmp = src_b / num;
 		auto iter1 = std::lower_bound(FileIndex[label][level].begin(),
 			FileIndex[label][level].end(),
@@ -94,8 +103,8 @@ namespace BACH
 		for (auto i = iter1; i != iter2; ++i)
 			if (!(*i)->merging)
 				cnt += (*i)->file_size;
-		if (cnt < option->MEM_TABLE_MAX_SIZE * util::ClacFileSize(
-			option->MERGE_NUM, level))
+		if (cnt < db->options->MEM_TABLE_MAX_SIZE * util::ClacFileSize(
+			db->options->MERGE_NUM, level))
 			return NULL;
 		Compaction* c = new Compaction();
 		c->vertex_id_b = tmp * num;
@@ -106,7 +115,7 @@ namespace BACH
 		for (auto i = iter1; i != iter2; ++i)
 			if (!(*i)->merging)
 			{
-				c->file_list.push_back(**i);
+				c->file_list.push_back(*i);
 				(*i)->merging = true;
 				//std::cout<<"add file "<<(*i)->file_name<<" to compaction\n";
 			}
@@ -157,13 +166,13 @@ namespace BACH
 	void VersionIterator::nextlevel()
 	{
 		++level;
-		vertex_t num = util::ClacFileSize(version->option->MERGE_NUM, level);
+		vertex_t num = util::ClacFileSize(version->db->options->MERGE_NUM, level);
 		vertex_t tmp = src / num;
 		src = tmp * num;
 		while (level < version->FileIndex[label].size() && !findsrc())
 		{
 			++level;
-			num = util::ClacFileSize(version->option->MERGE_NUM, level);
+			num = util::ClacFileSize(version->db->options->MERGE_NUM, level);
 			tmp = src / num;
 			src = tmp * num;
 		}
@@ -187,7 +196,7 @@ namespace BACH
 		//}
 		//if (version->FileIndex[label][level][l]->vertex_id_b != src)
 		//	return false;
-		vertex_t num = util::ClacFileSize(version->option->MERGE_NUM, level);
+		vertex_t num = util::ClacFileSize(version->db->options->MERGE_NUM, level);
 		vertex_t tmp = src / num;
 		auto x = std::lower_bound(version->FileIndex[label][level].begin(),
 			version->FileIndex[label][level].end(),

@@ -18,7 +18,7 @@ namespace BACH
 				[&] {CompactLoop(); }));
 			compact_thread[i]->detach();
 		}
-		read_version = current_version = new Version(options);
+		read_version = current_version = new Version(this);
 	}
 	DB::~DB()
 	{
@@ -99,12 +99,13 @@ namespace BACH
 				lock.unlock();
 				VersionEdit* edit;
 				time_t time = 0;
-				x.file_id = Files->GetFileID(x.label_id, x.target_level, x.vertex_id_b);
+				std::tie(x.file_id, x.identify) = Files->GetFileID(
+					x.label_id, x.target_level, x.vertex_id_b);
 				if (x.Persistence != NULL)
 				{
 					//persistence
 					edit = Memtable->MemTablePersistence(x.label_id, x.file_id,
-						x.Persistence);
+						x.Persistence, x.identify);
 					time = x.Persistence->max_time;
 				}
 				else
@@ -129,7 +130,7 @@ namespace BACH
 							if ((*iter)->merging == false)
 							{
 								(*iter)->merging = true;
-								x.file_list.push_back(**iter);
+								x.file_list.push_back(*iter);
 								break;
 							}
 						break;

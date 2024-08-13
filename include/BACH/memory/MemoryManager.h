@@ -49,7 +49,7 @@ namespace BACH
 		size_t GetMergeType(label_t label_id, vertex_t src_b, vertex_t src_e);
 		time_t GetVertexDelTime(label_t edge_label_id, vertex_t src) const;
 		VersionEdit* MemTablePersistence(label_t label_id,
-			idx_t file_id, SizeEntry* size_info);
+			idx_t file_id, SizeEntry* size_info, identify_t identify);
 		//void PersistenceAll();
 
 	private:

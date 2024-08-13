@@ -29,7 +29,8 @@ namespace BACH
 
 		void AddCompaction(Compaction& compaction);
 		VersionEdit* MergeSSTable(Compaction& compaction);
-		idx_t GetFileID(label_t label, idx_t level, vertex_t src_b);
+		std::pair<idx_t, identify_t> GetFileID(
+			label_t label, idx_t level, vertex_t src_b);
 
 	private:
 		DB* db;
@@ -40,6 +41,7 @@ namespace BACH
 			std::vector<  //level
 			std::vector<  //src_b
 			idx_t>>> FileNumList;
+		identify_t file_identify = 0;
 		//std::shared_ptr<Version> current_version;
 		friend class DB;
 	};

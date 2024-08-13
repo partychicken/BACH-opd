@@ -18,10 +18,15 @@ namespace BACH
 	class SSTableParser
 	{
 	public:
-		explicit SSTableParser(label_t _label,
-			std::shared_ptr<FileReader> _fileReader,
-			std::shared_ptr<Options> _options, bool if_read_filter = true);
-		~SSTableParser() = default;
+		SSTableParser(label_t _label,
+			FileReader* _fileReader,
+			std::shared_ptr<Options> _options,
+			identify_t id);
+		SSTableParser& operator=(const SSTableParser&) = delete;
+		SSTableParser(const SSTableParser& x) = delete;
+		SSTableParser(SSTableParser&& x);
+		SSTableParser() = delete;
+		~SSTableParser();
 		edge_property_t GetEdge(vertex_t src, vertex_t dst);
 		void GetEdges(vertex_t src, std::shared_ptr<std::vector<
 			std::tuple<vertex_t, vertex_t, edge_property_t>>> answer,
@@ -40,15 +45,15 @@ namespace BACH
 
 	private:
 		label_t label;
-		std::shared_ptr<FileReader> reader;
+		FileReader* reader;
 		std::shared_ptr<Options> options;
-		bool read_filter;
+		identify_t file_identify;
 		//std::shared_ptr <BloomFilter> filter = NULL;
 		edge_t edge_cnt = 0;
 		size_t edge_msg_end_pos = 0;//end position
 		size_t edge_allocation_end_pos = 0;
-		size_t filter_end_pos = 0;
 		size_t filter_allocation_end_pos = 0;
+		size_t filter_end_pos = 0;
 		vertex_t src_b = 0, src_e = 0;
 		vertex_t now_src = 0;
 		off_t file_size = 0;
@@ -61,5 +66,6 @@ namespace BACH
 		size_t edge_allocation_buffer_len = 0, edge_msg_buffer_len = 0;
 		vertex_t now_edge_src, now_edge_dst;
 		edge_property_t now_edge_prop;
+		bool valid = true;
 	};
 }

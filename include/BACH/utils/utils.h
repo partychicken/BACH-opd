@@ -84,10 +84,10 @@ namespace BACH
 		{
 			idx_t file_id = 0;
 			idx_t x = 1;
-			for(auto i = sst_path.size(); i > 0; i++)
-			{	
-				if(sst_path[i] == '_')
-				break;
+			for (auto i = sst_path.size(); i > 0; i++)
+			{
+				if (sst_path[i] == '_')
+					break;
 				file_id = file_id + x * (sst_path[i] - '0');
 				x *= 10;
 			}
@@ -144,6 +144,18 @@ namespace BACH
 		inline T GetDecodeFixed(const char* data)
 		{
 			return *(reinterpret_cast<const T*>(data));
+		}
+		inline ref_t make_ref(identify_t id, idx_t num)
+		{
+			return ((ref_t)(id) << (sizeof(idx_t) * 8)) | num;
+		}
+		inline identify_t unzip_id(ref_t x)
+		{
+			return (identify_t)(x >> (sizeof(idx_t) * 8));
+		}
+		inline idx_t unzip_ref_num(ref_t x)
+		{
+			return (idx_t)(x & (((ref_t)(1) << (sizeof(idx_t) * 8)) - 1));
 		}
 	}
 }

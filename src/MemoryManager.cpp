@@ -67,7 +67,7 @@ namespace BACH
 			else
 			{
 				idx_t file_no = VertexLabelIndex[label]->FileIndex.lowerbound(vertex);
-				auto reader = db->ReaderCaches->find(static_cast<std::string>(
+				auto reader = std::make_shared<FileReader>(static_cast<std::string>(
 					db->Labels->GetVertexLabel(label)) + "_"
 					+ std::to_string(file_no) + ".property");
 				auto parser = std::make_shared<PropertyFileParser>(
@@ -193,10 +193,11 @@ namespace BACH
 		return EdgeLabelIndex[edge_label_id]->VertexIndex[src]->deadtime;
 	}
 	VersionEdit* MemoryManager::MemTablePersistence(label_t label_id,
-		idx_t file_id, SizeEntry* size_info)
+		idx_t file_id, SizeEntry* size_info, identify_t identify)
 	{
 		auto temp_file_metadata = new FileMetaData(label_id,
-			0, size_info->begin_vertex_id, file_id, db->Labels->GetEdgeLabel(label_id));
+			0, size_info->begin_vertex_id, file_id,
+			db->Labels->GetEdgeLabel(label_id), identify);
 		std::string file_name = temp_file_metadata->file_name;
 		auto fw = std::make_shared<FileWriter>(db->options->STORAGE_DIR + "/" + file_name, false);
 		auto sst = std::make_shared<SSTableBuilder>(fw, db->options);

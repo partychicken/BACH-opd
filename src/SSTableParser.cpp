@@ -1,16 +1,19 @@
 #include "BACH/sstable/SSTableParser.h"
-
+#include "BACH/sstable/FileMetaData.h"
 namespace BACH
 {
 	SSTableParser::SSTableParser(label_t _label,
-		std::shared_ptr<FileReader> _fileReader,
-		std::shared_ptr<Options> _options, bool if_read_filter) :
+		FileReader* _fileReader,
+		std::shared_ptr<Options> _options,
+		identify_t id) :
 		label(_label),
 		reader(_fileReader),
 		options(_options),
-		read_filter(if_read_filter)
+		file_identify(id)
 	{
-		file_size = (*reader).file_size();
+		std::printf("SPat 0x%x for %s C\n", reader, reader->file_data->file_name.data());
+		//reader->add_ref();
+		file_size = reader->file_size();
 
 		//SSTable用CSR块存储信息，src_vertex->dst_vertex
 		size_t offset = sizeof(vertex_t) * 2 + sizeof(edge_num_t);
@@ -42,6 +45,28 @@ namespace BACH
 		//	+ " edge_allocation_end_pos: " + std::to_string(edge_allocation_end_pos)
 		//	+ " filter_allocation_end_pos: " + std::to_string(filter_allocation_end_pos)
 		//	+ " filter_end_pos: " + std::to_string(filter_end_pos) +"\n";
+	}
+	SSTableParser::SSTableParser(SSTableParser&& x) :
+		label(x.label), reader(x.reader), options(x.options), file_identify(x.file_identify),
+		edge_cnt(x.edge_cnt), edge_msg_end_pos(x.edge_msg_end_pos),
+		edge_allocation_end_pos(x.edge_allocation_end_pos),
+		filter_allocation_end_pos(x.filter_allocation_end_pos),
+		filter_end_pos(x.filter_end_pos), src_b(x.src_b), src_e(x.src_e), file_size(x.file_size)
+	{
+		//std::printf("SPat 0x%x for %s Cp\n", reader, reader->file_data->file_name.data());
+		//std::cout << "copyed!!!!!\n";
+		x.valid = false;
+	}
+	SSTableParser::~SSTableParser()
+	{
+		if (valid)
+		{
+			/*std::printf("delete parser for %s ref is %d\n",
+				reader->file_data->file_name.data(), util::unzip_ref_num(reader->ref.load(
+				order_acq_rel)));*/
+			std::printf("SPat 0x%x for %s D\n", reader, reader->file_data->file_name.data());
+			while (!reader->dec_ref(file_identify, true));
+		}
 	}
 	// 在此文件中查找特定src->dst的边，如果不存在则返回null，存在返回一个指向(vertex_id,edge_property)的指针
 	edge_property_t SSTableParser::GetEdge(vertex_t src, vertex_t dst)

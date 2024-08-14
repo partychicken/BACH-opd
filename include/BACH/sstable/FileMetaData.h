@@ -25,7 +25,7 @@ namespace BACH
 		bool merging = false;
 		bool death = false;
 		identify_t identify;
-		std::atomic<FileReader*> reader = NULL;
+		std::atomic<std::shared_ptr<FileReader>> reader;
 		idx_t reader_pos = -1;
 
 		FileMetaData() = default;

@@ -15,13 +15,13 @@ namespace BACH {
 	struct FileMetaData;
 	class FileReader final {
 	public:
-		FileReader(const std::string& file_path, FileMetaData* _file_data = NULL);
+		FileReader(const std::string& file_path/*, FileMetaData* _file_data = NULL*/);
 		FileReader(const FileReader& x) = delete;
 		FileReader(FileReader&& x) = delete;
 
 		~FileReader();
-		void add_ref();
-		bool dec_ref(identify_t id, bool deadby = false);
+		//void add_ref();
+		//bool dec_ref(identify_t id, bool deadby = false);
 		// 类似unistd中的pread
 		// 从offset处开始，读取count长度的内容到buf中
 		bool fread(void* buf, int32_t count, int32_t offset = 0) const;
@@ -30,13 +30,13 @@ namespace BACH {
 		off_t file_size() const { return sb.st_size; }
 	private:
 		int32_t fd = 0;
-		std::atomic<bool> deleted = false;
-		FileMetaData* file_data = NULL;
-		identify_t id;
-		std::atomic<ref_t> ref;
+		//std::atomic<bool> deleted = false;
+		//FileMetaData* file_data = NULL;
+		//identify_t id;
+		//std::atomic<ref_t> ref;
 		struct stat sb {};
 		friend class FileReaderCache;
-		friend class SSTableParser;
+		//friend class SSTableParser;
 	};
 
 

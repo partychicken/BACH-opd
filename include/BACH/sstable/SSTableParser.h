@@ -19,7 +19,7 @@ namespace BACH
 	{
 	public:
 		SSTableParser(label_t _label,
-			FileReader* _fileReader,
+			std::shared_ptr<FileReader> _fileReader,
 			std::shared_ptr<Options> _options,
 			identify_t id);
 		SSTableParser& operator=(const SSTableParser&) = delete;
@@ -45,7 +45,7 @@ namespace BACH
 
 	private:
 		label_t label;
-		FileReader* reader;
+		std::shared_ptr<FileReader> reader;
 		std::shared_ptr<Options> options;
 		identify_t file_identify;
 		//std::shared_ptr <BloomFilter> filter = NULL;

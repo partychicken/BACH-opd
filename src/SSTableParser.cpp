@@ -3,7 +3,7 @@
 namespace BACH
 {
 	SSTableParser::SSTableParser(label_t _label,
-		FileReader* _fileReader,
+		std::shared_ptr<FileReader> _fileReader,
 		std::shared_ptr<Options> _options,
 		identify_t id) :
 		label(_label),
@@ -11,7 +11,7 @@ namespace BACH
 		options(_options),
 		file_identify(id)
 	{
-		std::printf("SPat 0x%x for %s C\n", reader, reader->file_data->file_name.data());
+		//std::printf("SPat 0x%x for %s C\n", reader, reader->file_data->file_name.data());
 		//reader->add_ref();
 		file_size = reader->file_size();
 
@@ -64,8 +64,8 @@ namespace BACH
 			/*std::printf("delete parser for %s ref is %d\n",
 				reader->file_data->file_name.data(), util::unzip_ref_num(reader->ref.load(
 				order_acq_rel)));*/
-			std::printf("SPat 0x%x for %s D\n", reader, reader->file_data->file_name.data());
-			while (!reader->dec_ref(file_identify, true));
+			//std::printf("SPat 0x%x for %s D\n", reader, reader->file_data->file_name.data());
+			//while (!reader->dec_ref(file_identify, true));
 		}
 	}
 	// 在此文件中查找特定src->dst的边，如果不存在则返回null，存在返回一个指向(vertex_id,edge_property)的指针

@@ -6,10 +6,9 @@
 #include <string_view>
 #include <sul/dynamic_bitset.hpp>
 #include "BloomFilter.h"
-#include "Buffer.h"
 #include "BACH/file/FileReader.h"
 #include "BACH/utils/utils.h"
-#include "BACH/utils/options.h"
+#include "BACH/utils/Options.h"
 #include "BACH/memory/VertexEntry.h"
 
 #pragma once

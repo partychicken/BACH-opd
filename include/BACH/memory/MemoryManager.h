@@ -12,7 +12,7 @@
 #include "BACH/sstable/SSTableBuilder.h"
 #include "BACH/sstable/Version.h"
 #include "BACH/utils/types.h"
-#include "BACH/utils/options.h"
+#include "BACH/utils/Options.h"
 
 
 namespace BACH

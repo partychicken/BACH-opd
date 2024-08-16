@@ -10,7 +10,7 @@
 #include "Compaction.h"
 #include "BACH/file/FileWriter.h"
 #include "BACH/label/LabelManager.h"
-#include "BACH/utils/options.h"
+#include "BACH/utils/Options.h"
 #include "BACH/sstable/SSTableParser.h"
 #include "BACH/sstable/SSTableBuilder.h"
 #include "BACH/sstable/Version.h"

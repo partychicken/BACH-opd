@@ -6,7 +6,7 @@
 #include "BACH/label/LabelManager.h"
 #include "BACH/memory/MemoryManager.h"
 #include "BACH/sstable/FileManager.h"
-#include "BACh/sstable/Version.h"
+#include "BACH/sstable/Version.h"
 
 namespace BACH
 {

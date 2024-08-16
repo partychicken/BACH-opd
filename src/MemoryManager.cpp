@@ -207,7 +207,7 @@ namespace BACH
 		auto fw = std::make_shared<FileWriter>(db->options->STORAGE_DIR + "/" + file_name, false);
 		auto sst = std::make_shared<SSTableBuilder>(fw, db->options);
 		sst->SetSrcRange(size_info->begin_vertex_id,
-			size_info->begin_vertex_id + size_info->entry.size() - 1);
+			size_info->begin_vertex_id + db->options->MERGE_NUM - 1);
 		vertex_t index;
 		for (index = 0; index < size_info->entry.size(); ++index)
 		{

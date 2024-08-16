@@ -39,12 +39,11 @@ namespace BACH {
 
 		edge_num_t new_file_edge_num = 0;
 		std::priority_queue<SingelEdgeInformation> q;
-		vertex_t new_file_src_begin = -1, new_file_src_end = 0;
+		vertex_t new_file_src_begin = compaction.vertex_id_b, 
+			new_file_src_end = compaction.vertex_id_e;
 		for (size_t i = 0; i < parsers.size(); i++)
 		{
 			new_file_edge_num += parsers[i].GetEdgeNum();
-			new_file_src_begin = std::min(new_file_src_begin, parsers[i].GetSrcBegin());
-			new_file_src_end = std::max(new_file_src_end, parsers[i].GetSrcEnd());
 			if (parsers[i].GetFirstEdge())
 			{
 				q.push(SingelEdgeInformation{ parsers[i].GetNowEdgeSrc(), parsers[i].GetNowEdgeDst(), parsers[i].GetNowEdgeProp(), (size_t)i, file_ids[i] });

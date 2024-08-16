@@ -18,11 +18,14 @@ namespace BACH
 				file_data->reader.store(std::make_shared<FileReader>(
 					prefix + file_data->file_name));
 				idx_t pos;
-				bool FALSE = false;
+				bool FALSE;
 				do
 				{
-					pos = size.load();
-					while (!size.compare_exchange_weak(pos, (pos + 1) % max_size));
+					do
+					{
+						pos = size.load();
+					} while (!size.compare_exchange_weak(pos, (pos + 1) % max_size));
+					FALSE = false;
 				} while (!cache_deleting[pos].compare_exchange_weak(FALSE, true));
 				if (cache[pos] != NULL)
 				{
@@ -30,10 +33,10 @@ namespace BACH
 					cache[pos]->reader_pos = -1;
 					if (cache[pos]->death)
 						delete cache[pos];
-					cache_deleting[pos].store(false);
 				}
 				cache[pos] = file_data;
 				file_data->reader_pos = pos;
+				cache_deleting[pos].store(false);
 			}
 			if (x == NULL || x == writing)
 				continue;

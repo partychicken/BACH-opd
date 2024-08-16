@@ -1,3 +1,6 @@
 [submodule "include/CPMA"]
 	path = include/CPMA
 	url = https://github.com/2600254/Packed-Memory-Array.git
+[submodule "include/dynamic_bitset"]
+	path = include/dynamic_bitset
+	url = https://github.com/pinam45/dynamic_bitset

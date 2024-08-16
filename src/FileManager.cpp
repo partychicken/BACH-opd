@@ -31,10 +31,9 @@ namespace BACH {
 		std::vector<idx_t> file_ids;
 		for (auto& file : compaction.file_list)
 		{
-			//std::cout << "parse file: " << file.file_name << "\n";
 			auto reader = db->ReaderCaches->find(file);
 			parsers.emplace_back(compaction.label_id,
-				reader, db->options, file->identify);
+				reader, db->options);
 			file_ids.push_back(file->file_id);
 		}
 
@@ -55,7 +54,7 @@ namespace BACH {
 		auto file_id = compaction.file_id;
 		auto temp_file_metadata = new FileMetaData(label_id,
 			compaction.target_level, compaction.vertex_id_b,
-			file_id, db->Labels->GetEdgeLabel(label_id), compaction.identify);
+			file_id, db->Labels->GetEdgeLabel(label_id));
 		std::string file_name = temp_file_metadata->file_name;
 		auto fw = std::make_shared<FileWriter>(db->options->STORAGE_DIR + "/"
 			+ file_name);
@@ -96,7 +95,7 @@ namespace BACH {
 			now_src_vertex_id++;
 		}
 		sst_builder->ArrangeCurrentSrcInfo();
-		sst_builder->ArrangeSSTableInfo();
+		temp_file_metadata->filter = sst_builder->ArrangeSSTableInfo();
 		temp_file_metadata->file_size = fw->file_size();
 
 		VersionEdit* edit = new VersionEdit();
@@ -108,7 +107,7 @@ namespace BACH {
 		}
 		return edit;
 	}
-	std::pair<idx_t, identify_t> FileManager::GetFileID(
+	idx_t FileManager::GetFileID(
 		label_t label, idx_t level, vertex_t src_b)
 	{
 		auto x = src_b / util::ClacFileSize(db->options->MERGE_NUM, level);
@@ -118,6 +117,6 @@ namespace BACH {
 			FileNumList[label].resize(level + 1);
 		if (FileNumList[label][level].size() <= x)
 			FileNumList[label][level].resize(x + 1, 0);
-		return std::make_pair(FileNumList[label][level][x]++, ++file_identify);
+		return FileNumList[label][level][x]++;
 	}
 }

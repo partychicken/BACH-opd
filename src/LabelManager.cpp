@@ -36,6 +36,11 @@ namespace BACH
 		return label_iter->second;
 	}
 
+	label_t LabelManager::GetSrcVertexLabelId(label_t id)
+	{
+		return std::get<1>(EdgeLabel[id]);
+	}
+
 	label_t LabelManager::GetEdgeLabelId(std::string label)
 	{
 		auto label_iter = EdgeLabelIdIndex.find(label);

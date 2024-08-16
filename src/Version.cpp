@@ -10,7 +10,6 @@ namespace BACH
 		db(_prev->db)
 	{
 		version_name = _prev->version_name + 1;
-		//std::cout << "version: " << version_name << " created\n";
 		prev->next = this;
 		FileIndex = prev->FileIndex;
 		for (auto& i : edit->EditFileList)
@@ -43,17 +42,9 @@ namespace BACH
 			for (auto& j : i)
 				for (auto& k : j)
 					k->ref.fetch_add(1, std::memory_order_relaxed);
-		//auto x = this;
-		//while (x != NULL)
-		//{
-		//	std::cout << x->epoch;
-		//	x = x->prev;
-		//}
-		//std::cout << std::endl;
 	}
 	Version::~Version()
 	{
-		//std::cout << "version: " << version_name << " deleted\n";
 		if (size_entry != NULL)
 			size_entry->delete_entry();
 		for (auto& i : FileIndex)
@@ -63,14 +54,9 @@ namespace BACH
 					k->ref.fetch_add(-1, std::memory_order_relaxed);
 					if (k->ref.load() == 0)
 					{
-						//std::cout << "delete file: " << k->file_name << std::endl;
 						unlink((db->options->STORAGE_DIR + "/"
 							+ k->file_name).c_str());
-						//if (k->reader != NULL)
-						//{
-						//	k->reader->file_data = NULL;
-						//}
-						if (k->reader_pos != -1)
+						if (k->reader_pos != (idx_t) - 1)
 							k->death = true;
 						else
 							delete k;
@@ -111,25 +97,21 @@ namespace BACH
 		c->vertex_id_e = (tmp + 1) * num - 1;
 		c->label_id = label;
 		c->target_level = level + 1;
-		//std::cout << "-------\n";
 		for (auto i = iter1; i != iter2; ++i)
 			if (!(*i)->merging)
 			{
 				c->file_list.push_back(*i);
 				(*i)->merging = true;
-				//std::cout<<"add file "<<(*i)->file_name<<" to compaction\n";
 			}
 		return c;
 	}
 	void Version::AddRef()
 	{
 		ref.fetch_add(1, std::memory_order_relaxed);
-		//std::cout << "version: " << version_name << " ref++, now is:" << ref.load() << "\n";
 	}
 	void Version::DecRef()
 	{
 		ref.fetch_add(-1, std::memory_order_relaxed);
-		//std::cout << "version: " << version_name << " ref--, now is:" << ref.load() << "\n";
 		bool FALSE = false;
 		if (ref.load() == 0 && deleting.compare_exchange_weak(FALSE, true, std::memory_order_relaxed))
 			delete this;
@@ -183,19 +165,6 @@ namespace BACH
 	{
 		if (version->FileIndex[label][level].empty())
 			return false;
-		//idx_t l = 0, r = version->FileIndex[label][level].size();
-		//while (l < r)
-		//{
-		//	idx_t mid = l + r >> 1;
-		//	if (version->FileIndex[label][level][mid]->vertex_id_b == src ?
-		//		version->FileIndex[label][level][mid]->file_id < NONEINDEX :
-		//		version->FileIndex[label][level][mid]->vertex_id_b < src)
-		//		l = mid + 1;
-		//	else
-		//		r = mid;
-		//}
-		//if (version->FileIndex[label][level][l]->vertex_id_b != src)
-		//	return false;
 		vertex_t num = util::ClacFileSize(version->db->options->MERGE_NUM, level);
 		vertex_t tmp = src / num;
 		auto x = std::lower_bound(version->FileIndex[label][level].begin(),

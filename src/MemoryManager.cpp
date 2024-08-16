@@ -160,7 +160,8 @@ namespace BACH
 	}
 	void MemoryManager::GetEdges(vertex_t src, label_t label, time_t now_time,
 		std::shared_ptr<std::vector<
-		std::tuple<vertex_t, vertex_t, edge_property_t>>> answer,
+		std::pair<vertex_t, edge_property_t>>> answer,
+		sul::dynamic_bitset<>& filter,
 		bool (*func)(edge_property_t))
 	{
 		std::shared_lock<std::shared_mutex> table_lock(EdgeLabelIndex[label]->vertex_mutex[src]);
@@ -174,8 +175,12 @@ namespace BACH
 			{
 				if (i.time > now_time)
 					continue;
-				if (i.property == TOMBSTONE || func(i.property))
-					answer->emplace_back(i.dst, answer->size(), i.property);
+				if (!filter[i.dst])
+				{
+					if (i.property != TOMBSTONE && func(i.property))
+						answer->emplace_back(i.dst, i.property);
+					filter[i.dst] = true;
+				}
 			}
 			src_entry = src_entry->next;
 		}
@@ -193,17 +198,18 @@ namespace BACH
 		return EdgeLabelIndex[edge_label_id]->VertexIndex[src]->deadtime;
 	}
 	VersionEdit* MemoryManager::MemTablePersistence(label_t label_id,
-		idx_t file_id, SizeEntry* size_info, identify_t identify)
+		idx_t file_id, SizeEntry* size_info)
 	{
 		auto temp_file_metadata = new FileMetaData(label_id,
 			0, size_info->begin_vertex_id, file_id,
-			db->Labels->GetEdgeLabel(label_id), identify);
+			db->Labels->GetEdgeLabel(label_id));
 		std::string file_name = temp_file_metadata->file_name;
 		auto fw = std::make_shared<FileWriter>(db->options->STORAGE_DIR + "/" + file_name, false);
 		auto sst = std::make_shared<SSTableBuilder>(fw, db->options);
 		sst->SetSrcRange(size_info->begin_vertex_id,
 			size_info->begin_vertex_id + size_info->entry.size() - 1);
-		for (vertex_t index = 0; index < size_info->entry.size(); ++index)
+		vertex_t index;
+		for (index = 0; index < size_info->entry.size(); ++index)
 		{
 			for (auto x : size_info->entry[index]->EdgeIndex)
 			{
@@ -216,28 +222,15 @@ namespace BACH
 				else
 					sst->AddEdge(index, util::unzip_pair_first(x),
 						size_info->entry[index]->EdgePool[v].property);
-				/*bool tombstone = false;
-				for (auto v = util::unzip_pair_second(x); v != NONEINDEX;
-					v = size_info->entry[index]->EdgePool[v].last_version)
-				{
-					if (size_info->entry[index]->EdgePool[v].property == TOMBSTONE)
-						tombstone = true;
-					else
-					{
-						if (tombstone == true)
-							tombstone = false;
-						else
-						{
-							sst->AddEdge(index,
-								size_info->entry[index]->EdgePool[v].dst,
-								size_info->entry[index]->EdgePool[v].property);
-						}
-					}
-				}*/
 			}
 			sst->ArrangeCurrentSrcInfo();
 		}
-		sst->ArrangeSSTableInfo();
+		while (index < db->options->MERGE_NUM)
+		{
+			sst->ArrangeCurrentSrcInfo();
+			++index;
+		}
+		temp_file_metadata->filter = sst->ArrangeSSTableInfo();
 		auto vedit = new VersionEdit();
 		temp_file_metadata->file_size = fw->file_size();
 		vedit->EditFileList.push_back(*temp_file_metadata);

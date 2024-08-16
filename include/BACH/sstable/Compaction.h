@@ -14,7 +14,6 @@ namespace BACH
 		vertex_t vertex_id_b;
 		vertex_t vertex_id_e;
 		idx_t file_id;
-		identify_t identify;
 		SizeEntry* Persistence;
 	};
 }

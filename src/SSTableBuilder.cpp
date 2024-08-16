@@ -37,13 +37,18 @@ namespace BACH
 		}
 		this->edge_dst_id_list.clear();
 	}
-	void SSTableBuilder::ArrangeSSTableInfo()
+	std::shared_ptr<sul::dynamic_bitset<>> SSTableBuilder::ArrangeSSTableInfo()
 	{
+		auto bitmap = std::make_shared<sul::dynamic_bitset<>>();
 		edge_num_t edge_num_prefix_sum = 0;
 		for (auto num : this->edge_allocation_list)
 		{
 			edge_num_prefix_sum += num;
 			writer->append((char*)(&edge_num_prefix_sum), sizeof(edge_num_t));
+			if (num == 0)
+				bitmap->push_back(0);
+			else
+				bitmap->push_back(1);
 		}
 		for (auto& i : this->filter)
 		{
@@ -62,5 +67,6 @@ namespace BACH
 		util::PutFixed(metadata, edge_num_prefix_sum);
 		writer->append(metadata.data(), metadata.size());
 		writer->flush();
+		return bitmap;
 	}
 }

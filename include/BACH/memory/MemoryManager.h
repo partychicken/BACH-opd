@@ -3,6 +3,7 @@
 #include <memory>
 #include <string>
 #include <string_view>
+#include <sul/dynamic_bitset.hpp>
 #include "VertexLabelIdEntry.h"
 #include "VertexEntry.h"
 #include "BACH/label/LabelManager.h"
@@ -43,13 +44,14 @@ namespace BACH
 			time_t now_time);
 		void GetEdges(vertex_t src, label_t label, time_t now_time,
 			std::shared_ptr<std::vector
-			<std::tuple<vertex_t, vertex_t, edge_property_t>>> answer,
+			<std::pair<vertex_t, edge_property_t>>> answer,
+			sul::dynamic_bitset<>& filter,
 			bool (*func)(edge_property_t));
 
 		size_t GetMergeType(label_t label_id, vertex_t src_b, vertex_t src_e);
 		time_t GetVertexDelTime(label_t edge_label_id, vertex_t src) const;
 		VersionEdit* MemTablePersistence(label_t label_id,
-			idx_t file_id, SizeEntry* size_info, identify_t identify);
+			idx_t file_id, SizeEntry* size_info);
 		//void PersistenceAll();
 
 	private:

@@ -21,6 +21,7 @@ namespace BACH
 			std::string edge_label_name,
 			std::string src_label_name, std::string dst_label_name);
 		label_t GetVertexLabelId(std::string label);
+		label_t GetSrcVertexLabelId(label_t id);
 		label_t GetEdgeLabelId(std::string label);
 		std::string_view GetVertexLabel(label_t id);
 		std::string_view GetEdgeLabel(label_t id);

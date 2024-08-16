@@ -24,7 +24,16 @@ namespace BACH
 	{
 		std::cout << "closed" << std::endl;
 		close = true;
-		Files->CompactionCV.notify_all();
+		std::unique_lock <std::mutex> lock(Files->CloseCVMutex);
+		if (Files->CompactionList.empty())
+		{
+			Files->CompactionCV.notify_all();
+			//break;
+		}
+		else
+		{
+			Files->CloseCV.wait(lock);
+		}
 	}
 	Transaction DB::BeginTransaction()
 	{
@@ -99,13 +108,13 @@ namespace BACH
 				lock.unlock();
 				VersionEdit* edit;
 				time_t time = 0;
-				std::tie(x.file_id, x.identify) = Files->GetFileID(
+				x.file_id = Files->GetFileID(
 					x.label_id, x.target_level, x.vertex_id_b);
 				if (x.Persistence != NULL)
 				{
 					//persistence
 					edit = Memtable->MemTablePersistence(x.label_id, x.file_id,
-						x.Persistence, x.identify);
+						x.Persistence);
 					time = x.Persistence->max_time;
 				}
 				else
@@ -140,18 +149,14 @@ namespace BACH
 				std::unique_lock<std::shared_mutex> version_lock(version_mutex);
 				Version* tmp = current_version;
 				tmp->AddSizeEntry(x.Persistence);
-				//std::cout << "create file: " << edit->EditFileList.begin()->file_name << std::endl;
 				current_version = new Version(tmp, edit, time);
 				auto compact = current_version->GetCompaction(edit);
 				if (compact != NULL)
-				{
-					//std::cout<<"get compaction for version: "<<current_version->version_name<<"\n";
-
 					Files->AddCompaction(*compact);
-				}
 				tmp->DecRef();
 				version_lock.unlock();
 				ProgressReadVersion();
+				Files->CloseCV.notify_one();
 			}
 			else
 			{

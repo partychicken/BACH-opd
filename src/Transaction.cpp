@@ -94,15 +94,14 @@ namespace BACH
 		VersionIterator iter(version, label, src);
 		while (!iter.End())
 		{
-			auto fr = db->ReaderCaches->find(iter.GetFile());
-			auto parser = std::make_shared<SSTableParser>(
-				label, fr, db->options, iter.GetFile()->identify);
-			//std::cout << "get edge " + std::to_string(src) + "to" + std::to_string(dst)
-			//	+ " from file " + iter.GetFile()->file_name + "\n";
-			//std::printf("get filereader %x for file %s\n", fr, iter.GetFile()->file_name.data());
-			auto found = parser->GetEdge(src, dst);
-			if (!std::isnan(found))
-				return found;
+			if ((*iter.GetFile()->filter)[src - iter.GetFile()->vertex_id_b])
+			{
+				auto fr = db->ReaderCaches->find(iter.GetFile());
+				auto parser = std::make_shared<SSTableParser>(label, fr, db->options);
+				auto found = parser->GetEdge(src, dst);
+				if (!std::isnan(found))
+					return found;
+			}
 			iter.next();
 		}
 		return TOMBSTONE;
@@ -111,22 +110,34 @@ namespace BACH
 		Transaction::GetEdges(vertex_t src, label_t label,
 			bool (*func)(edge_property_t))
 	{
-		//<dst,index,property>
-		auto answer_temp = std::make_shared<std::vector<
-			std::tuple<vertex_t, vertex_t, edge_property_t>>>();
+		//<dst,property>
+		sul::dynamic_bitset<> filter(GetVertexNum(
+			db->Labels->GetSrcVertexLabelId(label)));
 		auto answer = std::make_shared<std::vector<
 			std::pair<vertex_t, edge_property_t>>>();
-		db->Memtable->GetEdges(src, label, read_epoch, answer_temp, func);
+		db->Memtable->GetEdges(src, label, read_epoch, answer, filter, func);
 		VersionIterator iter(version, label, src);
 		while (!iter.End())
 		{
-			auto fr = db->ReaderCaches->find(iter.GetFile());
-			auto parser = std::make_shared<SSTableParser>(
-				label, fr, db->options, iter.GetFile()->identify);
-			parser->GetEdges(src, answer_temp, func);
+			if ((*iter.GetFile()->filter)[src - iter.GetFile()->vertex_id_b])
+			{
+				auto fr = db->ReaderCaches->find(iter.GetFile());
+				auto parser = std::make_shared<SSTableParser>(label, fr, db->options);
+				parser->GetEdges(src, answer, filter, func);
+			}
 			iter.next();
 		}
-		std::sort(answer_temp->begin(), answer_temp->end());
+		/*std::unordered_set<vertex_t> dsts;
+		for (auto& i : *answer_temp)
+		{
+			if (dsts.find(i.first) == dsts.end())
+			{
+				dsts.insert(i.first);
+				if (i.second != TOMBSTONE)
+					answer->emplace_back(i);
+			}
+		}*/
+		/*std::sort(answer_temp->begin(), answer_temp->end());
 		auto last = std::unique(answer_temp->begin(), answer_temp->end(),
 			[](const std::tuple<vertex_t, vertex_t, edge_property_t>& A,
 				const std::tuple<vertex_t, vertex_t, edge_property_t>& B)
@@ -136,7 +147,7 @@ namespace BACH
 		answer_temp->erase(last, answer_temp->end());
 		for (auto i = answer_temp->begin(); i != last; i++)
 			if (std::get<2>(*i) != TOMBSTONE)
-				(*answer).emplace_back(std::get<0>(*i), std::get<2>(*i));
+				(*answer).emplace_back(std::get<0>(*i), std::get<2>(*i));*/
 		return answer;
 	}
 }

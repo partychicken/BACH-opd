@@ -4,6 +4,7 @@
 #include <memory>
 #include <string>
 #include <string_view>
+#include <sul/dynamic_bitset.hpp>
 #include "BloomFilter.h"
 #include "Buffer.h"
 #include "BACH/file/FileReader.h"
@@ -20,16 +21,11 @@ namespace BACH
 	public:
 		SSTableParser(label_t _label,
 			std::shared_ptr<FileReader> _fileReader,
-			std::shared_ptr<Options> _options,
-			identify_t id);
-		SSTableParser& operator=(const SSTableParser&) = delete;
-		SSTableParser(const SSTableParser& x) = delete;
-		SSTableParser(SSTableParser&& x);
-		SSTableParser() = delete;
-		~SSTableParser();
+			std::shared_ptr<Options> _options);
 		edge_property_t GetEdge(vertex_t src, vertex_t dst);
 		void GetEdges(vertex_t src, std::shared_ptr<std::vector<
-			std::tuple<vertex_t, vertex_t, edge_property_t>>> answer,
+			std::pair<vertex_t, edge_property_t>>> answer,
+			sul::dynamic_bitset<>& filter,
 			bool (*func)(edge_property_t));
 		void ReadEdgeAllocationBuffer();
 		void ReadEdgeMsgBuffer();
@@ -47,7 +43,6 @@ namespace BACH
 		label_t label;
 		std::shared_ptr<FileReader> reader;
 		std::shared_ptr<Options> options;
-		identify_t file_identify;
 		//std::shared_ptr <BloomFilter> filter = NULL;
 		edge_t edge_cnt = 0;
 		size_t edge_msg_end_pos = 0;//end position

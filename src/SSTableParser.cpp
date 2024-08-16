@@ -4,12 +4,10 @@ namespace BACH
 {
 	SSTableParser::SSTableParser(label_t _label,
 		std::shared_ptr<FileReader> _fileReader,
-		std::shared_ptr<Options> _options,
-		identify_t id) :
+		std::shared_ptr<Options> _options) :
 		label(_label),
 		reader(_fileReader),
-		options(_options),
-		file_identify(id)
+		options(_options)
 	{
 		//std::printf("SPat 0x%x for %s C\n", reader, reader->file_data->file_name.data());
 		//reader->add_ref();
@@ -46,32 +44,10 @@ namespace BACH
 		//	+ " filter_allocation_end_pos: " + std::to_string(filter_allocation_end_pos)
 		//	+ " filter_end_pos: " + std::to_string(filter_end_pos) +"\n";
 	}
-	SSTableParser::SSTableParser(SSTableParser&& x) :
-		label(x.label), reader(x.reader), options(x.options), file_identify(x.file_identify),
-		edge_cnt(x.edge_cnt), edge_msg_end_pos(x.edge_msg_end_pos),
-		edge_allocation_end_pos(x.edge_allocation_end_pos),
-		filter_allocation_end_pos(x.filter_allocation_end_pos),
-		filter_end_pos(x.filter_end_pos), src_b(x.src_b), src_e(x.src_e), file_size(x.file_size)
-	{
-		//std::printf("SPat 0x%x for %s Cp\n", reader, reader->file_data->file_name.data());
-		//std::cout << "copyed!!!!!\n";
-		x.valid = false;
-	}
-	SSTableParser::~SSTableParser()
-	{
-		if (valid)
-		{
-			/*std::printf("delete parser for %s ref is %d\n",
-				reader->file_data->file_name.data(), util::unzip_ref_num(reader->ref.load(
-				order_acq_rel)));*/
-			//std::printf("SPat 0x%x for %s D\n", reader, reader->file_data->file_name.data());
-			//while (!reader->dec_ref(file_identify, true));
-		}
-	}
+
 	// 在此文件中查找特定src->dst的边，如果不存在则返回null，存在返回一个指向(vertex_id,edge_property)的指针
 	edge_property_t SSTableParser::GetEdge(vertex_t src, vertex_t dst)
 	{
-
 		// 通过布隆过滤器分配数组，拿到布隆过滤器date的存放位置（存放位置是一个区间，因此需要取布隆过滤器分配数组的src-1以及src的信息）以及布隆过滤器的func_num
 		size_t offset, len;
 		idx_t func_num;
@@ -148,7 +124,8 @@ namespace BACH
 	}
 	// 在一个文件中批量查找以src为起点的所有边，边属性的条件过滤函数以参数形式放入，过滤之后的边信息放在answer指向的vector中
 	void SSTableParser::GetEdges(vertex_t src, std::shared_ptr<std::vector<
-		std::tuple<vertex_t, vertex_t, edge_property_t>>> answer,
+		std::pair<vertex_t, edge_property_t>>> answer,
+		sul::dynamic_bitset<>& filter,
 		bool (*func)(edge_property_t))
 	{
 		GetEdgeRangeBySrcId(src);
@@ -171,10 +148,15 @@ namespace BACH
 			this->src_edge_info_offset += len;
 			for (size_t j = 0; j < len / singel_edge_total_info_size; j++)
 			{
-				auto edge_property = util::GetDecodeFixed<edge_property_t>(buffer + offset + sizeof(vertex_t));
-				if (edge_property == TOMBSTONE || func(edge_property)) {
-					auto vertex_id = util::GetDecodeFixed<vertex_t>(buffer + offset);
-					answer->emplace_back(vertex_id, answer->size(), edge_property);
+				auto vertex_id = util::GetDecodeFixed<vertex_t>(buffer + offset);
+				if (!filter[vertex_id])
+				{
+					auto edge_property = util::GetDecodeFixed<edge_property_t>(buffer + offset + sizeof(vertex_t));
+					if (edge_property != TOMBSTONE && func(edge_property))
+					{
+						answer->emplace_back(vertex_id, edge_property);
+					}
+					filter[vertex_id] = true;
 				}
 				offset += singel_edge_total_info_size;
 			}

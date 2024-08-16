@@ -3,7 +3,7 @@
 #include <math.h>
 #include <memory>
 #include <string>
-#include "options.h"
+#include "Options.h"
 #include "types.h"
 namespace BACH
 {
@@ -144,18 +144,6 @@ namespace BACH
 		inline T GetDecodeFixed(const char* data)
 		{
 			return *(reinterpret_cast<const T*>(data));
-		}
-		inline ref_t make_ref(identify_t id, idx_t num)
-		{
-			return ((ref_t)(id) << (sizeof(idx_t) * 8)) | num;
-		}
-		inline identify_t unzip_id(ref_t x)
-		{
-			return (identify_t)(x >> (sizeof(idx_t) * 8));
-		}
-		inline idx_t unzip_ref_num(ref_t x)
-		{
-			return (idx_t)(x & (((ref_t)(1) << (sizeof(idx_t) * 8)) - 1));
 		}
 	}
 }

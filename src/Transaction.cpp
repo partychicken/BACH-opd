@@ -111,11 +111,18 @@ namespace BACH
 			bool (*func)(edge_property_t))
 	{
 		//<dst,property>
-		sul::dynamic_bitset<> filter(GetVertexNum(
-			db->Labels->GetSrcVertexLabelId(label)));
-		auto answer = std::make_shared<std::vector<
+		//sul::dynamic_bitset<> filter(GetVertexNum(
+		//	db->Labels->GetSrcVertexLabelId(label)));
+		//auto answer = std::make_shared<std::vector<
+		//	std::pair<vertex_t, edge_property_t>>>();
+		std::shared_ptr<std::vector<std::pair<
+			vertex_t, edge_property_t>>> answer_temp[3];
+		vertex_t c = 0;
+		for (size_t i = 0; i < 3; i++)
+			answer_temp[i] = std::make_shared<std::vector<
 			std::pair<vertex_t, edge_property_t>>>();
-		db->Memtable->GetEdges(src, label, read_epoch, answer, filter, func);
+		db->Memtable->GetEdges(src, label, read_epoch, answer_temp, c, /*filter,*/ func);
+		//std::cout << answer_temp[c]->size() << std::endl;
 		VersionIterator iter(version, label, src);
 		while (!iter.End())
 		{
@@ -123,7 +130,8 @@ namespace BACH
 			{
 				auto fr = db->ReaderCaches->find(iter.GetFile());
 				auto parser = std::make_shared<SSTableParser>(label, fr, db->options);
-				parser->GetEdges(src, answer, filter, func);
+				parser->GetEdges(src, answer_temp[(c + 1) % 3], /*filter, */func);
+				db->Memtable->merge_answer(answer_temp, c);
 			}
 			iter.next();
 		}
@@ -148,6 +156,6 @@ namespace BACH
 		for (auto i = answer_temp->begin(); i != last; i++)
 			if (std::get<2>(*i) != TOMBSTONE)
 				(*answer).emplace_back(std::get<0>(*i), std::get<2>(*i));*/
-		return answer;
+		return answer_temp[c];
 	}
 }

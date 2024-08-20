@@ -43,7 +43,8 @@ namespace BACH
 			size_t D = deletion.range_query(src_b + 1, src_e + 1);
 			size_t rR = recent_write.range_query(src_b + 1, src_e + 1);
 			size_t rW = recent_read.range_query(src_b + 1, src_e + 1);
-			if (std::sqrt((1.0 * D / W) * (1.0 * rR / rW)) > 0.5)
+			return 1;
+			if (std::sqrt((1.0 * D / W) * (1.0 * rR / (rW + rR))) > 0.5)
 				return 1;
 			else
 				return 2;

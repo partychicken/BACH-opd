@@ -160,8 +160,9 @@ namespace BACH
 	}
 	void MemoryManager::GetEdges(vertex_t src, label_t label, time_t now_time,
 		std::shared_ptr<std::vector<
-		std::pair<vertex_t, edge_property_t>>> answer,
-		sul::dynamic_bitset<>& filter,
+		std::pair<vertex_t, edge_property_t>>> answer_temp[],
+		vertex_t& c,
+		//sul::dynamic_bitset<>& filter,
 		bool (*func)(edge_property_t))
 	{
 		std::shared_lock<std::shared_mutex> table_lock(EdgeLabelIndex[label]->vertex_mutex[src]);
@@ -171,17 +172,33 @@ namespace BACH
 		while (src_entry != NULL)
 		{
 			std::shared_lock<std::shared_mutex> src_lock(src_entry->mutex);
-			for (auto& i : src_entry->EdgePool)
+			vertex_t answer_size = answer_temp[(c + 1) % 3]->size();
+			vertex_t answer_cnt = 0;
+			for (auto i : src_entry->EdgeIndex)
 			{
-				if (i.time > now_time)
+				if (i == 0)
 					continue;
-				if (!filter[i.dst])
+				auto dst = util::unzip_pair_first(i);
+				auto index = util::unzip_pair_second(i);
+				while (index != NONEINDEX &&
+					src_entry->EdgePool[index].time > now_time)
+					index = src_entry->EdgePool[index].last_version;
+				if (index != NONEINDEX
+					&& src_entry->EdgePool[index].property != TOMBSTONE
+					&& func(src_entry->EdgePool[index].property))
 				{
-					if (i.property != TOMBSTONE && func(i.property))
-						answer->emplace_back(i.dst, i.property);
-					filter[i.dst] = true;
+					if (answer_cnt >= answer_size)
+						answer_temp[(c + 1) % 3]->emplace_back(dst, src_entry->EdgePool[index].property);
+					else
+						(*answer_temp[(c + 1) % 3])[answer_cnt++] = std::make_pair(dst, src_entry->EdgePool[index].property);
 				}
+				//filter[dst] = true;
 			}
+			if (answer_cnt < answer_size)
+			{
+				answer_temp[(c + 1) % 3]->resize(answer_cnt);
+			}
+			merge_answer(answer_temp, c);
 			src_entry = src_entry->next;
 		}
 	}
@@ -235,6 +252,60 @@ namespace BACH
 		temp_file_metadata->file_size = fw->file_size();
 		vedit->EditFileList.push_back(*temp_file_metadata);
 		return vedit;
+	}
+
+	void MemoryManager::merge_answer(std::shared_ptr<std::vector
+		<std::pair<vertex_t, edge_property_t>>> answer_temp[3],
+		vertex_t& c)
+	{
+		if (answer_temp[(c + 1) % 3]->size() == 0)
+		{
+			return;
+		}
+		if (answer_temp[c]->size() == 0)
+		{
+			c = (c + 1) % 3;
+			return;
+		}
+		//std::printf("[%d]: ", c);
+		//for (auto& i : *answer_temp[c])
+		//	std::printf("%d ", i.first);
+		//std::printf("\n");
+		//std::printf("[%d]: ", (c + 1) % 3);
+		//for (auto& i : *answer_temp[(c + 1) % 3])
+		//	std::printf("%d ", i.first);
+		//std::printf("\n");
+		vertex_t answer_size = answer_temp[(c + 2) % 3]->size();
+		vertex_t answer_cnt = 0;
+		vertex_t i = 0, j = 0;
+		auto put_element_in_answer = [&](vertex_t nc, vertex_t& cnt) {
+			if (answer_cnt >= answer_size)
+				answer_temp[(c + 2) % 3]->emplace_back((*answer_temp[nc])[cnt]);
+			else
+				(*answer_temp[(c + 2) % 3])[answer_cnt++] = (*answer_temp[nc])[cnt];
+			cnt++;
+			};
+		for (; i < answer_temp[c]->size() &&
+			j < answer_temp[(c + 1) % 3]->size();)
+			if ((*answer_temp[c])[i].first <= (*answer_temp[(c + 1) % 3])[j].first)
+				put_element_in_answer(c, i);
+			else
+				put_element_in_answer((c + 1) % 3, j);
+		while (i < answer_temp[c]->size())
+			put_element_in_answer(c, i);
+		while (j < answer_temp[(c + 1) % 3]->size())
+			put_element_in_answer((c + 1) % 3, j);
+		//std::cout << "answer_cnt: " << answer_cnt << " answer_size: " << answer_size << std::endl;
+		if (answer_cnt < answer_size)
+		{
+			answer_temp[(c + 2) % 3]->resize(answer_cnt);
+		}
+		//std::printf("[%d]: ", (c + 2) % 3);
+		//for (auto& i : *answer_temp[(c + 2) % 3])
+		//	std::printf("%d ", i.first);
+		//std::printf("\n");
+		//std::cin >> answer_cnt;
+		c = (c + 2) % 3;
 	}
 
 	void MemoryManager::vertex_property_persistence(label_t label_id)
@@ -297,4 +368,17 @@ namespace BACH
 		else
 			return util::unzip_pair_second(*edge_index_iter);
 	}
+
+	//inline void MemoryManager::put_element_in_answer(
+	//	std::shared_ptr<std::vector
+	//	<std::pair<vertex_t, edge_property_t>>> answer_temp[],
+	//	vertex_t& c, vertex_t& answer_cnt,
+	//	vertex_t& answer_size, vertex_t& cnt)
+	//{
+	//	if (answer_cnt >= answer_size)
+	//		answer_temp[(c + 2) % 3]->emplace_back((*answer_temp[(c + 1) % 3])[cnt]);
+	//	else
+	//		(*answer_temp[(c + 2) % 3])[answer_cnt++] = (*answer_temp[(c + 1) % 3])[cnt];
+	//	cnt++;
+	//}
 }

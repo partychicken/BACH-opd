@@ -44,8 +44,9 @@ namespace BACH
 			time_t now_time);
 		void GetEdges(vertex_t src, label_t label, time_t now_time,
 			std::shared_ptr<std::vector
-			<std::pair<vertex_t, edge_property_t>>> answer,
-			sul::dynamic_bitset<>& filter,
+			<std::pair<vertex_t, edge_property_t>>> answer_temp[3],
+			vertex_t& c,
+			//sul::dynamic_bitset<>& filter,
 			bool (*func)(edge_property_t));
 
 		size_t GetMergeType(label_t label_id, vertex_t src_b, vertex_t src_e);
@@ -53,6 +54,10 @@ namespace BACH
 		VersionEdit* MemTablePersistence(label_t label_id,
 			idx_t file_id, SizeEntry* size_info);
 		//void PersistenceAll();
+
+		void merge_answer(std::shared_ptr<std::vector
+			<std::pair<vertex_t, edge_property_t>>> answer_temp[3],
+			vertex_t& c);
 
 	private:
 		ConcurrentArray <EdgeLabelEntry*> EdgeLabelIndex;
@@ -62,7 +67,5 @@ namespace BACH
 		void vertex_property_persistence(label_t label_id);
 		void immute_memtable(SizeEntry*& size_info, label_t label);
 		edge_t find_edge(vertex_t src, vertex_t dst, VertexEntry* entry);
-
 	};
-
 }

@@ -125,7 +125,7 @@ namespace BACH
 	// 在一个文件中批量查找以src为起点的所有边，边属性的条件过滤函数以参数形式放入，过滤之后的边信息放在answer指向的vector中
 	void SSTableParser::GetEdges(vertex_t src, std::shared_ptr<std::vector<
 		std::pair<vertex_t, edge_property_t>>> answer,
-		sul::dynamic_bitset<>& filter,
+		//sul::dynamic_bitset<>& filter,
 		bool (*func)(edge_property_t))
 	{
 		GetEdgeRangeBySrcId(src);
@@ -137,6 +137,8 @@ namespace BACH
 		// 批量读边，将边属性过滤后的边放入answer中
 		size_t singel_read_max_len = this->options->READ_BUFFER_SIZE / singel_edge_total_info_size * singel_edge_total_info_size;
 		edge_len_t read_num = (this->src_edge_len - 1) / singel_read_max_len + 1;
+		vertex_t answer_size = answer->size();
+		vertex_t answer_cnt = 0;
 		for (edge_len_t i = 1; i <= read_num; i++)
 		{
 			size_t len = (i != read_num) ? singel_read_max_len : this->src_edge_len % singel_read_max_len;
@@ -149,17 +151,26 @@ namespace BACH
 			for (size_t j = 0; j < len / singel_edge_total_info_size; j++)
 			{
 				auto vertex_id = util::GetDecodeFixed<vertex_t>(buffer + offset);
-				if (!filter[vertex_id])
+				//if (!filter[vertex_id])
 				{
 					auto edge_property = util::GetDecodeFixed<edge_property_t>(buffer + offset + sizeof(vertex_t));
 					if (edge_property != TOMBSTONE && func(edge_property))
 					{
-						answer->emplace_back(vertex_id, edge_property);
+						if (answer_cnt >= answer_size)
+							answer->emplace_back(vertex_id, edge_property);
+						else
+							(*answer)[answer_cnt++] = std::make_pair(vertex_id, edge_property);
+						//answer->emplace_back(vertex_id, edge_property);
 					}
-					filter[vertex_id] = true;
+					//filter[vertex_id] = true;
 				}
 				offset += singel_edge_total_info_size;
 			}
+		}
+		//std::cout << "answer_cnt: " << answer_cnt << " answer_size: " << answer_size << std::endl;
+		if (answer_cnt < answer_size)
+		{
+			answer->resize(answer_cnt);
 		}
 	}
 	void SSTableParser::GetEdgeRangeBySrcId(vertex_t src)

@@ -53,9 +53,9 @@ namespace bach
 		txn->DelEdge(src, dst, label);
 	}
 	edge_property_t Transaction::GetEdge(
-		vertex_t src, vertex_t dst, label_t label)
+		vertex_t src, vertex_t dst, label_t label,bool should)
 	{
-		return txn->GetEdge(src, dst, label);
+		return txn->GetEdge(src, dst, label, should);
 	}
 	std::shared_ptr<std::vector<std::pair<vertex_t, edge_property_t>>>
 		Transaction::GetEdges(vertex_t src, label_t label,

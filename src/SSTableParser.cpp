@@ -74,11 +74,11 @@ namespace BACH
 			len = util::GetDecodeFixed<size_t>(filter_allocation_info + singel_filter_allocation_size) - offset;
 			func_num = util::GetDecodeFixed<idx_t>(filter_allocation_info + singel_filter_allocation_size + sizeof(size_t));
 		}
-		if (offset >= 10000000 || len >= 10000000 || func_num >= 10000000)
-		{
-			std::cout << "fuckit man" << std::endl;
-			exit(-1);
-		}
+		//if (offset >= 10000000 || len >= 10000000 || func_num >= 10000000)
+		//{
+		//	std::cout << "fuckit man" << std::endl;
+		//	exit(-1);
+		//}
 		//std::cout<<"offset: "<<offset<<" len: "<<len<<" func_num: "<<func_num<<std::endl;
 		// query 如果布隆过滤器长度为0直接证明没有src的边
 		if (!len)

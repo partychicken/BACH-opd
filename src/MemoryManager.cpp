@@ -30,7 +30,7 @@ namespace BACH
 		{
 			if (EdgeLabelIndex[i]->src_label_id == label_id)
 			{
-				std::unique_lock<std::shared_mutex> lock(EdgeLabelIndex[i]->mutex);
+				//std::unique_lock<std::shared_mutex> lock(EdgeLabelIndex[i]->mutex);
 				if (EdgeLabelIndex[i]->now_size_info->entry.size() >= db->options->MERGE_NUM)
 				{
 					EdgeLabelIndex[i]->now_size_info =
@@ -99,6 +99,7 @@ namespace BACH
 	void MemoryManager::PutEdge(vertex_t src, vertex_t dst, label_t label,
 		edge_property_t property, time_t now_time)
 	{
+	RETRY:
 		std::shared_lock<std::shared_mutex> table_lock(EdgeLabelIndex[label]->vertex_mutex[src]);
 		auto src_entry = EdgeLabelIndex[label]->VertexIndex[src];
 		if (property == TOMBSTONE)
@@ -106,8 +107,12 @@ namespace BACH
 		else
 			EdgeLabelIndex[label]->query_counter.AddWrite(src);
 		table_lock.unlock();
-
 		std::unique_lock<std::shared_mutex> src_lock(src_entry->mutex);
+		if (src_entry->size_info->immutable)
+		{
+			src_lock.unlock();
+			goto RETRY;
+		}
 		edge_t found = find_edge(src, dst, src_entry);
 		if (found != NONEINDEX)
 		{
@@ -125,6 +130,7 @@ namespace BACH
 			if (src_entry->size_info->immutable.compare_exchange_weak(
 				FALSE, true, std::memory_order_acq_rel))
 			{
+				src_lock.unlock();
 				immute_memtable(src_entry->size_info, label);
 			}
 	}
@@ -138,7 +144,7 @@ namespace BACH
 		PutEdge(src, dst, label, TOMBSTONE, now_time);
 	}
 	edge_property_t MemoryManager::GetEdge(vertex_t src, vertex_t dst,
-		label_t label, time_t now_time)
+		label_t label, time_t now_time, bool should)
 	{
 		std::shared_lock<std::shared_mutex> table_lock(EdgeLabelIndex[label]->vertex_mutex[src]);
 		auto src_entry = EdgeLabelIndex[label]->VertexIndex[src];
@@ -151,11 +157,23 @@ namespace BACH
 			while (found != NONEINDEX)
 			{
 				if (src_entry->EdgePool[found].time <= now_time)
+				{
+					if (should == false && src_entry->EdgePool[found].property != TOMBSTONE)
+					{
+						std::printf("now is %d\n", now_time);
+						for (auto& i : src_entry->EdgePool)
+						{
+							std::printf("%d %d %d %d\n", i.dst, i.property, i.time, i.last_version);
+						}
+					}
 					return src_entry->EdgePool[found].property;
+				}
+				std::printf("time fail %d %d at %d for %d\n", src, dst, now_time, src_entry->EdgePool[found].time);
 				found = src_entry->EdgePool[found].last_version;
 			}
 			src_entry = src_entry->next;
 		}
+		//std::printf("not found %d %d\n", src, dst);
 		return NOTFOUND;
 	}
 	void MemoryManager::GetEdges(vertex_t src, label_t label, time_t now_time,
@@ -329,14 +347,14 @@ namespace BACH
 	}
 	void MemoryManager::immute_memtable(SizeEntry*& size_info, label_t label)
 	{
+		std::unique_lock<std::shared_mutex>tlocks[db->options->MERGE_NUM];
 		std::unique_lock<std::shared_mutex>locks[db->options->MERGE_NUM];
-		for (vertex_t i = size_info->begin_vertex_id;
-			i <= size_info->begin_vertex_id + size_info->entry.size() - 1;
-			++i)
+		for (vertex_t i = 0; i < size_info->entry.size(); ++i)
 		{
-			locks[i - size_info->begin_vertex_id] =
-				std::unique_lock<std::shared_mutex>(
-					EdgeLabelIndex[label]->vertex_mutex[i]);
+			tlocks[i] = std::unique_lock<std::shared_mutex>(
+				EdgeLabelIndex[label]->vertex_mutex[i + size_info->begin_vertex_id]);
+			locks[i] = std::unique_lock<std::shared_mutex>(
+				size_info->entry[i]->mutex);
 		}
 		auto new_size_info = new SizeEntry(
 			size_info->begin_vertex_id, size_info);

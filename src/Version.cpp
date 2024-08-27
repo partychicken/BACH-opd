@@ -56,7 +56,7 @@ namespace BACH
 					{
 						unlink((db->options->STORAGE_DIR + "/"
 							+ k->file_name).c_str());
-						if (k->reader_pos != (idx_t)-1)
+						if (k->reader_pos != (idx_t) - 1)
 							k->death = true;
 						else
 							delete k;
@@ -89,8 +89,8 @@ namespace BACH
 		for (auto i = iter1; i != iter2; ++i)
 			if (!(*i)->merging)
 				cnt += (*i)->file_size;
-		if (cnt < db->options->MEM_TABLE_MAX_SIZE
-			* util::ClacFileSize(db->options->MERGE_NUM, level))
+		if (cnt < db->options->MEM_TABLE_MAX_SIZE * util::ClacFileSize(
+			db->options->MERGE_NUM, level))
 			return NULL;
 		Compaction* c = new Compaction();
 		c->vertex_id_b = tmp * num;
@@ -119,8 +119,6 @@ namespace BACH
 	void Version::AddSizeEntry(SizeEntry* x)
 	{
 		size_entry = x;
-		if (x != NULL)
-			x->version = version_name;  
 	}
 
 	VersionIterator::VersionIterator(Version* _version, label_t _label, vertex_t _src)

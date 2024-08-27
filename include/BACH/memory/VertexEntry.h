@@ -39,7 +39,6 @@ namespace BACH
 		SizeEntry* last = NULL;
 		std::atomic<bool> immutable;
 		time_t max_time = 0;
-		idx_t version = -1;
 		SizeEntry(vertex_t _begin_vertex_id, SizeEntry* next);
 		void delete_entry();
 	};

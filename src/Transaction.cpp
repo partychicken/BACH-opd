@@ -19,16 +19,16 @@ namespace BACH
 		if (valid)
 		{
 			{
-				//std::unique_lock<std::shared_mutex> rlock(db->read_epoch_table_mutex);
-				//if (--db->read_epoch_table[read_epoch] == 0)
-				//	db->read_epoch_table.erase(read_epoch);
+				std::unique_lock<std::shared_mutex> rlock(db->read_epoch_table_mutex);
+				if (--db->read_epoch_table[read_epoch] == 0)
+					db->read_epoch_table.erase(read_epoch);
 				version->DecRef();
 			}
 			if (write_epoch != MAXTIME)
 			{
-				//std::unique_lock<std::shared_mutex> wlock(db->write_epoch_table_mutex);
-				db->write_epoch_table.remove(write_epoch);
-				//wlock.unlock();
+				std::unique_lock<std::shared_mutex> wlock(db->write_epoch_table_mutex);
+				db->write_epoch_table.erase(write_epoch);
+				wlock.unlock();
 				db->ProgressReadVersion();
 			}
 		}
@@ -86,9 +86,9 @@ namespace BACH
 		db->Memtable->DelEdge(src, dst, label, write_epoch);
 	}
 	edge_property_t Transaction::GetEdge(
-		vertex_t src, vertex_t dst, label_t label, bool should)
+		vertex_t src, vertex_t dst, label_t label)
 	{
-		edge_property_t x = db->Memtable->GetEdge(src, dst, label, read_epoch, should);
+		edge_property_t x = db->Memtable->GetEdge(src, dst, label, read_epoch);
 		if (!std::isnan(x))
 			return x;
 		VersionIterator iter(version, label, src);
@@ -100,38 +100,9 @@ namespace BACH
 				auto parser = std::make_shared<SSTableParser>(label, fr, db->options);
 				auto found = parser->GetEdge(src, dst);
 				if (!std::isnan(found))
-				{
-					//if (should == false)
-					//{
-					//	auto srcentry = db->Memtable->EdgeLabelIndex[label]->
-					//		VertexIndex[src];
-					//	for (auto& i : srcentry->EdgePool)
-					//	{
-					//		std::printf("dst %d, ", i.dst);
-					//	}
-					//}
-					//exit(-1);
 					return found;
-				}
-				//std::printf("notfound %d %d in %s\n", src, dst,iter.GetFile()->file_name.c_str());
 			}
 			iter.next();
-		}
-		if (should)
-		{
-			VersionIterator iter(version, label, src);
-
-			auto srcentry = db->Memtable->EdgeLabelIndex[label]->
-				VertexIndex[src];
-			while (srcentry != NULL)
-			{
-				for (auto& i : srcentry->EdgePool)
-				{
-					std::printf("dst %d, ", i.dst);
-				}
-				srcentry = srcentry->next;
-			}
-			exit(-1);
 		}
 		return TOMBSTONE;
 	}

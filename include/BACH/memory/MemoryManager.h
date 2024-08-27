@@ -41,7 +41,7 @@ namespace BACH
 			edge_property_t property, time_t now_time);
 		void DelEdge(vertex_t src, vertex_t dst, label_t label, time_t now_time);
 		edge_property_t GetEdge(vertex_t src, vertex_t dst, label_t label,
-			time_t now_time, bool should);
+			time_t now_time);
 		void GetEdges(vertex_t src, label_t label, time_t now_time,
 			std::shared_ptr<std::vector
 			<std::pair<vertex_t, edge_property_t>>> answer_temp[3],
@@ -67,7 +67,5 @@ namespace BACH
 		void vertex_property_persistence(label_t label_id);
 		void immute_memtable(SizeEntry*& size_info, label_t label);
 		edge_t find_edge(vertex_t src, vertex_t dst, VertexEntry* entry);
-
-		friend class Transaction;
 	};
 }

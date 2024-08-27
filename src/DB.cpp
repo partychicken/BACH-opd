@@ -37,38 +37,37 @@ namespace BACH
 	}
 	Transaction DB::BeginTransaction()
 	{
-		//std::unique_lock<std::shared_mutex> wlock(write_epoch_table_mutex);
+		std::unique_lock<std::shared_mutex> wlock(write_epoch_table_mutex);
 		time_t local_write_epoch_id = epoch_id.fetch_add(1, std::memory_order_relaxed);
 		write_epoch_table.insert(local_write_epoch_id);
 		time_t local_read_epoch_id;
-		local_read_epoch_id = write_epoch_table.find_min() - 1;
-		//wlock.unlock();
-		//std::unique_lock<std::shared_mutex> rlock(read_epoch_table_mutex);
-		//if (read_epoch_table.find(local_read_epoch_id) == read_epoch_table.end())
-		//	read_epoch_table[local_read_epoch_id] = 1;
-		//else
-		//	++read_epoch_table[local_read_epoch_id];
-		//rlock.unlock();
+		local_read_epoch_id = (*write_epoch_table.begin()) - 1;
+		wlock.unlock();
+		std::unique_lock<std::shared_mutex> rlock(read_epoch_table_mutex);
+		if (read_epoch_table.find(local_read_epoch_id) == read_epoch_table.end())
+			read_epoch_table[local_read_epoch_id] = 1;
+		else
+			++read_epoch_table[local_read_epoch_id];
+		rlock.unlock();
 		std::shared_lock<std::shared_mutex>versionlock(version_mutex);
 		return Transaction(local_write_epoch_id, local_read_epoch_id, this,
 			read_version);
 	}
 	Transaction DB::BeginReadOnlyTransaction()
 	{
-		time_t local_epoch_id = get_read_time();
-		//std::shared_lock<std::shared_mutex> wlock(write_epoch_table_mutex);
-
-		//if (write_epoch_table.empty())
-		//	local_epoch_id = epoch_id.load(std::memory_order_acquire);
-		//else
-		//	local_epoch_id = write_epoch_table.find_min() - 1;
-		//wlock.unlock();
-		//std::unique_lock<std::shared_mutex> rlock(read_epoch_table_mutex);
-		//if (read_epoch_table.find(local_epoch_id) == read_epoch_table.end())
-		//	read_epoch_table[local_epoch_id] = 1;
-		//else
-		//	++read_epoch_table[local_epoch_id];
-		//rlock.unlock();
+		time_t local_epoch_id;
+		std::shared_lock<std::shared_mutex> wlock(write_epoch_table_mutex);
+		if (write_epoch_table.empty())
+			local_epoch_id = epoch_id.load(std::memory_order_acquire);
+		else
+			local_epoch_id = (*write_epoch_table.begin()) - 1;
+		wlock.unlock();
+		std::unique_lock<std::shared_mutex> rlock(read_epoch_table_mutex);
+		if (read_epoch_table.find(local_epoch_id) == read_epoch_table.end())
+			read_epoch_table[local_epoch_id] = 1;
+		else
+			++read_epoch_table[local_epoch_id];
+		rlock.unlock();
 		std::shared_lock<std::shared_mutex>versionlock(version_mutex);
 		return Transaction(MAXTIME, local_epoch_id, this, read_version);
 	}
@@ -181,11 +180,10 @@ namespace BACH
 	}
 	time_t DB::get_read_time()
 	{
-		//std::shared_lock<std::shared_mutex> wlock(write_epoch_table_mutex);
-		auto time = write_epoch_table.find_min();
-		if (time == time_t(-1))
-			return epoch_id.load(std::memory_order_acquire) - 1;
+		std::shared_lock<std::shared_mutex> wlock(write_epoch_table_mutex);
+		if (write_epoch_table.empty())
+			return epoch_id.load(std::memory_order_acquire);
 		else
-			return time - 1;
+			return (*write_epoch_table.begin()) - 1;
 	}
 }

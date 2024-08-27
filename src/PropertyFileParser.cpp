@@ -22,6 +22,10 @@ namespace BACH
 			len = sizeof(size_t) * 2;
 			offset = (count + 2 - index) * sizeof(size_t);
 		}
+		if (len > 10000)
+		{
+			exit(-1);
+		}
 		char buf[len];
 		reader->rread(buf, len, offset);
 		if (index == 0)
@@ -36,6 +40,10 @@ namespace BACH
 			len -= offset;
 		}
 		auto property=std::make_shared<std::string>();
+		if (len > 10000)
+		{
+			exit(-1);
+		}
 		property->resize(len);
 		reader->fread(property->data(), len, offset);
 		return property;

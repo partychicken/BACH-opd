@@ -75,9 +75,9 @@ namespace BACH
 		{
 			return cnt;
 		}
-		//return the index of the first element that is not less than x
-		//T should support operator<= and operator==
-		size_t lowerbound(T x) const
+		//return the first element that is not more than x
+		//T should support operator <= and operator==
+		T rlowerbound(T x) const
 		{
 			size_t pf = array.size() - 1;
 			while (!(array[pf][0] <= x) && pf > 0)
@@ -86,9 +86,16 @@ namespace BACH
 			}
 			if (array[pf][0] == x)
 			{
-				return (1 << pf) - 1;
+				return array[pf][0];
 			}
-			return (1 << pf) + std::lower_bound(array[pf], array[pf] + (1 << pf), x) - array[pf];
+			auto it = std::upper_bound(array[pf], array[pf]
+				+ ((pf == array.size() - 1) ?
+					cnt + 1 - ((size_t)1 << util::highbit(cnt + 1))
+					: ((size_t)1 << pf)), x);
+			if (it != array[pf])
+				return *(it - 1);
+			else
+				return T();
 		}
 
 	private:

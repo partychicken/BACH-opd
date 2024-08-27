@@ -43,7 +43,7 @@ namespace BACH
 			}
 		}
 		VertexLabelIndex[label_id]->property_size += property.size();
-		if (VertexLabelIndex[label_id]->property_size >
+		if (VertexLabelIndex[label_id]->property_size >=
 			db->options->VERTEX_PROPERTY_MAX_SIZE)
 		{
 			vertex_property_persistence(label_id);
@@ -54,7 +54,7 @@ namespace BACH
 	std::shared_ptr<std::string> MemoryManager::GetVertex(vertex_t vertex, label_t label,
 		time_t now_time)
 	{
-		std::shared_lock<std::shared_mutex> lock(VertexLabelIndex[label]->mutex);
+		//std::shared_lock<std::shared_mutex> lock(VertexLabelIndex[label]->mutex);
 		auto x = VertexLabelIndex[label]->deletetime.find(vertex);
 		if (x == VertexLabelIndex[label]->deletetime.end()
 			|| x->second > now_time)
@@ -62,13 +62,15 @@ namespace BACH
 			if (vertex >= VertexLabelIndex[label]->unpersistence)
 			{
 				return std::make_shared<std::string>(
-					VertexLabelIndex[label]->VertexProperty[vertex]);
+					VertexLabelIndex[label]->VertexProperty[
+						vertex- VertexLabelIndex[label]->unpersistence]);
 			}
 			else
 			{
-				idx_t file_no = VertexLabelIndex[label]->FileIndex.lowerbound(vertex);
-				auto reader = std::make_shared<FileReader>(static_cast<std::string>(
-					db->Labels->GetVertexLabel(label)) + "_"
+				idx_t file_no = VertexLabelIndex[label]->FileIndex.rlowerbound(vertex);
+				auto reader = std::make_shared<FileReader>(
+					db->options->STORAGE_DIR + "/" + static_cast<std::string>(
+						db->Labels->GetVertexLabel(label)) + "_"
 					+ std::to_string(file_no) + ".property");
 				auto parser = std::make_shared<PropertyFileParser>(
 					reader);

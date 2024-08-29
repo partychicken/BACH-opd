@@ -43,12 +43,6 @@ namespace BACH
 		time_t local_read_epoch_id;
 		local_read_epoch_id = (*write_epoch_table.begin()) - 1;
 		wlock.unlock();
-		std::unique_lock<std::shared_mutex> rlock(read_epoch_table_mutex);
-		if (read_epoch_table.find(local_read_epoch_id) == read_epoch_table.end())
-			read_epoch_table[local_read_epoch_id] = 1;
-		else
-			++read_epoch_table[local_read_epoch_id];
-		rlock.unlock();
 		std::shared_lock<std::shared_mutex>versionlock(version_mutex);
 		return Transaction(local_write_epoch_id, local_read_epoch_id, this,
 			read_version);
@@ -62,12 +56,6 @@ namespace BACH
 		else
 			local_epoch_id = (*write_epoch_table.begin()) - 1;
 		wlock.unlock();
-		std::unique_lock<std::shared_mutex> rlock(read_epoch_table_mutex);
-		if (read_epoch_table.find(local_epoch_id) == read_epoch_table.end())
-			read_epoch_table[local_epoch_id] = 1;
-		else
-			++read_epoch_table[local_epoch_id];
-		rlock.unlock();
 		std::shared_lock<std::shared_mutex>versionlock(version_mutex);
 		return Transaction(MAXTIME, local_epoch_id, this, read_version);
 	}
@@ -125,23 +113,29 @@ namespace BACH
 					case 1:
 						break;
 					case 2:
-						std::shared_lock<std::shared_mutex> lock(version_mutex);
+						std::shared_lock<std::shared_mutex> versionlock(version_mutex);
 						if (current_version->FileIndex[x.label_id].size() <= x.target_level)
 							break;
 						auto iter = std::lower_bound(
 							current_version->FileIndex[x.label_id][x.target_level].begin(),
 							current_version->FileIndex[x.label_id][x.target_level].end(),
-							std::make_pair(x.vertex_id_b, NONEINDEX),
+							std::make_pair(x.vertex_id_b + 1, 0),
 							FileCompareWithPair);
-						if (iter == current_version->FileIndex[x.label_id][x.target_level].end())
+						if (iter == current_version->FileIndex[x.label_id][x.target_level].begin())
 							break;
+						iter--;
 						while ((*iter)->vertex_id_b == x.vertex_id_b)
+						{
 							if ((*iter)->merging == false)
 							{
 								(*iter)->merging = true;
 								x.file_list.push_back(*iter);
 								break;
 							}
+							if (iter == current_version->FileIndex[x.label_id][x.target_level].begin())
+								break;
+							iter--;
+						}
 						break;
 					}
 					edit = Files->MergeSSTable(x);

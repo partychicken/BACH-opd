@@ -19,9 +19,6 @@ namespace BACH
 		if (valid)
 		{
 			{
-				std::unique_lock<std::shared_mutex> rlock(db->read_epoch_table_mutex);
-				if (--db->read_epoch_table[read_epoch] == 0)
-					db->read_epoch_table.erase(read_epoch);
 				version->DecRef();
 			}
 			if (write_epoch != MAXTIME)

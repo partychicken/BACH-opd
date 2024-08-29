@@ -31,7 +31,8 @@ namespace BACH
 			if (EdgeLabelIndex[i]->src_label_id == label_id)
 			{
 				std::unique_lock<std::shared_mutex> lock(EdgeLabelIndex[i]->mutex);
-				if (EdgeLabelIndex[i]->now_size_info->entry.size() >= db->options->MERGE_NUM)
+				if (EdgeLabelIndex[i]->now_size_info->entry.size()
+					>= db->options->MEMORY_MERGE_NUM)
 				{
 					EdgeLabelIndex[i]->now_size_info =
 						new SizeEntry(vertex_id, NULL);
@@ -63,7 +64,7 @@ namespace BACH
 			{
 				return std::make_shared<std::string>(
 					VertexLabelIndex[label]->VertexProperty[
-						vertex- VertexLabelIndex[label]->unpersistence]);
+						vertex - VertexLabelIndex[label]->unpersistence]);
 			}
 			else
 			{
@@ -101,6 +102,7 @@ namespace BACH
 	void MemoryManager::PutEdge(vertex_t src, vertex_t dst, label_t label,
 		edge_property_t property, time_t now_time)
 	{
+	RETRY:
 		std::shared_lock<std::shared_mutex> table_lock(EdgeLabelIndex[label]->vertex_mutex[src]);
 		auto src_entry = EdgeLabelIndex[label]->VertexIndex[src];
 		if (property == TOMBSTONE)
@@ -110,6 +112,8 @@ namespace BACH
 		table_lock.unlock();
 
 		std::unique_lock<std::shared_mutex> src_lock(src_entry->mutex);
+		if (src_entry->size_info->immutable)
+			goto RETRY;
 		edge_t found = find_edge(src, dst, src_entry);
 		if (found != NONEINDEX)
 		{
@@ -226,7 +230,8 @@ namespace BACH
 		auto fw = std::make_shared<FileWriter>(db->options->STORAGE_DIR + "/" + file_name, false);
 		auto sst = std::make_shared<SSTableBuilder>(fw, db->options);
 		sst->SetSrcRange(size_info->begin_vertex_id,
-			size_info->begin_vertex_id + db->options->MERGE_NUM - 1);
+			size_info->begin_vertex_id
+			+ db->options->MEMORY_MERGE_NUM - 1);
 		vertex_t index;
 		for (index = 0; index < size_info->entry.size(); ++index)
 		{
@@ -244,7 +249,7 @@ namespace BACH
 			}
 			sst->ArrangeCurrentSrcInfo();
 		}
-		while (index < db->options->MERGE_NUM)
+		while (index < db->options->MEMORY_MERGE_NUM)
 		{
 			sst->ArrangeCurrentSrcInfo();
 			++index;
@@ -331,7 +336,7 @@ namespace BACH
 	}
 	void MemoryManager::immute_memtable(SizeEntry*& size_info, label_t label)
 	{
-		std::unique_lock<std::shared_mutex>locks[db->options->MERGE_NUM];
+		std::unique_lock<std::shared_mutex>locks[db->options->MEMORY_MERGE_NUM];
 		for (vertex_t i = size_info->begin_vertex_id;
 			i <= size_info->begin_vertex_id + size_info->entry.size() - 1;
 			++i)

@@ -56,7 +56,7 @@ namespace BACH
 					{
 						unlink((db->options->STORAGE_DIR + "/"
 							+ k->file_name).c_str());
-						if (k->reader_pos != (idx_t) - 1)
+						if (k->reader_pos != (idx_t)-1)
 							k->death = true;
 						else
 							delete k;
@@ -75,7 +75,7 @@ namespace BACH
 		idx_t level = edit->EditFileList.begin()->level;
 		vertex_t src_b = edit->EditFileList.begin()->vertex_id_b;
 		vertex_t num = util::ClacFileSize(
-			db->options->MERGE_NUM, level) * db->options->MERGE_NUM;
+			db->options, level) * db->options->FILE_MERGE_NUM;
 		vertex_t tmp = src_b / num;
 		auto iter1 = std::lower_bound(FileIndex[label][level].begin(),
 			FileIndex[label][level].end(),
@@ -89,8 +89,8 @@ namespace BACH
 		for (auto i = iter1; i != iter2; ++i)
 			if (!(*i)->merging)
 				cnt += (*i)->file_size;
-		if (cnt < db->options->MEM_TABLE_MAX_SIZE * util::ClacFileSize(
-			db->options->MERGE_NUM, level))
+		if (cnt < db->options->MEM_TABLE_MAX_SIZE
+			* util::fast_pow(db->options->FILE_MERGE_NUM, 2 * level))
 			return NULL;
 		Compaction* c = new Compaction();
 		c->vertex_id_b = tmp * num;
@@ -148,13 +148,13 @@ namespace BACH
 	void VersionIterator::nextlevel()
 	{
 		++level;
-		vertex_t num = util::ClacFileSize(version->db->options->MERGE_NUM, level);
+		vertex_t num = util::ClacFileSize(version->db->options, level);
 		vertex_t tmp = src / num;
 		src = tmp * num;
 		while (level < version->FileIndex[label].size() && !findsrc())
 		{
 			++level;
-			num = util::ClacFileSize(version->db->options->MERGE_NUM, level);
+			num = util::ClacFileSize(version->db->options, level);
 			tmp = src / num;
 			src = tmp * num;
 		}
@@ -165,7 +165,7 @@ namespace BACH
 	{
 		if (version->FileIndex[label][level].empty())
 			return false;
-		vertex_t num = util::ClacFileSize(version->db->options->MERGE_NUM, level);
+		vertex_t num = util::ClacFileSize(version->db->options, level);
 		vertex_t tmp = src / num;
 		auto x = std::lower_bound(version->FileIndex[label][level].begin(),
 			version->FileIndex[label][level].end(),

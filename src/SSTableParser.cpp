@@ -44,7 +44,13 @@ namespace BACH
 		//	+ " filter_allocation_end_pos: " + std::to_string(filter_allocation_end_pos)
 		//	+ " filter_end_pos: " + std::to_string(filter_end_pos) +"\n";
 	}
-
+	SSTableParser::~SSTableParser()
+	{
+		if (this->edge_allocation_read_buffer != NULL)
+			delete this->edge_allocation_read_buffer;
+		if (this->edge_msg_read_buffer != NULL)
+			delete this->edge_msg_read_buffer;
+	}
 	// 在此文件中查找特定src->dst的边，如果不存在则返回null，存在返回一个指向(vertex_id,edge_property)的指针
 	edge_property_t SSTableParser::GetEdge(vertex_t src, vertex_t dst)
 	{
@@ -205,6 +211,8 @@ namespace BACH
 	{
 		this->edge_allocation_buffer_pos = 0;
 		this->edge_allocation_buffer_len = std::min(this->options->READ_BUFFER_SIZE / sizeof(edge_num_t), this->src_e - this->src_b + 1 - this->edge_allocation_now_pos);
+		if(this->edge_allocation_read_buffer != NULL)
+			delete this->edge_allocation_read_buffer;
 		this->edge_allocation_read_buffer = (char*)malloc(this->edge_allocation_buffer_len * sizeof(edge_num_t));
 		if (!reader->fread(this->edge_allocation_read_buffer, this->edge_allocation_buffer_len * sizeof(edge_num_t), this->edge_msg_end_pos + this->edge_allocation_now_pos * sizeof(edge_num_t)))
 		{
@@ -215,8 +223,11 @@ namespace BACH
 	{
 		this->edge_msg_buffer_pos = 0;
 		this->edge_msg_buffer_len = std::min(this->options->READ_BUFFER_SIZE / singel_edge_total_info_size, this->edge_cnt - this->edge_msg_now_pos);
+		if (this->edge_msg_read_buffer != NULL)
+			delete this->edge_msg_read_buffer;
 		this->edge_msg_read_buffer = (char*)malloc(this->edge_msg_buffer_len * singel_edge_total_info_size);
-		if (!reader->fread(this->edge_msg_read_buffer, this->edge_msg_buffer_len * singel_edge_total_info_size))
+		if (!reader->fread(this->edge_msg_read_buffer, this->edge_msg_buffer_len * singel_edge_total_info_size,
+			 this->edge_msg_now_pos * singel_edge_total_info_size))
 		{
 			std::cout << "read fail msg" << std::endl;
 		}

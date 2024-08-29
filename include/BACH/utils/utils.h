@@ -102,11 +102,13 @@ namespace BACH
 					ans *= a;
 			return ans;
 		}
-		inline vertex_t ClacFileSize(vertex_t MERGE_NUM, idx_t level)
+		inline vertex_t ClacFileSize(
+			std::shared_ptr<BACH::Options> options, idx_t level)
 		{
-			return fast_pow(MERGE_NUM, level + 1);
+			return options->MEMORY_MERGE_NUM * fast_pow(
+				options->FILE_MERGE_NUM, level);
 		}
-		inline std::pair<vertex_t, vertex_t> ClacChunkAndListId(
+		/*inline std::pair<vertex_t, vertex_t> ClacChunkAndListId(
 			vertex_t MERGE_NUM, idx_t level, vertex_t vertex_id)
 		{
 			vertex_t list_size = util::ClacFileSize(MERGE_NUM, level);
@@ -115,7 +117,7 @@ namespace BACH
 			vertex_t list_id = (vertex_id - chunk_id * chunk_size)
 				/ list_size;
 			return std::make_pair(chunk_id, list_id);
-		}
+		}*/
 
 		inline vertex_pair_t make_vertex_pair(vertex_t src, vertex_t dst)
 		{

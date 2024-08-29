@@ -21,6 +21,7 @@ namespace BACH
 		SSTableParser(label_t _label,
 			std::shared_ptr<FileReader> _fileReader,
 			std::shared_ptr<Options> _options);
+		~SSTableParser();
 		edge_property_t GetEdge(vertex_t src, vertex_t dst);
 		void GetEdges(vertex_t src, std::shared_ptr<std::vector<
 			std::pair<vertex_t, edge_property_t>>> answer,

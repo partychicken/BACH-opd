@@ -21,7 +21,6 @@ namespace BACH
 		SSTableParser(label_t _label,
 			std::shared_ptr<FileReader> _fileReader,
 			std::shared_ptr<Options> _options);
-		~SSTableParser();
 		edge_property_t GetEdge(vertex_t src, vertex_t dst);
 		void GetEdges(vertex_t src, std::shared_ptr<std::vector<
 			std::pair<vertex_t, edge_property_t>>> answer,
@@ -54,8 +53,8 @@ namespace BACH
 		off_t file_size = 0;
 		size_t src_edge_info_offset = 0;
 		edge_len_t src_edge_len = 0;
-		char* edge_allocation_read_buffer = NULL;
-		char* edge_msg_read_buffer = NULL;
+		std::string edge_allocation_read_buffer;
+		std::string edge_msg_read_buffer;
 		size_t edge_allocation_buffer_pos = 0, edge_msg_buffer_pos = 0;
 		size_t edge_allocation_now_pos = 0, edge_msg_now_pos = 0;
 		size_t edge_allocation_buffer_len = 0, edge_msg_buffer_len = 0;

@@ -52,7 +52,7 @@ namespace BACH
 		size_t GetMergeType(label_t label_id, vertex_t src_b, vertex_t src_e);
 		time_t GetVertexDelTime(label_t edge_label_id, vertex_t src) const;
 		VersionEdit* MemTablePersistence(label_t label_id,
-			idx_t file_id, SizeEntry* size_info);
+			idx_t file_id, std::shared_ptr < SizeEntry > size_info);
 		//void PersistenceAll();
 
 		void merge_answer(std::shared_ptr<std::vector
@@ -65,7 +65,7 @@ namespace BACH
 		DB* db;
 
 		void vertex_property_persistence(label_t label_id);
-		void immute_memtable(SizeEntry*& size_info, label_t label);
-		edge_t find_edge(vertex_t src, vertex_t dst, VertexEntry* entry);
+		void immute_memtable(std::shared_ptr<SizeEntry> size_info, label_t label);
+		edge_t find_edge(vertex_t src, vertex_t dst, std::shared_ptr < VertexEntry > entry);
 	};
 }

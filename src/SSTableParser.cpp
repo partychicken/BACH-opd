@@ -44,13 +44,6 @@ namespace BACH
 		//	+ " filter_allocation_end_pos: " + std::to_string(filter_allocation_end_pos)
 		//	+ " filter_end_pos: " + std::to_string(filter_end_pos) +"\n";
 	}
-	SSTableParser::~SSTableParser()
-	{
-		if (this->edge_allocation_read_buffer != NULL)
-			delete this->edge_allocation_read_buffer;
-		if (this->edge_msg_read_buffer != NULL)
-			delete this->edge_msg_read_buffer;
-	}
 	// 在此文件中查找特定src->dst的边，如果不存在则返回null，存在返回一个指向(vertex_id,edge_property)的指针
 	edge_property_t SSTableParser::GetEdge(vertex_t src, vertex_t dst)
 	{
@@ -80,11 +73,7 @@ namespace BACH
 			len = util::GetDecodeFixed<size_t>(filter_allocation_info + singel_filter_allocation_size) - offset;
 			func_num = util::GetDecodeFixed<idx_t>(filter_allocation_info + singel_filter_allocation_size + sizeof(size_t));
 		}
-		if (offset >= 10000000 || len >= 10000000 || func_num >= 10000000)
-		{
-			std::cout << "fuckit man" << std::endl;
-			exit(-1);
-		}
+
 		//std::cout<<"offset: "<<offset<<" len: "<<len<<" func_num: "<<func_num<<std::endl;
 		// query 如果布隆过滤器长度为0直接证明没有src的边
 		if (!len)
@@ -211,10 +200,9 @@ namespace BACH
 	{
 		this->edge_allocation_buffer_pos = 0;
 		this->edge_allocation_buffer_len = std::min(this->options->READ_BUFFER_SIZE / sizeof(edge_num_t), this->src_e - this->src_b + 1 - this->edge_allocation_now_pos);
-		if(this->edge_allocation_read_buffer != NULL)
-			delete this->edge_allocation_read_buffer;
-		this->edge_allocation_read_buffer = (char*)malloc(this->edge_allocation_buffer_len * sizeof(edge_num_t));
-		if (!reader->fread(this->edge_allocation_read_buffer, this->edge_allocation_buffer_len * sizeof(edge_num_t), this->edge_msg_end_pos + this->edge_allocation_now_pos * sizeof(edge_num_t)))
+		this->edge_allocation_read_buffer.clear();
+		this->edge_allocation_read_buffer.resize(this->edge_allocation_buffer_len * sizeof(edge_num_t));
+		if (!reader->fread(edge_allocation_read_buffer.data(), this->edge_allocation_buffer_len * sizeof(edge_num_t), this->edge_msg_end_pos + this->edge_allocation_now_pos * sizeof(edge_num_t)))
 		{
 			std::cout << "read fail alloca" << std::endl;
 		}
@@ -223,11 +211,10 @@ namespace BACH
 	{
 		this->edge_msg_buffer_pos = 0;
 		this->edge_msg_buffer_len = std::min(this->options->READ_BUFFER_SIZE / singel_edge_total_info_size, this->edge_cnt - this->edge_msg_now_pos);
-		if (this->edge_msg_read_buffer != NULL)
-			delete this->edge_msg_read_buffer;
-		this->edge_msg_read_buffer = (char*)malloc(this->edge_msg_buffer_len * singel_edge_total_info_size);
-		if (!reader->fread(this->edge_msg_read_buffer, this->edge_msg_buffer_len * singel_edge_total_info_size,
-			 this->edge_msg_now_pos * singel_edge_total_info_size))
+		this->edge_msg_read_buffer.clear();
+		this->edge_msg_read_buffer.resize(this->edge_msg_buffer_len * singel_edge_total_info_size);
+		if (!reader->fread(edge_msg_read_buffer.data(), this->edge_msg_buffer_len * singel_edge_total_info_size,
+			this->edge_msg_now_pos * singel_edge_total_info_size))
 		{
 			std::cout << "read fail msg" << std::endl;
 		}
@@ -259,7 +246,7 @@ namespace BACH
 			if (this->edge_allocation_buffer_pos >= this->edge_allocation_buffer_len) {
 				this->ReadEdgeAllocationBuffer();
 			}
-			if (util::GetDecodeFixed<edge_num_t>(this->edge_allocation_read_buffer + this->edge_allocation_buffer_pos * sizeof(edge_num_t)) > this->edge_msg_now_pos) {
+			if (util::GetDecodeFixed<edge_num_t>(this->edge_allocation_read_buffer.data() + this->edge_allocation_buffer_pos * sizeof(edge_num_t)) > this->edge_msg_now_pos) {
 				break;
 			}
 			this->edge_allocation_buffer_pos++;
@@ -270,8 +257,8 @@ namespace BACH
 			this->ReadEdgeMsgBuffer();
 		}
 		auto offset = this->edge_msg_buffer_pos * singel_edge_total_info_size;
-		this->now_edge_dst = util::GetDecodeFixed<vertex_t>(this->edge_msg_read_buffer + offset);
-		this->now_edge_prop = util::GetDecodeFixed<edge_property_t>(this->edge_msg_read_buffer + offset + sizeof(vertex_t));
+		this->now_edge_dst = util::GetDecodeFixed<vertex_t>(this->edge_msg_read_buffer.data() + offset);
+		this->now_edge_prop = util::GetDecodeFixed<edge_property_t>(this->edge_msg_read_buffer.data() + offset + sizeof(vertex_t));
 		this->edge_msg_now_pos++;
 		this->edge_msg_buffer_pos++;
 		return true;

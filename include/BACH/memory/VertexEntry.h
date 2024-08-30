@@ -25,28 +25,29 @@ namespace BACH
 	{
 		CPMA<spmae_settings<vertex_edge_pair_t>>EdgeIndex;
 		std::vector <EdgeEntry> EdgePool;
-		SizeEntry* size_info;
+		std::shared_ptr < SizeEntry > size_info;
 		std::shared_mutex mutex;
 		time_t deadtime = MAXTIME;
-		VertexEntry* next;
-		VertexEntry(SizeEntry* size_info, VertexEntry* _next = NULL);
+		std::shared_ptr < VertexEntry > next;
+		VertexEntry(std::shared_ptr < SizeEntry > size_info,
+			std::shared_ptr < VertexEntry > _next = NULL);
 	};
 	struct SizeEntry
 	{
 		vertex_t begin_vertex_id;
 		size_t size = 0;
-		std::vector<VertexEntry*> entry;
-		SizeEntry* last = NULL;
+		std::vector < std::shared_ptr < VertexEntry >> entry;
+		std::shared_ptr < SizeEntry >  last = NULL;
 		std::atomic<bool> immutable;
 		time_t max_time = 0;
-		SizeEntry(vertex_t _begin_vertex_id, SizeEntry* next);
+		SizeEntry(vertex_t _begin_vertex_id);
 		void delete_entry();
 	};
 	struct EdgeLabelEntry
 	{
-		ConcurrentArray<VertexEntry*> VertexIndex;
+		ConcurrentArray<std::shared_ptr < VertexEntry >> VertexIndex;
 		QueryCounter query_counter;
-		SizeEntry* now_size_info;
+		std::shared_ptr < SizeEntry > now_size_info;
 		label_t src_label_id;
 		ConcurrentArray<std::shared_mutex> vertex_mutex;
 		std::shared_mutex mutex;

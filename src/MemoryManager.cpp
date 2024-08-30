@@ -35,10 +35,12 @@ namespace BACH
 					>= db->options->MEMORY_MERGE_NUM)
 				{
 					EdgeLabelIndex[i]->now_size_info =
-						new SizeEntry(vertex_id, NULL);
+						std::make_shared<SizeEntry>(vertex_id);
 				}
-				EdgeLabelIndex[i]->VertexIndex.push_back(
-					new VertexEntry(EdgeLabelIndex[i]->now_size_info));
+				auto x = std::make_shared<VertexEntry>(
+					EdgeLabelIndex[i]->now_size_info);
+				EdgeLabelIndex[i]->VertexIndex.push_back(x);
+				EdgeLabelIndex[i]->now_size_info->entry.emplace_back(x);
 				EdgeLabelIndex[i]->query_counter.AddVertex();
 				EdgeLabelIndex[i]->vertex_mutex.emplace_back_default();
 			}
@@ -221,7 +223,7 @@ namespace BACH
 		return EdgeLabelIndex[edge_label_id]->VertexIndex[src]->deadtime;
 	}
 	VersionEdit* MemoryManager::MemTablePersistence(label_t label_id,
-		idx_t file_id, SizeEntry* size_info)
+		idx_t file_id, std::shared_ptr < SizeEntry > size_info)
 	{
 		auto temp_file_metadata = new FileMetaData(label_id,
 			0, size_info->begin_vertex_id, file_id,
@@ -334,7 +336,7 @@ namespace BACH
 			VertexLabelIndex[label_id]->VertexProperty.size();
 		VertexLabelIndex[label_id]->VertexProperty.clear();
 	}
-	void MemoryManager::immute_memtable(SizeEntry*& size_info, label_t label)
+	void MemoryManager::immute_memtable(std::shared_ptr < SizeEntry > size_info, label_t label)
 	{
 		std::unique_lock<std::shared_mutex>locks[db->options->MEMORY_MERGE_NUM];
 		for (vertex_t i = size_info->begin_vertex_id;
@@ -345,8 +347,9 @@ namespace BACH
 				std::unique_lock<std::shared_mutex>(
 					EdgeLabelIndex[label]->vertex_mutex[i]);
 		}
-		auto new_size_info = new SizeEntry(
-			size_info->begin_vertex_id, size_info);
+		auto new_size_info = std::make_shared<SizeEntry>(
+			size_info->begin_vertex_id);
+		size_info->last = new_size_info;
 		if (size_info == EdgeLabelIndex[label]->now_size_info)
 		{
 			EdgeLabelIndex[label]->now_size_info = new_size_info;
@@ -355,9 +358,10 @@ namespace BACH
 			i <= size_info->begin_vertex_id + size_info->entry.size() - 1;
 			++i)
 		{
-			EdgeLabelIndex[label]->VertexIndex[i] =
-				new VertexEntry(new_size_info,
-					EdgeLabelIndex[label]->VertexIndex[i]);
+			auto x= std::make_shared < VertexEntry>(new_size_info,
+				EdgeLabelIndex[label]->VertexIndex[i]);
+			EdgeLabelIndex[label]->VertexIndex[i] = x;
+			new_size_info->entry.emplace_back(x);
 		}
 		Compaction x;
 		x.label_id = label;
@@ -366,7 +370,7 @@ namespace BACH
 		x.Persistence = size_info;
 		db->Files->AddCompaction(x);
 	}
-	edge_t MemoryManager::find_edge(vertex_t src, vertex_t dst, VertexEntry* entry)
+	edge_t MemoryManager::find_edge(vertex_t src, vertex_t dst, std::shared_ptr < VertexEntry > entry)
 	{
 		auto edge_index_iter = entry->EdgeIndex.
 			lower_bound(util::make_vertex_edge_pair(dst, 0));

@@ -116,7 +116,7 @@ namespace BACH
 		if (ref.load() == 0 && deleting.compare_exchange_weak(FALSE, true, std::memory_order_relaxed))
 			delete this;
 	}
-	void Version::AddSizeEntry(SizeEntry* x)
+	void Version::AddSizeEntry(std::shared_ptr < SizeEntry > x)
 	{
 		size_entry = x;
 	}

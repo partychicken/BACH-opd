@@ -22,7 +22,7 @@ namespace BACH
 		Compaction* GetCompaction(VersionEdit* edit);
 		void AddRef();
 		void DecRef();
-		void AddSizeEntry(SizeEntry* x);
+		void AddSizeEntry(std::shared_ptr < SizeEntry > x);
 
 		std::vector<          //label
 			std::vector<      //level
@@ -36,7 +36,7 @@ namespace BACH
 	private:
 		std::atomic<idx_t> ref = 2;
 		std::atomic<bool> deleting = false;
-		SizeEntry* size_entry = NULL;
+		std::shared_ptr < SizeEntry > size_entry = NULL;
 		DB* db;
 		friend class VersionIterator;
 	};

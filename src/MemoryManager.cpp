@@ -276,14 +276,6 @@ namespace BACH
 			c = (c + 1) % 3;
 			return;
 		}
-		//std::printf("[%d]: ", c);
-		//for (auto& i : *answer_temp[c])
-		//	std::printf("%d ", i.first);
-		//std::printf("\n");
-		//std::printf("[%d]: ", (c + 1) % 3);
-		//for (auto& i : *answer_temp[(c + 1) % 3])
-		//	std::printf("%d ", i.first);
-		//std::printf("\n");
 		vertex_t answer_size = answer_temp[(c + 2) % 3]->size();
 		vertex_t answer_cnt = 0;
 		vertex_t i = 0, j = 0;
@@ -304,16 +296,10 @@ namespace BACH
 			put_element_in_answer(c, i);
 		while (j < answer_temp[(c + 1) % 3]->size())
 			put_element_in_answer((c + 1) % 3, j);
-		//std::cout << "answer_cnt: " << answer_cnt << " answer_size: " << answer_size << std::endl;
 		if (answer_cnt < answer_size)
 		{
 			answer_temp[(c + 2) % 3]->resize(answer_cnt);
 		}
-		//std::printf("[%d]: ", (c + 2) % 3);
-		//for (auto& i : *answer_temp[(c + 2) % 3])
-		//	std::printf("%d ", i.first);
-		//std::printf("\n");
-		//std::cin >> answer_cnt;
 		c = (c + 2) % 3;
 	}
 
@@ -379,17 +365,4 @@ namespace BACH
 		else
 			return util::unzip_pair_second(*edge_index_iter);
 	}
-
-	//inline void MemoryManager::put_element_in_answer(
-	//	std::shared_ptr<std::vector
-	//	<std::pair<vertex_t, edge_property_t>>> answer_temp[],
-	//	vertex_t& c, vertex_t& answer_cnt,
-	//	vertex_t& answer_size, vertex_t& cnt)
-	//{
-	//	if (answer_cnt >= answer_size)
-	//		answer_temp[(c + 2) % 3]->emplace_back((*answer_temp[(c + 1) % 3])[cnt]);
-	//	else
-	//		(*answer_temp[(c + 2) % 3])[answer_cnt++] = (*answer_temp[(c + 1) % 3])[cnt];
-	//	cnt++;
-	//}
 }

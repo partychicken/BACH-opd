@@ -24,9 +24,9 @@ namespace BACH {
 		//bool dec_ref(identify_t id, bool deadby = false);
 		// 类似unistd中的pread
 		// 从offset处开始，读取count长度的内容到buf中
-		bool fread(void* buf, int32_t count, int32_t offset = 0) const;
+		bool fread(void* buf, size_t count, size_t offset = 0) const;
 		// 从filesize-offset处开始，读取count长度的内容到buf中
-		bool rread(void* buf, int32_t count, int32_t offset = 0) const;
+		bool rread(void* buf, size_t count, size_t offset = 0) const;
 		off_t file_size() const { return sb.st_size; }
 	private:
 		int32_t fd = 0;

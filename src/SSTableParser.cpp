@@ -9,8 +9,6 @@ namespace BACH
 		reader(_fileReader),
 		options(_options)
 	{
-		//std::printf("SPat 0x%x for %s C\n", reader, reader->file_data->file_name.data());
-		//reader->add_ref();
 		file_size = reader->file_size();
 
 		//SSTable用CSR块存储信息，src_vertex->dst_vertex
@@ -36,13 +34,6 @@ namespace BACH
 
 		//filter_end_pos = filter_allocation_end_pos - (sizeof(size_t) + sizeof(idx_t)) * (src_e - src_b + 1);
 		// 第三部分是布隆过滤器的信息，每一个src分配一个布隆过滤器，布隆过滤器不是定长的，因此需要第四部分的过滤器分配数组来标识src对应的布隆过滤器,并且由filter_len来标识过滤器长度
-		//std::cout << "src_b: " + std::to_string(src_b) 
-		//	+ " src_e: " + std::to_string(src_e) 
-		//	+ " edge_cnt: " + std::to_string(edge_cnt) +"\n";
-		//std::cout << "edge_msg_end_pos: " + std::to_string(edge_msg_end_pos)
-		//	+ " edge_allocation_end_pos: " + std::to_string(edge_allocation_end_pos)
-		//	+ " filter_allocation_end_pos: " + std::to_string(filter_allocation_end_pos)
-		//	+ " filter_end_pos: " + std::to_string(filter_end_pos) +"\n";
 	}
 	// 在此文件中查找特定src->dst的边，如果不存在则返回null，存在返回一个指向(vertex_id,edge_property)的指针
 	edge_property_t SSTableParser::GetEdge(vertex_t src, vertex_t dst)
@@ -74,7 +65,6 @@ namespace BACH
 		//	func_num = util::GetDecodeFixed<idx_t>(filter_allocation_info + singel_filter_allocation_size + sizeof(size_t));
 		//}
 
-		//std::cout<<"offset: "<<offset<<" len: "<<len<<" func_num: "<<func_num<<std::endl;
 		// query 如果布隆过滤器长度为0直接证明没有src的边
 		//if (!len)
 		//{
@@ -93,7 +83,6 @@ namespace BACH
 		//	return NOTFOUND;
 
 		GetEdgeRangeBySrcId(src);
-		//std::cout<<"src_edge_len: "<<src_edge_len<<std::endl;
 		// 批量读边，检查是否存在src->dst这条边
 		size_t singel_read_max_len = this->options->READ_BUFFER_SIZE / singel_edge_total_info_size * singel_edge_total_info_size;
 		edge_len_t read_num = (this->src_edge_len - 1) / singel_read_max_len + 1;
@@ -162,7 +151,6 @@ namespace BACH
 				offset += singel_edge_total_info_size;
 			}
 		}
-		//std::cout << "answer_cnt: " << answer_cnt << " answer_size: " << answer_size << std::endl;
 		if (answer_cnt < answer_size)
 		{
 			answer->resize(answer_cnt);

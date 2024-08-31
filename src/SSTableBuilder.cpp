@@ -5,8 +5,7 @@ namespace BACH
 {
 	SSTableBuilder::SSTableBuilder(std::shared_ptr<FileWriter> _fileWriter, std::shared_ptr<Options> _options) :
 		writer(_fileWriter),
-		options(_options)
-	{}
+		options(_options){}
 	//void SSTableBuilder::AddFilter(idx_t keys_num, double false_positive)
 	//{
 	//	filter.push_back(std::make_shared<BloomFilter>(keys_num, false_positive));

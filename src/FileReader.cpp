@@ -26,7 +26,7 @@ namespace BACH {
 		}
 	}
 
-	bool FileReader::fread(void* buf, int32_t count, int32_t offset) const {
+	bool FileReader::fread(void* buf, size_t count, size_t offset) const {
 		if (buf == nullptr) {
 			return false;
 		}
@@ -34,7 +34,7 @@ namespace BACH {
 			return false;
 		}
 
-		auto cnt = pread(fd, buf, count, offset);
+		size_t cnt = pread(fd, buf, count, offset);
 		if (cnt != count) {
 			cnt = pread(fd, buf, count, offset);
 			return false;
@@ -42,7 +42,7 @@ namespace BACH {
 		return true;
 	}
 
-	bool FileReader::rread(void* buf, int32_t count, int32_t offset) const {
+	bool FileReader::rread(void* buf, size_t count, size_t offset) const {
 		return fread(buf, count, sb.st_size - offset);
 	}
 }

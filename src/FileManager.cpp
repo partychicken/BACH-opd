@@ -39,16 +39,6 @@ namespace BACH {
 			else
 				file_ids.push_back(file->file_id + 1);
 		}
-		//for (auto& i : file_ids)
-		//	std::cout << i << ",";
-		//std::puts("");
-		//std::string s="merging: ";
-		//for (auto& file : compaction.file_list)
-		//{
-		//	s += file->file_name + " ";
-		//}
-		//s += "\n";
-		//std::cout << s;
 
 		edge_num_t new_file_edge_num = 0;
 		std::priority_queue<SingelEdgeInformation> q;
@@ -77,8 +67,6 @@ namespace BACH {
 		vertex_t now_src_vertex_id = new_file_src_begin;
 		edge_num_t already_written_in_edge_num = 0;
 		vertex_t last_src_id = -1, last_dst_id = -1;
-		edge_property_t lstp = 0;
-		idx_t lsa = 0;
 		while (already_written_in_edge_num < new_file_edge_num) {
 			SingelEdgeInformation tmp = q.top();
 			q.pop();
@@ -90,16 +78,6 @@ namespace BACH {
 				sst_builder->AddEdge(tmp.src_id, tmp.dst_id, tmp.prop);
 				last_src_id = tmp.src_id;
 				last_dst_id = tmp.dst_id;
-				lstp = tmp.prop;
-				lsa = tmp.parser_id;
-			}
-			else
-			{
-				if (lstp != TOMBSTONE)
-				{
-					std::cout<<last_src_id<<" "<<last_dst_id<<" "<<lstp<<" "<<lsa << std::endl;
-					std::cout<<tmp.src_id<<" "<<tmp.dst_id<<" "<<tmp.prop<<" "<<tmp.parser_id << std::endl;
-				}
 			}
 			already_written_in_edge_num++;
 			if (!parsers[tmp.parser_id].GetNextEdge())

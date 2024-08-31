@@ -358,7 +358,7 @@ namespace BACH
 			i <= size_info->begin_vertex_id + size_info->entry.size() - 1;
 			++i)
 		{
-			auto x= std::make_shared < VertexEntry>(new_size_info,
+			auto x= std::make_shared <VertexEntry>(new_size_info,
 				EdgeLabelIndex[label]->VertexIndex[i]);
 			EdgeLabelIndex[label]->VertexIndex[i] = x;
 			new_size_info->entry.emplace_back(x);

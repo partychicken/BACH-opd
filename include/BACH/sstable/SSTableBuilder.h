@@ -16,7 +16,7 @@ namespace BACH
 	public:
 		explicit SSTableBuilder(std::shared_ptr<FileWriter> _fileWriter,std::shared_ptr<Options> _options);
 		~SSTableBuilder() = default;
-		void AddFilter(idx_t keys_num, double false_positive);
+		//void AddFilter(idx_t keys_num, double false_positive);
 		void SetSrcRange(vertex_t src_b, vertex_t src_e);
 		void ArrangeCurrentSrcInfo();
 		std::shared_ptr<sul::dynamic_bitset<>>  ArrangeSSTableInfo();
@@ -24,7 +24,7 @@ namespace BACH
 	private:
 		std::shared_ptr <FileWriter> writer;
 		std::shared_ptr<Options> options;
-		std::vector <std::shared_ptr <BloomFilter>> filter;
+		//std::vector <std::shared_ptr <BloomFilter>> filter;
 		std::vector <size_t> edge_allocation_list;
 		std::vector <vertex_t> edge_dst_id_list;
 		std::vector <edge_property_t> edge_property_list;

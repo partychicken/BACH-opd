@@ -7,10 +7,10 @@ namespace BACH
 		writer(_fileWriter),
 		options(_options)
 	{}
-	void SSTableBuilder::AddFilter(idx_t keys_num, double false_positive)
-	{
-		filter.push_back(std::make_shared<BloomFilter>(keys_num, false_positive));
-	}
+	//void SSTableBuilder::AddFilter(idx_t keys_num, double false_positive)
+	//{
+	//	filter.push_back(std::make_shared<BloomFilter>(keys_num, false_positive));
+	//}
 	void SSTableBuilder::SetSrcRange(vertex_t src_b, vertex_t src_e)
 	{
 		this->src_b = src_b;
@@ -30,11 +30,11 @@ namespace BACH
 	{
 		edge_allocation_list.push_back(this->src_edge_num);
 		this->src_edge_num = 0;
-		this->AddFilter(this->edge_dst_id_list.size(), this->options->FALSE_POSITIVE);
-		for (auto dst_id : this->edge_dst_id_list)
-		{
-			this->filter.back()->insert(dst_id);
-		}
+		//this->AddFilter(this->edge_dst_id_list.size(), this->options->FALSE_POSITIVE);
+		//for (auto dst_id : this->edge_dst_id_list)
+		//{
+		//	this->filter.back()->insert(dst_id);
+		//}
 		this->edge_dst_id_list.clear();
 	}
 	std::shared_ptr<sul::dynamic_bitset<>> SSTableBuilder::ArrangeSSTableInfo()
@@ -50,18 +50,18 @@ namespace BACH
 			else
 				bitmap->push_back(1);
 		}
-		for (auto& i : this->filter)
-		{
-			writer->append(i->data().data(), i->data().size());
-		}
-		size_t filter_len_prefix_sum = 0;
+		//for (auto& i : this->filter)
+		//{
+		//	writer->append(i->data().data(), i->data().size());
+		//}
+		//size_t filter_len_prefix_sum = 0;
 		std::string metadata;
-		for (auto& i : this->filter)
-		{
-			filter_len_prefix_sum += i->data().size();
-			util::PutFixed(metadata, filter_len_prefix_sum);
-			util::PutFixed(metadata, (idx_t)i->get_func_num());
-		}
+		//for (auto& i : this->filter)
+		//{
+		//	filter_len_prefix_sum += i->data().size();
+		//	util::PutFixed(metadata, filter_len_prefix_sum);
+		//	util::PutFixed(metadata, (idx_t)i->get_func_num());
+		//}
 		util::PutFixed(metadata, src_b);
 		util::PutFixed(metadata, src_e);
 		util::PutFixed(metadata, edge_num_prefix_sum);

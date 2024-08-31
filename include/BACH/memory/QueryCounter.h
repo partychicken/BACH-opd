@@ -36,7 +36,7 @@ namespace BACH
 			deletion.add_at(src + 1, 1);
 			add_recent_query(src, 1);
 		}
-		//1: leveling 2:tiering
+		//1: tiering 2:leveling
 		idx_t GetCompactionType(vertex_t src_b, vertex_t src_e)
 		{
 			size_t W = write.range_query(src_b + 1, src_e + 1);
@@ -44,7 +44,7 @@ namespace BACH
 			size_t rR = recent_write.range_query(src_b + 1, src_e + 1);
 			size_t rW = recent_read.range_query(src_b + 1, src_e + 1);
 			//return 1;
-			if (std::sqrt((1.0 * D / W) * (1.0 * rR / (rW + rR))) > 0.5)
+			if (std::sqrt(1.0 * D / W) + (1.0 * rR / (rW + rR)) < 1)
 				return 1;
 			else
 				return 2;

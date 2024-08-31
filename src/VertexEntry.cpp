@@ -14,10 +14,16 @@ namespace BACH
 		begin_vertex_id(_begin_vertex_id), immutable(false) {}
 	void SizeEntry::delete_entry()
 	{
-		for (auto& memtable : last->entry)
+		for (auto& memtable : entry)
 		{
-			memtable->next.reset();
+			memtable->size_info.reset();
 		}
+		for (auto& lmemtable : last->entry)
+		{
+			lmemtable->next.reset();
+		}
+		for (auto& i : entry)
+			i.reset();
 	}
 	EdgeLabelEntry::EdgeLabelEntry(label_t src_label_id, size_t list_num) :
 		query_counter(list_num),

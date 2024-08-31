@@ -31,10 +31,10 @@ namespace BACH
 		edge_allocation_end_pos = edge_msg_end_pos + sizeof(edge_num_t) * (src_e - src_b + 1);
 		// 第二部分是记录src对应的dst在边数组中的位置范围，例如src为10对应的dst范围为( edge_list[src_info_list[src-1]],edge_list[src_info_list[src]] ]
 
-		filter_allocation_end_pos = file_size - sizeof(vertex_t) * 2 - sizeof(edge_num_t);
+		//filter_allocation_end_pos = file_size - sizeof(vertex_t) * 2 - sizeof(edge_num_t);
 		// 第四部分是布隆过滤器的分配数组，长度为固定长度，即代表文件中能表示的src_vertex_id的范围，然后每个字段为（filter_len，hash_func_num）,就可以计算出布隆过滤器的数组长度 
 
-		filter_end_pos = filter_allocation_end_pos - (sizeof(size_t) + sizeof(idx_t)) * (src_e - src_b + 1);
+		//filter_end_pos = filter_allocation_end_pos - (sizeof(size_t) + sizeof(idx_t)) * (src_e - src_b + 1);
 		// 第三部分是布隆过滤器的信息，每一个src分配一个布隆过滤器，布隆过滤器不是定长的，因此需要第四部分的过滤器分配数组来标识src对应的布隆过滤器,并且由filter_len来标识过滤器长度
 		//std::cout << "src_b: " + std::to_string(src_b) 
 		//	+ " src_e: " + std::to_string(src_e) 
@@ -48,49 +48,49 @@ namespace BACH
 	edge_property_t SSTableParser::GetEdge(vertex_t src, vertex_t dst)
 	{
 		// 通过布隆过滤器分配数组，拿到布隆过滤器date的存放位置（存放位置是一个区间，因此需要取布隆过滤器分配数组的src-1以及src的信息）以及布隆过滤器的func_num
-		size_t offset, len;
-		idx_t func_num;
+		//size_t offset, len;
+		//idx_t func_num;
 		if (src > src_e || src < src_b)
 			return NOTFOUND;
-		if (src == this->src_b)
-		{
-			char filter_allocation_info[singel_filter_allocation_size];
-			if (!reader->fread(filter_allocation_info, singel_filter_allocation_size, filter_end_pos))
-			{
-				std::cout << "read fail src_b" << std::endl;
-			}
-			offset = 0;
-			len = util::GetDecodeFixed<size_t>(filter_allocation_info);
-			func_num = util::GetDecodeFixed<idx_t>(filter_allocation_info + sizeof(size_t));
-		}
-		else {
-			char filter_allocation_info[singel_filter_allocation_size * 2];
-			if (!reader->fread(filter_allocation_info, singel_filter_allocation_size * 2, filter_end_pos + (src - src_b - 1) * singel_filter_allocation_size))
-			{
-				std::cout << "read fail src" << std::endl;
-			}
-			offset = util::GetDecodeFixed<size_t>(filter_allocation_info);
-			len = util::GetDecodeFixed<size_t>(filter_allocation_info + singel_filter_allocation_size) - offset;
-			func_num = util::GetDecodeFixed<idx_t>(filter_allocation_info + singel_filter_allocation_size + sizeof(size_t));
-		}
+		//if (src == this->src_b)
+		//{
+		//	char filter_allocation_info[singel_filter_allocation_size];
+		//	if (!reader->fread(filter_allocation_info, singel_filter_allocation_size, filter_end_pos))
+		//	{
+		//		std::cout << "read fail src_b" << std::endl;
+		//	}
+		//	offset = 0;
+		//	len = util::GetDecodeFixed<size_t>(filter_allocation_info);
+		//	func_num = util::GetDecodeFixed<idx_t>(filter_allocation_info + sizeof(size_t));
+		//}
+		//else {
+		//	char filter_allocation_info[singel_filter_allocation_size * 2];
+		//	if (!reader->fread(filter_allocation_info, singel_filter_allocation_size * 2, filter_end_pos + (src - src_b - 1) * singel_filter_allocation_size))
+		//	{
+		//		std::cout << "read fail src" << std::endl;
+		//	}
+		//	offset = util::GetDecodeFixed<size_t>(filter_allocation_info);
+		//	len = util::GetDecodeFixed<size_t>(filter_allocation_info + singel_filter_allocation_size) - offset;
+		//	func_num = util::GetDecodeFixed<idx_t>(filter_allocation_info + singel_filter_allocation_size + sizeof(size_t));
+		//}
 
 		//std::cout<<"offset: "<<offset<<" len: "<<len<<" func_num: "<<func_num<<std::endl;
 		// query 如果布隆过滤器长度为0直接证明没有src的边
-		if (!len)
-		{
-			return NOTFOUND;
-		}
+		//if (!len)
+		//{
+		//	return NOTFOUND;
+		//}
 
 		// 得到布隆过滤器的位置和长度之后在存放布隆过滤器信息的数组中拿到相应的布隆过滤器data
-		auto filter = std::make_shared<BloomFilter>();
-		std::string filter_data;
-		filter_data.resize(len);
-		if (!reader->fread(filter_data.data(), len, offset + edge_allocation_end_pos)) {
-			std::cout << "read fail bloom" << std::endl;
-		}
-		filter->create_from_data(func_num, filter_data);
-		if (!filter->exists(dst))
-			return NOTFOUND;
+		//auto filter = std::make_shared<BloomFilter>();
+		//std::string filter_data;
+		//filter_data.resize(len);
+		//if (!reader->fread(filter_data.data(), len, offset + edge_allocation_end_pos)) {
+		//	std::cout << "read fail bloom" << std::endl;
+		//}
+		//filter->create_from_data(func_num, filter_data);
+		//if (!filter->exists(dst))
+		//	return NOTFOUND;
 
 		GetEdgeRangeBySrcId(src);
 		//std::cout<<"src_edge_len: "<<src_edge_len<<std::endl;

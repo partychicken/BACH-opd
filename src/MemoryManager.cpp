@@ -119,12 +119,11 @@ namespace BACH
 		edge_t found = find_edge(src, dst, src_entry);
 		if (found != NONEINDEX)
 		{
-			src_entry->EdgeIndex.remove(
-				util::make_vertex_edge_pair(dst, found));
+			src_entry->EdgeIndex.erase(dst);
 		}
 		src_entry->EdgePool.emplace_back(dst, property, now_time, found);
 		src_entry->EdgeIndex.insert(
-			util::make_vertex_edge_pair(dst, src_entry->EdgePool.size() - 1));
+			std::make_pair(dst, src_entry->EdgePool.size() - 1));
 		src_entry->size_info->max_time = std::max(now_time,
 			src_entry->size_info->max_time);
 		src_entry->size_info->size += sizeof(EdgeEntry);
@@ -182,12 +181,10 @@ namespace BACH
 			std::shared_lock<std::shared_mutex> src_lock(src_entry->mutex);
 			vertex_t answer_size = answer_temp[(c + 1) % 3]->size();
 			vertex_t answer_cnt = 0;
-			for (auto i : src_entry->EdgeIndex)
+			for (auto &i : src_entry->EdgeIndex)
 			{
-				if (i == 0)
-					continue;
-				auto dst = util::unzip_pair_first(i);
-				auto index = util::unzip_pair_second(i);
+				auto &dst = i.first;
+				auto &index = i.second;
 				while (index != NONEINDEX &&
 					src_entry->EdgePool[index].time > now_time)
 					index = src_entry->EdgePool[index].last_version;
@@ -237,16 +234,14 @@ namespace BACH
 		vertex_t index;
 		for (index = 0; index < size_info->entry.size(); ++index)
 		{
-			for (auto x : size_info->entry[index]->EdgeIndex)
+			for (auto &x : size_info->entry[index]->EdgeIndex)
 			{
-				if (x == 0)
-					continue;
-				auto v = util::unzip_pair_second(x);
+				auto &v = x.second;
 				if (size_info->entry[index]->EdgePool[v].property == TOMBSTONE
 					&& size_info->entry[index]->EdgePool[v].last_version != NONEINDEX)
 					continue;
 				else
-					sst->AddEdge(index, util::unzip_pair_first(x),
+					sst->AddEdge(index, x.first,
 						size_info->entry[index]->EdgePool[v].property);
 			}
 			sst->ArrangeCurrentSrcInfo();
@@ -359,10 +354,10 @@ namespace BACH
 	edge_t MemoryManager::find_edge(vertex_t src, vertex_t dst, std::shared_ptr < VertexEntry > entry)
 	{
 		auto edge_index_iter = entry->EdgeIndex.
-			lower_bound(util::make_vertex_edge_pair(dst, 0));
-		if (util::unzip_pair_first(*edge_index_iter) != dst)
+			find(dst);
+		if (edge_index_iter == entry->EdgeIndex.end())
 			return NONEINDEX;
 		else
-			return util::unzip_pair_second(*edge_index_iter);
+			return edge_index_iter->second;
 	}
 }

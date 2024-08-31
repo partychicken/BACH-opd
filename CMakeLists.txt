@@ -27,7 +27,7 @@ add_subdirectory(include/dynamic_bitset)
 target_link_libraries(bach PRIVATE sul::dynamic_bitset)
 
 set(BUILD_TEST OFF)
-set(DEBUG ON)
+set(DEBUG OFF)
 
 set(CMAKE_CXX_FLAGS "-O3 ${CMAKE_CXX_FLAGS}")
 

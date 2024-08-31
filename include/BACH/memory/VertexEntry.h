@@ -23,7 +23,7 @@ namespace BACH
 	struct SizeEntry;
 	struct VertexEntry
 	{
-		CPMA<spmae_settings<vertex_edge_pair_t>>EdgeIndex;
+		std::map<vertex_t,edge_t>EdgeIndex;
 		std::vector <EdgeEntry> EdgePool;
 		std::shared_ptr < SizeEntry > size_info;
 		std::shared_mutex mutex;

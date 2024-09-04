@@ -64,7 +64,7 @@ namespace BACH
 				}
 		if (next != NULL)
 		{
-			next->prev = prev;
+			//next->prev = prev;
 			next->DecRef();
 		}
 	}
@@ -90,7 +90,8 @@ namespace BACH
 			if (!(*i)->merging)
 				cnt += (*i)->file_size;
 		if (cnt < db->options->MEM_TABLE_MAX_SIZE
-			* util::fast_pow(db->options->FILE_MERGE_NUM * 10, level))
+			* util::fast_pow(db->options->FILE_MERGE_NUM, level + 1)
+			* util::fast_pow(10, level))
 			return NULL;
 		Compaction* c = new Compaction();
 		c->vertex_id_b = tmp * num;

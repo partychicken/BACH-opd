@@ -90,7 +90,7 @@ namespace BACH
 			}
 			auto it = std::upper_bound(array[pf], array[pf]
 				+ ((pf == array.size() - 1) ?
-					cnt + 1 - ((size_t)1 << util::highbit(cnt + 1))
+					cnt + 1 - ((size_t)1 << util::highbit(cnt))
 					: ((size_t)1 << pf)), x);
 			if (it != array[pf])
 				return *(it - 1);

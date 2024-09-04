@@ -29,6 +29,7 @@ namespace BACH {
 	VersionEdit* FileManager::MergeSSTable(Compaction& compaction) {
 		std::vector<SSTableParser> parsers;
 		std::vector<idx_t> file_ids;
+		std::string a;
 		for (auto& file : compaction.file_list)
 		{
 			auto reader = db->ReaderCaches->find(file);
@@ -38,7 +39,9 @@ namespace BACH {
 				file_ids.push_back(0);
 			else
 				file_ids.push_back(file->file_id + 1);
+			a.append(file->file_name+std::to_string(file_ids.back()) + ", ");
 		}
+		puts(a.data());
 
 		edge_num_t new_file_edge_num = 0;
 		std::priority_queue<SingelEdgeInformation> q;
@@ -67,6 +70,7 @@ namespace BACH {
 		vertex_t now_src_vertex_id = new_file_src_begin;
 		edge_num_t already_written_in_edge_num = 0;
 		vertex_t last_src_id = -1, last_dst_id = -1;
+		edge_property_t edge_prop = 0; idx_t ls_id = 0;
 		while (already_written_in_edge_num < new_file_edge_num) {
 			SingelEdgeInformation tmp = q.top();
 			q.pop();
@@ -78,6 +82,13 @@ namespace BACH {
 				sst_builder->AddEdge(tmp.src_id, tmp.dst_id, tmp.prop);
 				last_src_id = tmp.src_id;
 				last_dst_id = tmp.dst_id;
+				edge_prop= tmp.prop;
+				ls_id = tmp.file_id;
+			}
+			else if(edge_prop!=TOMBSTONE)
+			{
+				std::printf("%d %d %lf %d\n", tmp.src_id, tmp.dst_id, tmp.prop, tmp.file_id);
+				std::printf("%d %d %lf %d\n", last_src_id, last_dst_id, edge_prop, ls_id);
 			}
 			already_written_in_edge_num++;
 			if (!parsers[tmp.parser_id].GetNextEdge())

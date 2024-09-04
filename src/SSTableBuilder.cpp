@@ -22,7 +22,7 @@ namespace BACH
 		util::PutFixed(temp_data, edge_property);
 		writer->append(temp_data.data(), temp_data.size());
 		//this->filter[index]->insert(dst);
-		this->edge_dst_id_list.push_back(dst);
+		//this->edge_dst_id_list.push_back(dst);
 		this->src_edge_num++;
 	}
 	void SSTableBuilder::ArrangeCurrentSrcInfo()
@@ -34,7 +34,7 @@ namespace BACH
 		//{
 		//	this->filter.back()->insert(dst_id);
 		//}
-		this->edge_dst_id_list.clear();
+		//this->edge_dst_id_list.clear();
 	}
 	std::shared_ptr<sul::dynamic_bitset<>> SSTableBuilder::ArrangeSSTableInfo()
 	{

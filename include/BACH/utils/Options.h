@@ -11,6 +11,13 @@ namespace BACH
 	struct Options
 	{
 		std::string STORAGE_DIR = "./output/db_storage";
+		enum class MergingStrategy
+		{
+			LEVELING,
+			TIERING,
+			ELASTIC
+		}
+		MERGING_STRATEGY = MergingStrategy::ELASTIC;
 		size_t MEM_TABLE_MAX_SIZE = 1 * 1024 * 1024;
 		size_t VERTEX_PROPERTY_MAX_SIZE = 64 * 1024 * 1024;
 		vertex_t MEMORY_MERGE_NUM = 8192;

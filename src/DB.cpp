@@ -108,12 +108,25 @@ namespace BACH
 				else
 				{
 					//choose merge type
-					switch (Memtable->GetMergeType(x.label_id, x.vertex_id_b, x.vertex_id_e))
+					idx_t type;
+					switch (options->MERGING_STRATEGY)
 					{
-					case 1:
+					case Options::MergingStrategy::LEVELING:
+						type = 1;
 						break;
+					case Options::MergingStrategy::TIERING:
+						type = 2;
+						break;
+					case Options::MergingStrategy::ELASTIC:
+						type = Memtable->GetMergeType(x.label_id, x.vertex_id_b, x.vertex_id_e);
+						break;
+					}
+					switch (type)
+					{
 					case 2:
-						std::shared_lock<std::shared_mutex> versionlock(version_mutex);
+						break;
+					case 1:
+						std::unique_lock<std::shared_mutex> versionlock(version_mutex);
 						if (current_version->FileIndex[x.label_id].size() <= x.target_level)
 							break;
 						auto iter = std::lower_bound(

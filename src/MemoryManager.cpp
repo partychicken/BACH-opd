@@ -117,13 +117,8 @@ namespace BACH
 		if (src_entry->size_info->immutable)
 			goto RETRY;
 		edge_t found = find_edge(src, dst, src_entry);
-		if (found != NONEINDEX)
-		{
-			src_entry->EdgeIndex.erase(dst);
-		}
+		src_entry->EdgeIndex[dst] = src_entry->EdgePool.size();
 		src_entry->EdgePool.emplace_back(dst, property, now_time, found);
-		src_entry->EdgeIndex.insert(
-			std::make_pair(dst, src_entry->EdgePool.size() - 1));
 		src_entry->size_info->max_time = std::max(now_time,
 			src_entry->size_info->max_time);
 		src_entry->size_info->size += sizeof(EdgeEntry);
@@ -181,10 +176,10 @@ namespace BACH
 			std::shared_lock<std::shared_mutex> src_lock(src_entry->mutex);
 			vertex_t answer_size = answer_temp[(c + 1) % 3]->size();
 			vertex_t answer_cnt = 0;
-			for (auto &i : src_entry->EdgeIndex)
+			for (auto& i : src_entry->EdgeIndex)
 			{
-				auto &dst = i.first;
-				auto &index = i.second;
+				auto dst = i.first;
+				auto index = i.second;
 				while (index != NONEINDEX &&
 					src_entry->EdgePool[index].time > now_time)
 					index = src_entry->EdgePool[index].last_version;
@@ -234,9 +229,9 @@ namespace BACH
 		vertex_t index;
 		for (index = 0; index < size_info->entry.size(); ++index)
 		{
-			for (auto &x : size_info->entry[index]->EdgeIndex)
+			for (auto& x : size_info->entry[index]->EdgeIndex)
 			{
-				auto &v = x.second;
+				auto& v = x.second;
 				if (size_info->entry[index]->EdgePool[v].property == TOMBSTONE
 					&& size_info->entry[index]->EdgePool[v].last_version != NONEINDEX)
 					continue;
@@ -339,7 +334,7 @@ namespace BACH
 			i <= size_info->begin_vertex_id + size_info->entry.size() - 1;
 			++i)
 		{
-			auto x= std::make_shared <VertexEntry>(new_size_info,
+			auto x = std::make_shared <VertexEntry>(new_size_info,
 				EdgeLabelIndex[label]->VertexIndex[i]);
 			EdgeLabelIndex[label]->VertexIndex[i] = x;
 			new_size_info->entry.emplace_back(x);

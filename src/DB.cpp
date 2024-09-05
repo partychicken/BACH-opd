@@ -5,7 +5,8 @@ namespace BACH
 {
 	DB::DB(std::shared_ptr<Options> _options) :
 		options(_options),
-		epoch_id(1)
+		epoch_id(1),
+		write_epoch_table(_options->MAX_WORKER_THREAD)
 	{
 		Labels = std::make_unique<LabelManager>();
 		Memtable = std::make_unique<MemoryManager>(this);
@@ -37,25 +38,20 @@ namespace BACH
 	}
 	Transaction DB::BeginTransaction()
 	{
-		std::unique_lock<std::shared_mutex> wlock(write_epoch_table_mutex);
+		//std::unique_lock<std::shared_mutex> wlock(write_epoch_table_mutex);
 		time_t local_write_epoch_id = epoch_id.fetch_add(1, std::memory_order_relaxed);
 		write_epoch_table.insert(local_write_epoch_id);
 		time_t local_read_epoch_id;
-		local_read_epoch_id = (*write_epoch_table.begin()) - 1;
-		wlock.unlock();
+		local_read_epoch_id = write_epoch_table.find_min() - 1;
+		//local_read_epoch_id = (*write_epoch_table.begin()) - 1;
+		//wlock.unlock();
 		std::shared_lock<std::shared_mutex>versionlock(version_mutex);
 		return Transaction(local_write_epoch_id, local_read_epoch_id, this,
 			read_version);
 	}
 	Transaction DB::BeginReadOnlyTransaction()
 	{
-		time_t local_epoch_id;
-		std::shared_lock<std::shared_mutex> wlock(write_epoch_table_mutex);
-		if (write_epoch_table.empty())
-			local_epoch_id = epoch_id.load(std::memory_order_acquire);
-		else
-			local_epoch_id = (*write_epoch_table.begin()) - 1;
-		wlock.unlock();
+		time_t local_epoch_id = get_read_time();
 		std::shared_lock<std::shared_mutex>versionlock(version_mutex);
 		return Transaction(MAXTIME, local_epoch_id, this, read_version);
 	}
@@ -187,10 +183,11 @@ namespace BACH
 	}
 	time_t DB::get_read_time()
 	{
-		std::shared_lock<std::shared_mutex> wlock(write_epoch_table_mutex);
+		//std::shared_lock<std::shared_mutex> wlock(write_epoch_table_mutex);
 		if (write_epoch_table.empty())
 			return epoch_id.load(std::memory_order_acquire);
 		else
-			return (*write_epoch_table.begin()) - 1;
+			//return (*write_epoch_table.begin()) - 1;
+			return write_epoch_table.find_min() - 1;
 	}
 }

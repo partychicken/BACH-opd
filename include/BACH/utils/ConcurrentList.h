@@ -2,6 +2,7 @@
 
 #include <atomic>
 #include <limits>
+#include <random>
 
 namespace BACH
 {
@@ -11,30 +12,32 @@ namespace BACH
 	public:
 		ConcurrentList(size_t _size) :list(_size), size(_size) {}
 		~ConcurrentList() = default;
-		void push_back(T val)
+		void insert(const T& val)
 		{
-			size_t ptr = 0;
+			size_t ptr = std::rand() % size;
+			T x = T();
 			while (true)
 			{
-				if (list[i].compare_exchange_weak(0, val))
+				if (list[ptr].compare_exchange_weak(x, val))
 					return;
 				ptr = (ptr + 1) % size;
 			}
 		}
 		void erase(T val)
 		{
-			size_t ptr = 0;
-			T x = 0;
+			size_t ptr = std::rand() % size;
+			T x = T();
 			while (true)
 			{
-				if (list[i].compare_exchange_weak(val, x))
+				T tmp = val;
+				if (list[ptr].compare_exchange_weak(tmp, x))
 					return;
 				ptr = (ptr + 1) % size;
 			}
 		}
-		T find_min()
+		T find_min() const
 		{
-			T ans = std::numeric_limits<KeyType>::max();
+			T ans = std::numeric_limits<T>::max();
 			for (size_t i = 0; i < size; ++i)
 			{
 				T val = list[i].load();
@@ -42,6 +45,10 @@ namespace BACH
 					ans = std::min(ans, val);
 			}
 			return ans;
+		}
+		bool empty() const
+		{
+			return find_min() == std::numeric_limits<T>::max();
 		}
 	private:
 		std::vector<std::atomic< T >> list;

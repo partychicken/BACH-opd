@@ -6,6 +6,7 @@
 #include "BACH/memory/MemoryManager.h"
 #include "BACH/sstable/FileManager.h"
 #include "BACH/sstable/Version.h"
+#include "BACH/utils/ConcurrentList.h"
 
 namespace BACH
 {
@@ -38,8 +39,7 @@ namespace BACH
 		std::unique_ptr<FileReaderCache> ReaderCaches;
 	private:
 		std::atomic<time_t> epoch_id;
-		std::shared_mutex write_epoch_table_mutex;
-		std::set<time_t> write_epoch_table;
+		ConcurrentList<time_t> write_epoch_table;
 		//deque + lock_free heap?
 		std::shared_mutex version_mutex;
 		Version* read_version = NULL, * current_version = NULL;

@@ -23,9 +23,9 @@ namespace BACH
 			}
 			if (write_epoch != MAXTIME)
 			{
-				std::unique_lock<std::shared_mutex> wlock(db->write_epoch_table_mutex);
+				//std::unique_lock<std::shared_mutex> wlock(db->write_epoch_table_mutex);
 				db->write_epoch_table.erase(write_epoch);
-				wlock.unlock();
+				//wlock.unlock();
 				db->ProgressReadVersion();
 			}
 		}

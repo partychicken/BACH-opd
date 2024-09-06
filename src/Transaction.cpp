@@ -3,14 +3,14 @@
 namespace BACH
 {
 	Transaction::Transaction(time_t _write_epoch, time_t _read_epoch,
-		DB* db, Version* _version) :
-		write_epoch(_write_epoch), read_epoch(_read_epoch), db(db), version(_version)
+		DB* db, Version* _version, time_t pos) :
+		write_epoch(_write_epoch), read_epoch(_read_epoch), db(db), version(_version), time_pos(pos)
 	{
 		version->AddRef();
 	}
 	Transaction::Transaction(Transaction&& txn) :
 		write_epoch(txn.write_epoch), read_epoch(txn.read_epoch),
-		db(txn.db), version(txn.version)
+		db(txn.db), version(txn.version), time_pos(txn.time_pos)
 	{
 		txn.valid = false;
 	}
@@ -24,7 +24,7 @@ namespace BACH
 			if (write_epoch != MAXTIME)
 			{
 				//std::unique_lock<std::shared_mutex> wlock(db->write_epoch_table_mutex);
-				db->write_epoch_table.erase(write_epoch);
+				db->write_epoch_table.erase(time_pos);
 				//wlock.unlock();
 				db->ProgressReadVersion();
 			}

@@ -12,7 +12,7 @@ namespace BACH
 		Transaction& operator=(const Transaction&) = delete;
 		Transaction(const Transaction& txn) = delete;
 		Transaction(time_t _write_epoch, time_t _read_epoch,
-			DB* db, Version* _version);
+			DB* db, Version* _version, time_t pos = -1);
 		Transaction(Transaction&& txn);
 		~Transaction();
 
@@ -37,6 +37,7 @@ namespace BACH
 		time_t read_epoch;
 		DB* db;
 		Version* version;
+		size_t time_pos;
 		bool valid = true;
 	};
 }

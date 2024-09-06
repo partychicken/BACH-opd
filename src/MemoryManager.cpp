@@ -104,15 +104,14 @@ namespace BACH
 	void MemoryManager::PutEdge(vertex_t src, vertex_t dst, label_t label,
 		edge_property_t property, time_t now_time)
 	{
-	RETRY:
-		std::shared_lock<std::shared_mutex> table_lock(EdgeLabelIndex[label]->vertex_mutex[src]);
-		auto src_entry = EdgeLabelIndex[label]->VertexIndex[src];
 		if (property == TOMBSTONE)
 			EdgeLabelIndex[label]->query_counter.AddDeletion(src);
 		else
 			EdgeLabelIndex[label]->query_counter.AddWrite(src);
-		table_lock.unlock();
-
+	RETRY:
+		//std::shared_lock<std::shared_mutex> table_lock(EdgeLabelIndex[label]->vertex_mutex[src]);
+		auto src_entry = EdgeLabelIndex[label]->VertexIndex[src];
+		//table_lock.unlock();
 		std::unique_lock<std::shared_mutex> src_lock(src_entry->mutex);
 		if (src_entry->size_info->immutable)
 			goto RETRY;
@@ -142,10 +141,10 @@ namespace BACH
 	edge_property_t MemoryManager::GetEdge(vertex_t src, vertex_t dst,
 		label_t label, time_t now_time)
 	{
-		std::shared_lock<std::shared_mutex> table_lock(EdgeLabelIndex[label]->vertex_mutex[src]);
+		//std::shared_lock<std::shared_mutex> table_lock(EdgeLabelIndex[label]->vertex_mutex[src]);
 		auto src_entry = EdgeLabelIndex[label]->VertexIndex[src];
 		EdgeLabelIndex[label]->query_counter.AddRead(src);
-		table_lock.unlock();
+		//table_lock.unlock();
 		while (src_entry != NULL)
 		{
 			std::shared_lock<std::shared_mutex> src_lock(src_entry->mutex);
@@ -167,10 +166,10 @@ namespace BACH
 		//sul::dynamic_bitset<>& filter,
 		bool (*func)(edge_property_t))
 	{
-		std::shared_lock<std::shared_mutex> table_lock(EdgeLabelIndex[label]->vertex_mutex[src]);
+		//std::shared_lock<std::shared_mutex> table_lock(EdgeLabelIndex[label]->vertex_mutex[src]);
 		auto src_entry = EdgeLabelIndex[label]->VertexIndex[src];
 		EdgeLabelIndex[label]->query_counter.AddRead(src);
-		table_lock.unlock();
+		//table_lock.unlock();
 		while (src_entry != NULL)
 		{
 			std::shared_lock<std::shared_mutex> src_lock(src_entry->mutex);
@@ -210,8 +209,8 @@ namespace BACH
 	}
 	time_t MemoryManager::GetVertexDelTime(label_t edge_label_id, vertex_t src) const
 	{
-		std::shared_lock<std::shared_mutex> table_lock(
-			EdgeLabelIndex[edge_label_id]->vertex_mutex[src]);
+		//std::shared_lock<std::shared_mutex> table_lock(
+		//	EdgeLabelIndex[edge_label_id]->vertex_mutex[src]);
 		return EdgeLabelIndex[edge_label_id]->VertexIndex[src]->deadtime;
 	}
 	VersionEdit* MemoryManager::MemTablePersistence(label_t label_id,

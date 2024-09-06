@@ -3,6 +3,7 @@
 #include <atomic>
 #include <limits>
 #include <random>
+#define min(a,b) ((a) < (b) ? (a) : (b))
 
 namespace BACH
 {
@@ -10,39 +11,38 @@ namespace BACH
 	class ConcurrentList
 	{
 	public:
-		ConcurrentList(size_t _size) :list(_size), size(_size) {}
-		~ConcurrentList() = default;
-		void insert(const T& val)
+		ConcurrentList(size_t _size) :
+			list((_size >> 1) << 2), size((_size >> 1) << 2)
 		{
-			size_t ptr = std::rand() % size;
-			T x = T();
+			for (auto& i : list)
+				i = std::numeric_limits<T>::max();
+		}
+		~ConcurrentList() = default;
+		size_t insert(const T& val)
+		{
+			size_t ptr = val % size;
+			T x = std::numeric_limits<T>::max();
 			while (true)
 			{
 				if (list[ptr].compare_exchange_weak(x, val))
-					return;
+					return ptr;
 				ptr = (ptr + 1) % size;
 			}
 		}
-		void erase(T val)
+		void erase(size_t pos)
 		{
-			size_t ptr = std::rand() % size;
-			T x = T();
-			while (true)
-			{
-				T tmp = val;
-				if (list[ptr].compare_exchange_weak(tmp, x))
-					return;
-				ptr = (ptr + 1) % size;
-			}
+			list[pos] = std::numeric_limits<T>::max();
 		}
 		T find_min() const
 		{
 			T ans = std::numeric_limits<T>::max();
-			for (size_t i = 0; i < size; ++i)
+			for (size_t i = 0; i < (size >> 2); ++i)
 			{
-				T val = list[i].load();
-				if (val != 0)
-					ans = std::min(ans, val);
+				T val1 = list[i << 2].load();
+				T val2 = list[(i << 2) | 1].load();
+				T val3 = list[(i << 2) | 2].load();
+				T val4 = list[(i << 2) | 3].load();
+				ans = min(ans, min(min(val1, val2), min(val3, val4)));
 			}
 			return ans;
 		}

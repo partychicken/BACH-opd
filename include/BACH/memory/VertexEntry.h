@@ -23,7 +23,7 @@ namespace BACH
 	struct SizeEntry;
 	struct VertexEntry
 	{
-		std::map<vertex_t,edge_t>EdgeIndex;
+		std::map<vertex_t, edge_t>EdgeIndex;
 		std::vector <EdgeEntry> EdgePool;
 		std::shared_ptr < SizeEntry > size_info;
 		std::shared_mutex mutex;
@@ -40,16 +40,16 @@ namespace BACH
 		std::shared_ptr < SizeEntry >  last = NULL;
 		std::atomic<bool> immutable;
 		time_t max_time = 0;
-		SizeEntry(vertex_t _begin_vertex_id);
+		SizeEntry(vertex_t _begin_k, vertex_t _size);
 		void delete_entry();
 	};
 	struct EdgeLabelEntry
 	{
-		ConcurrentArray<std::shared_ptr < VertexEntry >> VertexIndex;
+		//ConcurrentArray<std::shared_ptr < VertexEntry >> VertexIndex;
+		ConcurrentArray<std::shared_ptr < SizeEntry >> SizeIndex;
 		QueryCounter query_counter;
-		std::shared_ptr < SizeEntry > now_size_info;
 		label_t src_label_id;
-		ConcurrentArray<std::shared_mutex> vertex_mutex;
+		ConcurrentArray<std::shared_mutex> size_mutex;
 		std::shared_mutex mutex;
 		EdgeLabelEntry(label_t src_label_id, size_t list_num);
 	};

@@ -3,10 +3,11 @@
 //#define VERTEXENTRY
 
 #include <atomic>
+#include <map>
 #include <memory>
 #include <shared_mutex>
 #include <vector>
-#include <PMA/CPMA.hpp>
+//#include <PMA/CPMA.hpp>
 #include "QueryCounter.h"
 #include "BACH/utils/types.h"
 #include "BACH/utils/ConcurrentArray.h"

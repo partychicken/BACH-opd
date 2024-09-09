@@ -110,8 +110,8 @@ namespace BACH
 			EdgeLabelIndex[label]->query_counter.AddWrite(src);
 		auto k = src / db->options->MEMORY_MERGE_NUM;
 		auto index = src - k * db->options->MEMORY_MERGE_NUM;
-		std::unique_lock<std::shared_mutex> table_lock(EdgeLabelIndex[label]->size_mutex[k]);
 	RETRY:
+		std::unique_lock<std::shared_mutex> table_lock(EdgeLabelIndex[label]->size_mutex[k]);
 		auto size_entry = EdgeLabelIndex[label]->SizeIndex[k];
 		if (size_entry == NULL)
 		{

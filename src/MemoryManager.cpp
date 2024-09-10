@@ -256,10 +256,13 @@ namespace BACH
 		sst->SetSrcRange(size_info->begin_vertex_id,
 			size_info->begin_vertex_id
 			+ db->options->MEMORY_MERGE_NUM - 1);
-		vertex_t index;
-		for (index = 0; index < size_info->entry.size(); ++index)
+		std::unique_lock<std::shared_mutex>locks[db->options->MEMORY_MERGE_NUM];
+		for (vertex_t index = 0; index < size_info->entry.size(); ++index)
 		{
 			if (size_info->entry[index] != NULL)
+			{
+				locks[index] = std::unique_lock<std::shared_mutex>(
+					size_info->entry[index]->mutex);
 				for (auto& x : size_info->entry[index]->EdgeIndex)
 				{
 					auto& v = x.second;
@@ -270,6 +273,7 @@ namespace BACH
 						sst->AddEdge(index, x.first,
 							size_info->entry[index]->EdgePool[v].property);
 				}
+			}
 			sst->ArrangeCurrentSrcInfo();
 		}
 		temp_file_metadata->filter = sst->ArrangeSSTableInfo();

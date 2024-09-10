@@ -24,8 +24,9 @@ namespace BACH
 		for (auto& i : entry)
 			i.reset();
 	}
-	EdgeLabelEntry::EdgeLabelEntry(label_t src_label_id, size_t list_num) :
-		query_counter(list_num),
+	EdgeLabelEntry::EdgeLabelEntry(std::shared_ptr<Options> options,
+		label_t src_label_id) :
+		query_counter(options),
 		//now_size_info(std::make_shared<SizeEntry>(0)),
 		src_label_id(src_label_id),
 		mutex() {}

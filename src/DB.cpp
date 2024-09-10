@@ -114,7 +114,10 @@ namespace BACH
 						type = 2;
 						break;
 					case Options::MergingStrategy::ELASTIC:
-						type = Memtable->GetMergeType(x.label_id, x.vertex_id_b, x.vertex_id_e);
+						type = Memtable->GetMergeType(x.label_id, x.vertex_id_b, x.target_level);
+						break;
+					default:
+						type = 0;
 						break;
 					}
 					switch (type)

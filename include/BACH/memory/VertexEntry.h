@@ -52,7 +52,8 @@ namespace BACH
 		label_t src_label_id;
 		ConcurrentArray<std::shared_mutex> size_mutex;
 		std::shared_mutex mutex;
-		EdgeLabelEntry(label_t src_label_id, size_t list_num);
+		EdgeLabelEntry(std::shared_ptr<Options> options,
+			label_t src_label_id);
 	};
 }
 //#endif // !VERTEXENTRY

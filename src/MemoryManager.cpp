@@ -15,8 +15,7 @@ namespace BACH
 	}
 	void MemoryManager::AddEdgeLabel(label_t src_label, label_t dst_label)
 	{
-		EdgeLabelIndex.push_back(new EdgeLabelEntry(
-			src_label, db->options->QUERY_LIST_SIZE));
+		EdgeLabelIndex.push_back(new EdgeLabelEntry(db->options, src_label));
 	}
 
 	vertex_t MemoryManager::AddVertex(label_t label_id,
@@ -118,7 +117,7 @@ namespace BACH
 			size_entry = EdgeLabelIndex[label]->SizeIndex[k] =
 				std::make_shared<SizeEntry>(k, db->options->MEMORY_MERGE_NUM);
 		}
-		else if(size_entry->immutable)
+		else if (size_entry->immutable)
 			goto RETRY;
 		auto src_entry = size_entry->entry[index];
 		if (src_entry == NULL)

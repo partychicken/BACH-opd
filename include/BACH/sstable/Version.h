@@ -54,6 +54,7 @@ namespace BACH
 		vertex_t src;
 		idx_t level = -1;
 		idx_t idx = 0;
+		vertex_t file_size, size;
 		bool end = false;
 		void nextlevel();
 		bool findsrc();

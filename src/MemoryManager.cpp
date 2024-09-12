@@ -117,8 +117,6 @@ namespace BACH
 			size_entry = EdgeLabelIndex[label]->SizeIndex[k] =
 				std::make_shared<SizeEntry>(k, db->options->MEMORY_MERGE_NUM);
 		}
-		else if (size_entry->immutable)
-			goto RETRY;
 		auto src_entry = size_entry->entry[index];
 		if (src_entry == NULL)
 		{
@@ -127,6 +125,8 @@ namespace BACH
 		}
 		table_lock.unlock();
 		std::unique_lock<std::shared_mutex> src_lock(src_entry->mutex);
+		if (size_entry->immutable)
+			goto RETRY;
 		edge_t found = find_edge(src, dst, src_entry);
 		src_entry->EdgeIndex[dst] = src_entry->EdgePool.size();
 		src_entry->EdgePool.emplace_back(dst, property, now_time, found);
@@ -212,7 +212,10 @@ namespace BACH
 					if (answer_cnt >= answer_size)
 						answer_temp[(c + 1) % 3]->emplace_back(dst, src_entry->EdgePool[index].property);
 					else
-						(*answer_temp[(c + 1) % 3])[answer_cnt++] = std::make_pair(dst, src_entry->EdgePool[index].property);
+					{
+						(*answer_temp[(c + 1) % 3])[answer_cnt].first = dst;
+						(*answer_temp[(c + 1) % 3])[answer_cnt++].second = src_entry->EdgePool[index].property;
+					}
 				}
 				//filter[dst] = true;
 			}
@@ -296,15 +299,16 @@ namespace BACH
 			c = (c + 1) % 3;
 			return;
 		}
-		vertex_t answer_size = answer_temp[(c + 2) % 3]->size();
+		answer_temp[(c + 2) % 3]->resize(
+			answer_temp[c]->size() + answer_temp[(c + 1) % 3]->size());
+		//vertex_t answer_size = answer_temp[(c + 2) % 3]->size();
 		vertex_t answer_cnt = 0;
 		vertex_t i = 0, j = 0;
-		auto put_element_in_answer = [&](vertex_t nc, vertex_t& cnt) {
-			if (answer_cnt >= answer_size)
-				answer_temp[(c + 2) % 3]->emplace_back((*answer_temp[nc])[cnt]);
-			else
-				(*answer_temp[(c + 2) % 3])[answer_cnt++] = (*answer_temp[nc])[cnt];
-			cnt++;
+		auto put_element_in_answer =
+			[&](vertex_t nc, vertex_t& cnt)
+			{
+				(*answer_temp[(c + 2) % 3])[answer_cnt++] =
+					(*answer_temp[nc])[cnt++];
 			};
 		for (; i < answer_temp[c]->size() &&
 			j < answer_temp[(c + 1) % 3]->size();)
@@ -316,7 +320,7 @@ namespace BACH
 			put_element_in_answer(c, i);
 		while (j < answer_temp[(c + 1) % 3]->size())
 			put_element_in_answer((c + 1) % 3, j);
-		if (answer_cnt < answer_size)
+		if (answer_cnt < answer_temp[(c + 2) % 3]->size())
 		{
 			answer_temp[(c + 2) % 3]->resize(answer_cnt);
 		}

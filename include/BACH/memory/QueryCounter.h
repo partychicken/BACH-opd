@@ -24,13 +24,7 @@ namespace BACH
 			deletion.push_back();
 			recent_read.push_back();
 			recent_write.push_back();
-		}
-		void AddQueryList(vertex_t k)
-		{
-			while (query_list.size() <= k)
-				query_list.emplace_back_default();
-			if (query_list[k] == NULL)
-				query_list[k] = std::make_shared<FixedDoubleBitList<1>>(list_num);
+			query_list.push_back(std::make_shared<FixedDoubleBitList<1>>(list_num));
 		}
 		void AddRead(vertex_t src)
 		{
@@ -70,7 +64,6 @@ namespace BACH
 		void add_recent_query(vertex_t src, idx_t type)
 		{
 			auto k = src / memory_num;
-			AddQueryList(k);
 			switch (query_list[k]->push_back(type))
 			{
 			case 0:

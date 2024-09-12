@@ -123,7 +123,8 @@ namespace BACH
 	}
 
 	VersionIterator::VersionIterator(Version* _version, label_t _label, vertex_t _src)
-		: version(_version), label(_label), src(_src)
+		: version(_version), label(_label), src(_src), file_size(1),
+		size(version->db->options->MEMORY_MERGE_NUM)
 	{
 		if (version->FileIndex.size() <= label)
 		{
@@ -142,22 +143,21 @@ namespace BACH
 	{
 		if (end)
 			return;
-		if (idx == 0 || version->FileIndex[label][level][--idx]->vertex_id_b != src)
+		if (idx == 0 || version->FileIndex[label][level][--idx]->vertex_id_b != src * file_size)
 			nextlevel();
 	}
 
 	void VersionIterator::nextlevel()
 	{
 		++level;
-		vertex_t num = util::ClacFileSize(version->db->options, level);
-		vertex_t tmp = src / num;
-		src = tmp * num;
+		src = src / size;
+		file_size *= size;
+		size = version->db->options->FILE_MERGE_NUM;
 		while (level < version->FileIndex[label].size() && !findsrc())
 		{
 			++level;
-			num = util::ClacFileSize(version->db->options, level);
-			tmp = src / num;
-			src = tmp * num;
+			src = src / size;
+			file_size *= size;
 		}
 		if (level == version->FileIndex[label].size())
 			end = true;
@@ -166,16 +166,14 @@ namespace BACH
 	{
 		if (version->FileIndex[label][level].empty())
 			return false;
-		vertex_t num = util::ClacFileSize(version->db->options, level);
-		vertex_t tmp = src / num;
 		auto x = std::lower_bound(version->FileIndex[label][level].begin(),
 			version->FileIndex[label][level].end(),
-			std::make_pair(tmp * num + 1, 0),
+			std::make_pair(src * file_size + 1, 0),
 			FileCompareWithPair);
 		if (x == version->FileIndex[label][level].begin())
 			return false;
 		idx = x - version->FileIndex[label][level].begin() - 1;
-		if (version->FileIndex[label][level][idx]->vertex_id_b != tmp * num)
+		if (version->FileIndex[label][level][idx]->vertex_id_b != src * file_size)
 			return false;
 		return true;
 	}

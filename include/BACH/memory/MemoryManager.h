@@ -63,6 +63,8 @@ namespace BACH
 		ConcurrentArray <EdgeLabelEntry*> EdgeLabelIndex;
 		ConcurrentArray <VertexLabelEntry*> VertexLabelIndex;
 		DB* db;
+		const std::shared_ptr<SizeEntry> writing_size;
+		const std::shared_ptr<VertexEntry> writing_vertex;
 
 		void vertex_property_persistence(label_t label_id);
 		void immute_memtable(std::shared_ptr<SizeEntry> size_info, label_t label);

@@ -5,6 +5,7 @@
 #include <atomic>
 #include <map>
 #include <memory>
+#include <semaphore>
 #include <shared_mutex>
 #include <vector>
 //#include <PMA/CPMA.hpp>
@@ -37,9 +38,10 @@ namespace BACH
 	{
 		vertex_t begin_vertex_id;
 		size_t size = 0;
-		std::vector < std::shared_ptr < VertexEntry >> entry;
+		std::vector < std::atomic<std::shared_ptr < VertexEntry >>> entry;
 		std::shared_ptr < SizeEntry >  last = NULL;
 		std::atomic<bool> immutable;
+		std::counting_semaphore<1024> sema;
 		time_t max_time = 0;
 		SizeEntry(vertex_t _begin_k, vertex_t _size);
 		void delete_entry();
@@ -47,7 +49,7 @@ namespace BACH
 	struct EdgeLabelEntry
 	{
 		//ConcurrentArray<std::shared_ptr < VertexEntry >> VertexIndex;
-		ConcurrentArray<std::shared_ptr < SizeEntry >> SizeIndex;
+		ConcurrentArray <std::atomic< std::shared_ptr < SizeEntry >> > SizeIndex;
 		QueryCounter query_counter;
 		label_t src_label_id;
 		ConcurrentArray<std::shared_mutex> size_mutex;

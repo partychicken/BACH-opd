@@ -15,7 +15,7 @@ namespace BACH
 			x = NULL;
 			if (file_data->reader.compare_exchange_weak(x, writing))
 			{
-				file_data->reader.store(std::make_shared<FileReader>(
+				file_data->reader.store(x = std::make_shared<FileReader>(
 					prefix + file_data->file_name));
 				idx_t pos;
 				bool FALSE;

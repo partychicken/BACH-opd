@@ -38,11 +38,14 @@ namespace BACH
 		{
 			index /= memory_num;
 			tree[0][index] += value;
-			for (size_t i = 1; i < tree.size(); i++)
-			{
-				index /= merge_num;
-				tree[i][index] += value;
-			}
+			index /= merge_num;
+			tree[1][index] += value;
+			index /= merge_num;
+			tree[2][index] += value;
+			index /= merge_num;
+			tree[3][index] += value;
+			index /= merge_num;
+			tree[4][index] += value;
 		}
 		size_t range_query(vertex_t index, idx_t level) const
 		{

@@ -40,6 +40,7 @@ namespace BACH
 #endif
 	class DB;
 	class Transaction;
+	class Iterator;
 }
 
 namespace bach
@@ -62,6 +63,7 @@ namespace bach
 	private:
 		const std::unique_ptr<BACH::DB> db;
 	};
+	class Iterator;
 	class Transaction
 	{
 	public:
@@ -80,8 +82,22 @@ namespace bach
 		std::shared_ptr<std::vector<std::pair<vertex_t, edge_property_t>>>
 			GetEdges(vertex_t src, label_t label,
 				bool (*func)(edge_property_t) = [](edge_property_t x) {return true; });
+		Iterator GetIterator(vertex_t src, label_t label);
 
 	private:
 		const std::unique_ptr<BACH::Transaction> txn;
+	};
+	class Iterator
+	{
+	public:
+		Iterator(std::unique_ptr<BACH::Iterator> _iter);
+		~Iterator();
+		void Next();
+		vertex_t GetNowDst() const;
+		edge_property_t GetNowProperty() const;
+		bool IsValid() const;
+
+	private:
+		const std::unique_ptr<BACH::Iterator> iter;
 	};
 }

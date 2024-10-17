@@ -156,50 +156,6 @@ namespace BACH
 			answer->resize(answer_cnt);
 		}
 	}
-
-	bool SSTableParser::GetFirstEdgeBySrc(vertex_t src)
-	{
-		if (!this->edge_cnt) {
-			return false;
-		}
-		GetEdgeRangeBySrcId(src);
-		if (!this->src_edge_len)
-		{
-			return false;
-		}
-		this->edge_msg_buffer_pos = this->edge_msg_buffer_len = 0;
-		this->edge_msg_now_pos = this->src_edge_info_offset / singel_edge_total_info_size;
-		this->edge_msg_end_pos = (this->src_edge_info_offset + this->src_edge_len) / singel_edge_total_info_size;
-		
-		if (!this->GetNextEdgeBySrc()) {
-			return false;
-		}
-		return true;
-	}
-	bool SSTableParser::GetNextEdgeBySrc()
-	{
-		if (this->edge_msg_now_pos >= this->edge_msg_end_pos) {
-			return false;
-		}
-		if (this->edge_msg_buffer_pos >= this->edge_msg_buffer_len) {
-			this->edge_msg_buffer_pos = 0;
-			this->edge_msg_buffer_len = std::min(this->options->READ_BUFFER_SIZE / singel_edge_total_info_size, this->edge_msg_end_pos - this->edge_msg_now_pos);
-			this->edge_msg_read_buffer.clear();
-			this->edge_msg_read_buffer.resize(this->edge_msg_buffer_len * singel_edge_total_info_size);
-			if (!reader->fread(edge_msg_read_buffer.data(), this->edge_msg_buffer_len * singel_edge_total_info_size,
-				this->edge_msg_now_pos * singel_edge_total_info_size))
-			{
-				std::cout << "read fail msg" << std::endl;
-			}
-		}
-		auto offset = this->edge_msg_buffer_pos * singel_edge_total_info_size;
-		this->now_edge_dst = util::GetDecodeFixed<vertex_t>(this->edge_msg_read_buffer.data() + offset);
-		this->now_edge_prop = util::GetDecodeFixed<edge_property_t>(this->edge_msg_read_buffer.data() + offset + sizeof(vertex_t));
-		this->edge_msg_now_pos++;
-		this->edge_msg_buffer_pos++;
-		return true;
-	}
-
 	void SSTableParser::GetEdgeRangeBySrcId(vertex_t src)
 	{
 		if (src == this->src_b)

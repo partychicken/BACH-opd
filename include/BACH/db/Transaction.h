@@ -5,7 +5,6 @@
 
 namespace BACH
 {
-	class Iterator;
 	class Transaction
 	{
 	public:
@@ -32,7 +31,6 @@ namespace BACH
 		std::shared_ptr<std::vector<std::pair<vertex_t, edge_property_t>>>
 			GetEdges(vertex_t src, label_t label,
 				bool (*func)(edge_property_t) = [](edge_property_t x) {return true; });
-		Iterator GetIterator(vertex_t src, label_t label);
 
 	private:
 		time_t write_epoch;
@@ -41,7 +39,5 @@ namespace BACH
 		Version* version;
 		size_t time_pos;
 		bool valid = true;
-
-		friend class Iterator;
 	};
 }

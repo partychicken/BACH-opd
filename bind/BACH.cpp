@@ -63,27 +63,4 @@ namespace bach
 	{
 		return txn->GetEdges(src, label, func);
 	}
-	Iterator Transaction::GetIterator(vertex_t src, label_t label)
-	{
-		return std::make_unique<BACH::Iterator>(txn->GetIterator(src, label));
-	}
-	Iterator::Iterator(std::unique_ptr<BACH::Iterator> _iter):
-		iter(std::move(_iter)){}
-	Iterator::~Iterator() = default;
-	void Iterator::Next()
-	{
-		iter->Next();
-	}
-	vertex_t Iterator::GetNowDst() const
-	{
-		return iter->GetNowDst();
-	}
-	edge_property_t Iterator::GetNowProperty() const
-	{
-		return iter->GetNowProperty();
-	}
-	bool Iterator::IsValid() const
-	{
-		return iter->IsValid();
-	}
 }

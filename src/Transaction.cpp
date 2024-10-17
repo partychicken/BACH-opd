@@ -1,5 +1,4 @@
 #include "BACH/db/Transaction.h"
-#include "BACH/db/Iterator.h"
 
 namespace BACH
 {
@@ -154,9 +153,6 @@ namespace BACH
 		for (auto i = answer_temp->begin(); i != last; i++)
 			if (std::get<2>(*i) != TOMBSTONE)
 				(*answer).emplace_back(std::get<0>(*i), std::get<2>(*i));*/
-	}
-	Iterator Transaction::GetIterator(vertex_t src, label_t label)
-	{
-		return Iterator(src, label, db, this);
+		return answer_temp[c];
 	}
 }

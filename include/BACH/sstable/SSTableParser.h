@@ -26,8 +26,6 @@ namespace BACH
 			std::pair<vertex_t, edge_property_t>>> answer,
 			//sul::dynamic_bitset<>& filter,
 			bool (*func)(edge_property_t));
-		bool GetFirstEdgeBySrc(vertex_t src);
-		bool GetNextEdgeBySrc();
 		void ReadEdgeAllocationBuffer();
 		void ReadEdgeMsgBuffer();
 		bool GetFirstEdge();
@@ -54,7 +52,6 @@ namespace BACH
 		vertex_t now_src = 0;
 		off_t file_size = 0;
 		size_t src_edge_info_offset = 0;
-		size_t src_edge_end_offset = 0;
 		edge_len_t src_edge_len = 0;
 		std::string edge_allocation_read_buffer;
 		std::string edge_msg_read_buffer;

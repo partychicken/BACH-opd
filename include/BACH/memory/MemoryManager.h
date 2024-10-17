@@ -69,6 +69,5 @@ namespace BACH
 		void vertex_property_persistence(label_t label_id);
 		void immute_memtable(std::shared_ptr<SizeEntry> size_info, label_t label);
 		edge_t find_edge(vertex_t src, vertex_t dst, std::shared_ptr < VertexEntry > entry);
-		friend class Iterator;
 	};
 }

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <set>
 #include "BACH/file/FileReaderCache.h"
 #include "BACH/label/LabelManager.h"
 #include "BACH/memory/MemoryManager.h"

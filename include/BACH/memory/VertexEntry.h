@@ -1,6 +1,4 @@
 #pragma once
-//#ifndef VERTEXENTRY
-//#define VERTEXENTRY
 
 #include <atomic>
 #include <map>
@@ -8,7 +6,6 @@
 #include <semaphore>
 #include <shared_mutex>
 #include <vector>
-//#include <PMA/CPMA.hpp>
 #include "QueryCounter.h"
 #include "BACH/utils/types.h"
 #include "BACH/utils/ConcurrentArray.h"
@@ -58,4 +55,3 @@ namespace BACH
 			label_t src_label_id);
 	};
 }
-//#endif // !VERTEXENTRY

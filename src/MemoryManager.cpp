@@ -4,7 +4,7 @@
 namespace BACH
 {
 	MemoryManager::MemoryManager(DB* _db) :
-		db(_db), writing_size(std::make_shared<SizeEntry>(-1,0)),
+		db(_db), writing_size(std::make_shared<SizeEntry>(-1, 0)),
 		writing_vertex(std::make_shared<VertexEntry>(writing_size))
 	{
 
@@ -19,13 +19,11 @@ namespace BACH
 		EdgeLabelIndex.push_back(new EdgeLabelEntry(db->options, src_label));
 	}
 
-	vertex_t MemoryManager::AddVertex(label_t label_id,
-		std::string_view property, time_t now_time)
+	vertex_t MemoryManager::AddVertex(label_t label_id)
 	{
 		std::unique_lock<std::shared_mutex> lock(VertexLabelIndex[label_id]->mutex);
 		vertex_t vertex_id = VertexLabelIndex[label_id]->total_vertex.fetch_add(1);
-		VertexLabelIndex[label_id]->VertexProperty.push_back(
-			static_cast<std::string>(property));
+		VertexLabelIndex[label_id]->PropertyID.push_back(-1);
 		for (label_t i = 0; i < EdgeLabelIndex.size(); ++i)
 		{
 			if (EdgeLabelIndex[i]->src_label_id == label_id)
@@ -37,13 +35,22 @@ namespace BACH
 				EdgeLabelIndex[i]->query_counter.AddVertex();
 			}
 		}
+		return vertex_id;
+	}
+	void MemoryManager::PutVertex(label_t label_id, vertex_t vertex_id,
+		std::string_view property)
+	{
+		std::unique_lock<std::shared_mutex> lock(VertexLabelIndex[label_id]->mutex);
+		vertex_t property_id = VertexLabelIndex[label_id]->total_property.fetch_add(1);
+		VertexLabelIndex[label_id]->VertexProperty.push_back(
+			static_cast<std::string>(property));
+		VertexLabelIndex[label_id]->PropertyID[vertex_id] = property_id;
 		VertexLabelIndex[label_id]->property_size += property.size();
 		if (VertexLabelIndex[label_id]->property_size >=
 			db->options->VERTEX_PROPERTY_MAX_SIZE)
 		{
 			vertex_property_persistence(label_id);
 		}
-		return vertex_id;
 	}
 	std::shared_ptr<std::string> MemoryManager::GetVertex(vertex_t vertex, label_t label,
 		time_t now_time)
@@ -53,22 +60,23 @@ namespace BACH
 		if (x == VertexLabelIndex[label]->deletetime.end()
 			|| x->second > now_time)
 		{
-			if (vertex >= VertexLabelIndex[label]->unpersistence)
+			auto property_id = VertexLabelIndex[label]->PropertyID[vertex];
+			if (property_id >= VertexLabelIndex[label]->unpersistence)
 			{
 				return std::make_shared<std::string>(
 					VertexLabelIndex[label]->VertexProperty[
-						vertex - VertexLabelIndex[label]->unpersistence]);
+						property_id - VertexLabelIndex[label]->unpersistence]);
 			}
 			else
 			{
-				idx_t file_no = VertexLabelIndex[label]->FileIndex.rlowerbound(vertex);
+				idx_t file_no = VertexLabelIndex[label]->FileIndex.rlowerbound(property_id);
 				auto reader = std::make_shared<FileReader>(
 					db->options->STORAGE_DIR + "/" + static_cast<std::string>(
 						db->Labels->GetVertexLabel(label)) + "_"
 					+ std::to_string(file_no) + ".property");
 				auto parser = std::make_shared<PropertyFileParser>(
 					reader);
-				return parser->GetProperty(vertex - file_no);
+				return parser->GetProperty(property_id - file_no);
 			}
 		}
 		else

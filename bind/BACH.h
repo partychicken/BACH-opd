@@ -67,7 +67,8 @@ namespace bach
 	public:
 		Transaction(std::unique_ptr<BACH::Transaction> _txn);
 		~Transaction();
-		vertex_t AddVertex(label_t label, std::string_view property);
+		vertex_t AddVertex(label_t label);
+		void PutVertex(label_t label, vertex_t vertex_id, std::string_view property);
 		std::shared_ptr<std::string> GetVertex(vertex_t vertex, label_t label);
 		void DelVertex(vertex_t vertex, label_t label);
 		vertex_t GetVertexNum(label_t label);

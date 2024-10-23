@@ -26,9 +26,13 @@ namespace bach
 	Transaction::Transaction(std::unique_ptr<BACH::Transaction> _txn) :
 		txn(std::move(_txn)) {}
 	Transaction::~Transaction() = default;
-	vertex_t Transaction::AddVertex(label_t label, std::string_view property)
+	vertex_t Transaction::AddVertex(label_t label)
 	{
-		return txn->AddVertex(label, property);
+		return txn->AddVertex(label);
+	}
+	void Transaction::PutVertex(label_t label, vertex_t vertex_id, std::string_view property)
+	{
+		return txn->PutVertex(label, vertex_id, property);
 	}
 	std::shared_ptr<std::string> Transaction::GetVertex(vertex_t vertex, label_t label)
 	{

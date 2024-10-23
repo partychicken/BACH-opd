@@ -30,8 +30,9 @@ namespace BACH
 		void AddVertexLabel();
 		void AddEdgeLabel(label_t src_label, label_t dst_label);
 
-		vertex_t AddVertex(label_t label_id, std::string_view property,
-			time_t now_time);
+		vertex_t AddVertex(label_t label_id);
+		void PutVertex(label_t label_id, vertex_t vertex_id,
+			std::string_view property);
 		std::shared_ptr<std::string> GetVertex(vertex_t vertex, label_t label,
 			time_t now_time);
 		vertex_t GetVertexNum(label_t label_id) const;

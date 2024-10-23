@@ -31,13 +31,21 @@ namespace BACH
 		}
 	}
 
-	vertex_t Transaction::AddVertex(label_t label, std::string_view property)
+	vertex_t Transaction::AddVertex(label_t label)
 	{
 		if (write_epoch == MAXTIME)
 		{
 			return MAXVERTEX;
 		}
-		return db->Memtable->AddVertex(label, property, write_epoch);
+		return db->Memtable->AddVertex(label);
+	}
+	void Transaction::PutVertex(label_t label, vertex_t vertex_id, std::string_view property)
+	{
+		if (write_epoch == MAXTIME)
+		{
+			return;
+		}
+		db->Memtable->PutVertex(label, vertex_id, property);
 	}
 	std::shared_ptr<std::string> Transaction::GetVertex(
 		vertex_t vertex, label_t label)

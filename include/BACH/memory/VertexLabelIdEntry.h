@@ -12,8 +12,10 @@ namespace BACH
 	struct VertexLabelEntry
 	{
 		std::vector <std::string> VertexProperty;
+		std::vector <vertex_t> PropertyID;
 		ConcurrentArray <vertex_t> FileIndex;
 		std::atomic<vertex_t> total_vertex = 0;
+		std::atomic<vertex_t> total_property = 0;
 		vertex_t unpersistence = 0;
 		size_t property_size = 0;
 		idx_t property_file_cnt = 0;

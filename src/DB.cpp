@@ -152,15 +152,7 @@ namespace BACH
 					}
 					edit = Files->MergeSSTable(x);
 				}
-				std::unique_lock<std::shared_mutex> version_lock(version_mutex);
-				Version* tmp = current_version;
-				tmp->AddSizeEntry(x.Persistence);
-				current_version = new Version(tmp, edit, time);
-				auto compact = current_version->GetCompaction(edit);
-				if (compact != NULL)
-					Files->AddCompaction(*compact);
-				tmp->DecRef();
-				version_lock.unlock();
+				ProgressVersion(edit, time, x.Persistence);
 				ProgressReadVersion();
 				Files->CloseCV.notify_one();
 			}
@@ -171,6 +163,19 @@ namespace BACH
 					return;
 			}
 		}
+	}
+	void DB::ProgressVersion(VersionEdit* edit, time_t time,
+		std::shared_ptr<SizeEntry> size)
+	{
+		std::unique_lock<std::shared_mutex> version_lock(version_mutex);
+		Version* tmp = current_version;
+		tmp->AddSizeEntry(size);
+		current_version = new Version(tmp, edit, time);
+		auto compact = current_version->GetCompaction(edit);
+		if (compact != NULL)
+			Files->AddCompaction(*compact);
+		tmp->DecRef();
+		version_lock.unlock();
 	}
 	void DB::ProgressReadVersion()
 	{

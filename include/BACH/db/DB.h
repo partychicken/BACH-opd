@@ -28,6 +28,8 @@ namespace BACH
 			std::string src_label_name, std::string dst_label_name);
 		//compact all edge
 		void CompactAll();
+		void ProgressVersion(VersionEdit* edit, time_t time,
+			std::shared_ptr<SizeEntry> size=NULL);
 
 		//void Persistence(std::string_view label, vertex_t merge_id);
 		//void TestMerge(Compaction& x, idx_t type);

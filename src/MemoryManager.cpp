@@ -17,6 +17,15 @@ namespace BACH
 	void MemoryManager::AddEdgeLabel(label_t src_label, label_t dst_label)
 	{
 		EdgeLabelIndex.push_back(new EdgeLabelEntry(db->options, src_label));
+		auto i = EdgeLabelIndex.size() - 1;
+		std::unique_lock<std::shared_mutex> lock(EdgeLabelIndex[i]->mutex);
+		for (vertex_t vertex_id = 0; vertex_id < VertexLabelIndex[src_label]->total_vertex; ++vertex_id)
+		{
+			while (EdgeLabelIndex[i]->SizeIndex.size() <= vertex_id / db->options->MEMORY_MERGE_NUM)
+				EdgeLabelIndex[i]->SizeIndex.emplace_back_default(),
+				EdgeLabelIndex[i]->size_mutex.emplace_back_default();
+			EdgeLabelIndex[i]->query_counter.AddVertex();
+		}
 	}
 
 	vertex_t MemoryManager::AddVertex(label_t label_id)

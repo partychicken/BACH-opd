@@ -31,9 +31,13 @@ namespace BACH
 		Version* prev;
 		Version* next;
 		time_t epoch;
+		time_t next_epoch;
 
 		idx_t version_name = 0;
 	private:
+		std::vector<          //label
+			std::vector<      //level
+			size_t>> FileTotalSize;
 		std::atomic<idx_t> ref = 2;
 		std::atomic<bool> deleting = false;
 		std::shared_ptr < SizeEntry > size_entry = NULL;

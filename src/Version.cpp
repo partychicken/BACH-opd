@@ -4,14 +4,16 @@
 namespace BACH
 {
 	Version::Version(DB* _db) :
-		prev(NULL), next(NULL), epoch(0), db(_db) {}
+		prev(NULL), next(NULL), epoch(0), next_epoch(-1), db(_db) {}
 	Version::Version(Version* _prev, VersionEdit* edit, time_t time) :
-		prev(_prev), next(NULL), epoch(std::max(_prev->epoch, time)),
+		prev(_prev), next(NULL), epoch(std::max(_prev->epoch, time)), next_epoch(-1),
 		db(_prev->db)
 	{
 		version_name = _prev->version_name + 1;
 		prev->next = this;
+		prev->next_epoch = epoch;
 		FileIndex = prev->FileIndex;
+		FileTotalSize = prev->FileTotalSize;
 		for (auto& i : edit->EditFileList)
 		{
 			if (i.deletion)
@@ -25,17 +27,21 @@ namespace BACH
 					exit(-1);
 				}
 				FileIndex[i.label][i.level].erase(x);
+				FileTotalSize[i.label][i.level] -= i.file_size;
 			}
 			else
 			{
 				while (FileIndex.size() <= i.label)
-					FileIndex.emplace_back();
+					FileIndex.emplace_back(0),
+					FileTotalSize.emplace_back();
 				while (FileIndex[i.label].size() <= i.level)
-					FileIndex[i.label].emplace_back();
+					FileIndex[i.label].emplace_back(),
+					FileTotalSize[i.label].emplace_back(0);
 				auto x = std::upper_bound(FileIndex[i.label][i.level].begin(),
 					FileIndex[i.label][i.level].end(), &i, FileCompare);
 				auto f = new FileMetaData(i);
 				FileIndex[i.label][i.level].insert(x, f);
+				FileTotalSize[i.label][i.level] += i.file_size;
 			}
 		}
 		for (auto& i : FileIndex)
@@ -90,9 +96,25 @@ namespace BACH
 			if (!(*i)->merging)
 				cnt += (*i)->file_size;
 		if (cnt < db->options->MEM_TABLE_MAX_SIZE
-			* util::fast_pow(db->options->FILE_MERGE_NUM, level + 1)
-			* util::fast_pow(10, level))
-			return NULL;
+			* util::fast_pow(db->options->FILE_MERGE_NUM, level + 1))
+		{
+			if (FileTotalSize[label][level] < db->options->LEVEL_0_MAX_SIZE
+				* util::fast_pow(10, level))
+				return NULL;
+			vertex_t index = rand() % FileIndex[label][level].size();
+			src_b = FileIndex[label][level][index]->vertex_id_b;
+			tmp = src_b / num;
+			iter1 = std::lower_bound(FileIndex[label][level].begin(),
+				FileIndex[label][level].end(),
+				std::make_pair(tmp * num, (idx_t)0),
+				FileCompareWithPair);
+			iter2 = std::lower_bound(FileIndex[label][level].begin(),
+				FileIndex[label][level].end(),
+				std::make_pair((tmp + 1) * num, (idx_t)0),
+				FileCompareWithPair);
+			if (iter1 == iter2)
+				return NULL;
+		}
 		Compaction* c = new Compaction();
 		c->vertex_id_b = tmp * num;
 		c->vertex_id_e = (tmp + 1) * num - 1;

@@ -19,6 +19,7 @@ namespace BACH
 		}
 		MERGING_STRATEGY = MergingStrategy::ELASTIC;
 		size_t MEM_TABLE_MAX_SIZE = 1 * 1024 * 1024;
+		size_t LEVEL_0_MAX_SIZE = 512 * 1024 * 1024;
 		size_t VERTEX_PROPERTY_MAX_SIZE = 64 * 1024 * 1024;
 		vertex_t MEMORY_MERGE_NUM = 8192;
 		vertex_t FILE_MERGE_NUM = 32;

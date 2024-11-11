@@ -6,6 +6,7 @@ namespace BACH
 	DB::DB(std::shared_ptr<Options> _options) :
 		options(_options),
 		epoch_id(1),
+		read_epoch_id(0),
 		write_epoch_table(_options->MAX_WORKER_THREAD)
 	{
 		Labels = std::make_unique<LabelManager>();
@@ -179,14 +180,24 @@ namespace BACH
 	}
 	void DB::ProgressReadVersion()
 	{
-		std::unique_lock<std::shared_mutex>lock(version_mutex);
-		while (read_version->next != NULL &&
-			read_version->next->epoch < get_read_time())
+		time_t time, nrt = get_read_time();
+		do
 		{
-			Version* tmp = read_version;
-			read_version = read_version->next;
-			read_version->AddRef();
-			tmp->DecRef();
+			time = read_epoch_id.load();
+		} while (!read_epoch_id.compare_exchange_weak(time, nrt) && nrt > time);
+
+		Version* tail;
+		while (true)
+		{
+			tail = read_version.load();
+			if (tail->next_epoch == -1 || tail->next_epoch >= nrt)
+				break;
+			if (read_version.compare_exchange_weak(tail, tail->next))
+			{
+				tail->next->AddRef();
+				tail->DecRef();
+				break;
+			}
 		}
 	}
 	time_t DB::get_read_time()

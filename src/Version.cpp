@@ -4,16 +4,13 @@
 namespace BACH
 {
 	Version::Version(DB* _db) :
-		prev(NULL), next(NULL), epoch(0), next_epoch(-1), db(_db) {}
-	Version::Version(Version* _prev, VersionEdit* edit, time_t time) :
-		prev(_prev), next(NULL), epoch(std::max(_prev->epoch, time)), next_epoch(-1),
+		next(NULL), epoch(0), next_epoch(-1), db(_db) {}
+	Version::Version(std::shared_ptr<Version> _prev, VersionEdit* edit, time_t time) :
+		next(NULL), epoch(std::max(_prev->epoch, time)), next_epoch(-1),
 		db(_prev->db)
 	{
-		version_name = _prev->version_name + 1;
-		prev->next = this;
-		prev->next_epoch = epoch;
-		FileIndex = prev->FileIndex;
-		FileTotalSize = prev->FileTotalSize;
+		FileIndex = _prev->FileIndex;
+		FileTotalSize = _prev->FileTotalSize;
 		for (auto& i : edit->EditFileList)
 		{
 			if (i.deletion)
@@ -68,11 +65,6 @@ namespace BACH
 							delete k;
 					}
 				}
-		if (next != NULL)
-		{
-			//next->prev = prev;
-			next->DecRef();
-		}
 	}
 
 	Compaction* Version::GetCompaction(VersionEdit* edit)
@@ -128,23 +120,13 @@ namespace BACH
 			}
 		return c;
 	}
-	void Version::AddRef()
-	{
-		ref.fetch_add(1, std::memory_order_relaxed);
-	}
-	void Version::DecRef()
-	{
-		ref.fetch_add(-1, std::memory_order_relaxed);
-		bool FALSE = false;
-		if (ref.load() == 0 && deleting.compare_exchange_weak(FALSE, true, std::memory_order_relaxed))
-			delete this;
-	}
+
 	void Version::AddSizeEntry(std::shared_ptr < SizeEntry > x)
 	{
 		size_entry = x;
 	}
 
-	VersionIterator::VersionIterator(Version* _version, label_t _label, vertex_t _src)
+	VersionIterator::VersionIterator(std::shared_ptr<Version> _version, label_t _label, vertex_t _src)
 		: version(_version), label(_label), src(_src), file_size(1),
 		size(version->db->options->MEMORY_MERGE_NUM)
 	{

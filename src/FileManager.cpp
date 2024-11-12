@@ -27,24 +27,6 @@ namespace BACH {
 
 	//把多个文件归并后生成一个新的文件，然后生成新的Version并将current_version指向这个新的version，然后旧的version如果ref为0就删除这个version并将这个version对应的文件的ref减1，如果文件ref为0则物理删除
 	VersionEdit* FileManager::MergeSSTable(Compaction& compaction) {
-		if (compaction.file_list.size() == 1)
-		{
-			auto temp_file_metadata = new FileMetaData(compaction.label_id,
-				compaction.target_level, compaction.vertex_id_b,
-				compaction.file_id, db->Labels->GetEdgeLabel(compaction.label_id));
-			temp_file_metadata->filter = compaction.file_list[0]->filter;
-			temp_file_metadata->file_size = compaction.file_list[0]->file_size;
-
-			auto cp="cp "+db->options->STORAGE_DIR+"/"+ compaction.file_list[0]->file_name
-				+ " " + db->options->STORAGE_DIR + "/" + temp_file_metadata->file_name;
-			std::system(cp.c_str());
-
-			VersionEdit* edit = new VersionEdit();
-			edit->EditFileList.push_back(*temp_file_metadata);
-			edit->EditFileList.push_back(*compaction.file_list[0]);
-			edit->EditFileList[1].deletion = true;
-			return edit;
-		}
 		std::vector<SSTableParser> parsers;
 		std::vector<idx_t> file_ids;
 		for (auto& file : compaction.file_list)

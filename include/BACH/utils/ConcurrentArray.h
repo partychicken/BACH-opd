@@ -1,5 +1,6 @@
 #pragma once
 
+#include <atomic>
 #include <iostream>
 #include <algorithm>
 #include <vector>
@@ -21,14 +22,10 @@ namespace BACH
 		ConcurrentArray() = default;
 		~ConcurrentArray()
 		{
-			for (auto i : array)
+			for (int i = 0; i < 30; ++i)
 			{
-				delete[] i;
+				delete array[i];
 			}
-		}
-		void newblock(size_t size)
-		{
-			array.push_back(new T[1 << size]);
 		}
 		T& operator[](size_t index)
 		{
@@ -50,26 +47,41 @@ namespace BACH
 			size_t num = util::highbit(index);
 			return array[num][index - (1 << num)];
 		}
-		void push_back(const T& x)
+		size_t push_back(const T& x)
 		{
-			std::unique_lock<std::mutex> lock(write_lock);
-			size_t num = util::highbit(cnt + 1);
-			if (((size_t)1 << num) == cnt + 1)
+			size_t pos = cnt.fetch_add(1);
+			size_t num = util::highbit(pos + 1);
+			T* tmp = array[num];
+			while (tmp == NULL)
 			{
-				newblock(num);
+				bool bo = false;
+				if (empty[num].compare_exchange_weak(bo, true))
+				{
+					array[num] = new T[1 << num];
+					array_size++;
+				}
+				tmp = array[num];
 			}
-			array[num][cnt - ((size_t)1 << num) + 1] = x;
-			++cnt;
+			//std::cout << pos << " " << num << " " << pos + 1 - (1 << num) << std::endl;
+			array[num][pos + 1 - (1 << num)] = x;
+			return pos;
 		}
-		void emplace_back_default()
+		size_t emplace_back_default()
 		{
-			std::unique_lock<std::mutex> lock(write_lock);
-			size_t num = util::highbit(cnt + 1);
-			if (((size_t)1 << num) == cnt + 1)
+			size_t pos = cnt.fetch_add(1);
+			size_t num = util::highbit(pos + 1);
+			T* tmp = array[num];
+			while (tmp == NULL)
 			{
-				newblock(num);
+				bool bo = false;
+				if (empty[num].compare_exchange_strong(bo, true))
+				{
+					array[num] = new T[1 << num];
+					array_size++;
+				}
+				tmp = array[num];
 			}
-			++cnt;
+			return pos;
 		}
 		size_t size() const
 		{
@@ -79,7 +91,7 @@ namespace BACH
 		//T should support operator <= and operator==
 		T rlowerbound(T x) const
 		{
-			size_t pf = array.size() - 1;
+			size_t pf = array_size - 1;
 			while (!(array[pf][0] <= x) && pf > 0)
 			{
 				--pf;
@@ -89,7 +101,7 @@ namespace BACH
 				return array[pf][0];
 			}
 			auto it = std::upper_bound(array[pf], array[pf]
-				+ ((pf == array.size() - 1) ?
+				+ ((pf == array_size - 1) ?
 					cnt + 1 - ((size_t)1 << util::highbit(cnt))
 					: ((size_t)1 << pf)), x);
 			if (it != array[pf])
@@ -99,8 +111,9 @@ namespace BACH
 		}
 
 	private:
-		std::vector<T*> array;
-		size_t cnt = 0;
-		std::mutex write_lock;
+		T* array[30] = {0};
+		std::atomic<bool> empty[30];
+		size_t array_size = 0;
+		std::atomic<size_t> cnt = 0;
 	};
 }

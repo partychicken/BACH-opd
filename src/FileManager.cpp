@@ -61,7 +61,6 @@ namespace BACH {
 		auto fw = std::make_shared<FileWriter>(db->options->STORAGE_DIR + "/"
 			+ file_name);
 		auto sst_builder = std::make_shared<SSTableBuilder>(fw, db->options);
-		sst_builder->SetSrcRange(new_file_src_begin, new_file_src_end);
 		// 归并
 		// 归并的时候如果碰到两个或者多个相同的边，只保留file_id最大的边；墓碑标记不能消掉，除非新生成的文件在最后一层了
 		vertex_t now_src_vertex_id = new_file_src_begin;
@@ -92,11 +91,12 @@ namespace BACH {
 				file_ids[tmp.parser_id]
 				});
 		}
-		while (now_src_vertex_id != new_file_src_end) {
-			sst_builder->ArrangeCurrentSrcInfo();
-			now_src_vertex_id++;
-		}
+		//while (now_src_vertex_id != new_file_src_end) {
+		//	sst_builder->ArrangeCurrentSrcInfo();
+		//	now_src_vertex_id++;
+		//}
 		sst_builder->ArrangeCurrentSrcInfo();
+		sst_builder->SetSrcRange(new_file_src_begin, now_src_vertex_id);
 		temp_file_metadata->filter = sst_builder->ArrangeSSTableInfo();
 		temp_file_metadata->file_size = fw->file_size();
 

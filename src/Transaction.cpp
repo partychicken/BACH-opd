@@ -95,15 +95,15 @@ namespace BACH
 		VersionIterator iter(version, label, src);
 		while (!iter.End())
 		{
-			if(src - iter.GetFile()->vertex_id_b> iter.GetFile()->filter->size())
-			if ((*iter.GetFile()->filter)[src - iter.GetFile()->vertex_id_b])
-			{
-				auto fr = db->ReaderCaches->find(iter.GetFile());
-				auto parser = std::make_shared<SSTableParser>(label, fr, db->options);
-				auto found = parser->GetEdge(src, dst);
-				if (!std::isnan(found))
-					return found;
-			}
+			if (src - iter.GetFile()->vertex_id_b < iter.GetFile()->filter->size())
+				if ((*iter.GetFile()->filter)[src - iter.GetFile()->vertex_id_b])
+				{
+					auto fr = db->ReaderCaches->find(iter.GetFile());
+					auto parser = std::make_shared<SSTableParser>(label, fr, db->options);
+					auto found = parser->GetEdge(src, dst);
+					if (!std::isnan(found))
+						return found;
+				}
 			iter.next();
 		}
 		return TOMBSTONE;
@@ -128,14 +128,14 @@ namespace BACH
 		VersionIterator iter(version, label, src);
 		while (!iter.End())
 		{
-			if (src - iter.GetFile()->vertex_id_b > iter.GetFile()->filter->size())
-			if ((*iter.GetFile()->filter)[src - iter.GetFile()->vertex_id_b])
-			{
-				auto fr = db->ReaderCaches->find(iter.GetFile());
-				auto parser = std::make_shared<SSTableParser>(label, fr, db->options);
-				parser->GetEdges(src, answer_temp[(c + 1) % 3], /*filter, */func);
-				db->Memtable->merge_answer(answer_temp, c);
-			}
+			if (src - iter.GetFile()->vertex_id_b < iter.GetFile()->filter->size())
+				if ((*iter.GetFile()->filter)[src - iter.GetFile()->vertex_id_b])
+				{
+					auto fr = db->ReaderCaches->find(iter.GetFile());
+					auto parser = std::make_shared<SSTableParser>(label, fr, db->options);
+					parser->GetEdges(src, answer_temp[(c + 1) % 3], /*filter, */func);
+					db->Memtable->merge_answer(answer_temp, c);
+				}
 			iter.next();
 		}
 		/*std::unordered_set<vertex_t> dsts;

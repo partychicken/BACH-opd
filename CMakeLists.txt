@@ -21,6 +21,12 @@ target_compile_features(bach PUBLIC cxx_std_20)
 add_subdirectory(include/dynamic_bitset)
 target_link_libraries(bach PRIVATE sul::dynamic_bitset)
 
+set(skiplist_src include/skiplist/src/skiplist.cc)
+#set(skiplist_header include/skiplist/*.h)
+add_library(skiplist_lib ${skiplist_src})
+target_include_directories(skiplist_lib PUBLIC include/skiplist/include)
+target_link_libraries(bach PRIVATE skiplist_lib)
+
 set(BUILD_TEST OFF)
 set(DEBUG ON)
 

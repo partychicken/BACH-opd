@@ -130,14 +130,9 @@ namespace BACH
 			size_entry->sema.try_acquire();
 			goto RETRY;
 		}
-		edge_t found = find_edge(src, dst, size_entry);
-		auto eindex = size_entry->edge_pool.push_back({ dst, property, now_time, found });
-		if (found == NONEINDEX)
-			size_entry->edge_index[src - size_entry->begin_vertex_id].insert(
-				{ dst, eindex });
-		else
-			size_entry->edge_index[src - size_entry->begin_vertex_id].find(
-				dst)->second = eindex;
+		//edge_t found = find_edge(src, dst, size_entry);
+		auto eindex = size_entry->edge_pool[src - size_entry->begin_vertex_id].push_back(
+			{ dst, property, now_time, NONEINDEX });
 		size_entry->max_time = std::max(now_time,
 			size_entry->max_time);
 		size_entry->size += sizeof(EdgeEntry);
@@ -167,14 +162,14 @@ namespace BACH
 		std::shared_ptr<SizeEntry> size_entry = EdgeLabelIndex[label]->SizeIndex[k];
 		while (size_entry != NULL)
 		{
-			edge_t found = find_edge(src, dst, size_entry);
-			while (found != NONEINDEX)
+			for (size_t i = 0; i < size_entry->edge_pool[src - size_entry->begin_vertex_id].size(); ++i)
 			{
-				if (size_entry->edge_pool[found].time <= now_time)
-					return size_entry->edge_pool[found].property;
-				found = size_entry->edge_pool[found].last_version;
+				auto& e = size_entry->edge_pool[src - size_entry->begin_vertex_id][i];
+				if (e.time <= now_time)
+				{
+					return e.property;
+				}
 			}
-			size_entry = size_entry->next;
 		}
 		return NOTFOUND;
 	}
@@ -193,26 +188,40 @@ namespace BACH
 			std::shared_lock<std::shared_mutex> src_lock(size_entry->mutex);
 			vertex_t answer_size = answer_temp[(c + 1) % 3]->size();
 			vertex_t answer_cnt = 0;
-			for (auto& i : size_entry->edge_index[src - size_entry->begin_vertex_id])
+			auto index = src - size_entry->begin_vertex_id;
+			std::vector<std::tuple<vertex_t, time_t, edge_property_t>> edge_heap(size_entry->edge_pool[index].size());
+			auto comp = [](const std::tuple<vertex_t, time_t, edge_property_t>& a,
+				const std::tuple<vertex_t, time_t, edge_property_t>& b)
+				{
+					return std::get<0>(a) == std::get<0>(b) ?
+						std::get<1>(a) > std::get<1>(b) :
+						std::get<0>(a) < std::get<0>(b);
+				};
+			for (size_t i = 0; i < size_entry->edge_pool[index].size(); ++i)
 			{
-				auto dst = i.first;
-				auto index = i.second;
-				while (index != NONEINDEX &&
-					size_entry->edge_pool[index].time > now_time)
-					index = size_entry->edge_pool[index].last_version;
-				if (index != NONEINDEX
-					&& size_entry->edge_pool[index].property != TOMBSTONE
-					&& func(size_entry->edge_pool[index].property))
+				auto& e = size_entry->edge_pool[index][i];
+				if (e.time <= now_time && func(e.property))
+				{
+					edge_heap[i] = { e.dst, e.property, e.time };
+					std::push_heap(edge_heap.begin(), edge_heap.begin() + i + 1, comp);
+				}
+			}
+			vertex_t last = -1;
+			for (size_t i = 0; i < size_entry->edge_pool[index].size(); ++i)
+			{
+				std::pop_heap(edge_heap.begin(), edge_heap.end() - i, comp);
+				auto& e = edge_heap[size_entry->edge_pool[index].size() - i - 1];
+				if (std::get<0>(e) != last)
 				{
 					if (answer_cnt >= answer_size)
-						answer_temp[(c + 1) % 3]->emplace_back(dst, size_entry->edge_pool[index].property);
+						answer_temp[(c + 1) % 3]->emplace_back(std::get<0>(e), std::get<2>(e));
 					else
 					{
-						(*answer_temp[(c + 1) % 3])[answer_cnt].first = dst;
-						(*answer_temp[(c + 1) % 3])[answer_cnt++].second = size_entry->edge_pool[index].property;
+						(*answer_temp[(c + 1) % 3])[answer_cnt].first = std::get<0>(e);
+						(*answer_temp[(c + 1) % 3])[answer_cnt++].second = std::get<2>(e);
 					}
+					last = std::get<0>(e);
 				}
-				//filter[dst] = true;
 			}
 			if (answer_cnt < answer_size)
 			{
@@ -250,12 +259,32 @@ namespace BACH
 			size_info->begin_vertex_id
 			+ db->options->MEMORY_MERGE_NUM - 1);
 		std::unique_lock<std::shared_mutex>lock(size_info->mutex);
-		for (vertex_t index = 0; index < size_info->edge_index.size(); ++index)
+		for (vertex_t index = 0; index < size_info->edge_pool.size(); ++index)
 		{
-			for (auto& x : size_info->edge_index[index])
+			std::vector<std::tuple<vertex_t, time_t, edge_property_t>> edge_heap(size_info->edge_pool[index].size());
+			auto comp = [](const std::tuple<vertex_t, time_t, edge_property_t>& a,
+				const std::tuple<vertex_t, time_t, edge_property_t>& b)
+				{
+					return std::get<0>(a) == std::get<0>(b) ?
+						std::get<1>(a) > std::get<1>(b) :
+						std::get<0>(a) < std::get<0>(b);
+				};
+			for (size_t i = 0; i < size_info->edge_pool[index].size(); ++i)
 			{
-				auto& v = x.second;
-				sst->AddEdge(index, x.first, size_info->edge_pool[v].property);
+				auto& e = size_info->edge_pool[index][i];
+				edge_heap[i] = { e.dst, e.property, e.time };
+				std::push_heap(edge_heap.begin(), edge_heap.begin() + i + 1, comp);
+			}
+			vertex_t last = -1;
+			for (size_t i = 0; i < size_info->edge_pool[index].size(); ++i)
+			{
+				std::pop_heap(edge_heap.begin(), edge_heap.end() - i, comp);
+				auto& e = edge_heap[size_info->edge_pool[index].size() - i - 1];
+				if (std::get<0>(e) != last)
+				{
+					sst->AddEdge(index, std::get<0>(e), std::get<2>(e));
+					last = std::get<0>(e);
+				}
 			}
 			sst->ArrangeCurrentSrcInfo();
 		}
@@ -343,12 +372,12 @@ namespace BACH
 		x.Persistence = size_info;
 		db->Files->AddCompaction(x);
 	}
-	edge_t MemoryManager::find_edge(vertex_t src, vertex_t dst, std::shared_ptr < SizeEntry > entry)
-	{
-		auto edge_index_iter = entry->edge_index[src - entry->begin_vertex_id].find(dst);
-		if (edge_index_iter == entry->edge_index[src - entry->begin_vertex_id].end())
-			return NONEINDEX;
-		else
-			return edge_index_iter->second;
-	}
+	//edge_t MemoryManager::find_edge(vertex_t src, vertex_t dst, std::shared_ptr < SizeEntry > entry)
+	//{
+	//	auto edge_index_iter = entry->edge_index[src - entry->begin_vertex_id].find(dst);
+	//	if (edge_index_iter == entry->edge_index[src - entry->begin_vertex_id].end())
+	//		return NONEINDEX;
+	//	else
+	//		return edge_index_iter->second;
+	//}
 }

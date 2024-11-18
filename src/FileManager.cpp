@@ -42,8 +42,7 @@ namespace BACH {
 
 		edge_num_t new_file_edge_num = 0;
 		std::priority_queue<SingelEdgeInformation> q;
-		vertex_t new_file_src_begin = compaction.vertex_id_b,
-			new_file_src_end = compaction.vertex_id_e;
+		vertex_t new_file_src_begin = compaction.vertex_id_b;
 		for (size_t i = 0; i < parsers.size(); i++)
 		{
 			new_file_edge_num += parsers[i].GetEdgeNum();

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <atomic>
+#include <map>
 #include <memory>
 #include <semaphore>
 #include <shared_mutex>
@@ -22,16 +23,16 @@ namespace BACH
 	struct SizeEntry
 	{
 		vertex_t begin_vertex_id;
-		std::vector<sl_map<vertex_t, idx_t>> edge_index;
-		ConcurrentArray<EdgeEntry> edge_pool;
+		//std::vector<sl_map<vertex_t, edge_t>> edge_index;
+		std::vector < ConcurrentArray<EdgeEntry>> edge_pool;
 		std::shared_ptr<SizeEntry> last = NULL, next = NULL;
 		std::atomic<bool> immutable;
 		std::counting_semaphore<1024> sema;
-		sl_map <vertex_t, time_t> del_table;
+		std::map <vertex_t, time_t> del_table;
 		std::shared_mutex mutex;
 		size_t size = 0;
 		time_t max_time = 0;
-		SizeEntry(vertex_t _begin_k, vertex_t _size, 
+		SizeEntry(vertex_t _begin_k, vertex_t _size,
 			std::shared_ptr<SizeEntry> _next = NULL);
 		void delete_entry();
 	};

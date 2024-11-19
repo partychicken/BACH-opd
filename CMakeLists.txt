@@ -8,6 +8,8 @@ endif()
 SET(CMAKE_C_COMPILER "gcc-12")
 SET(CMAKE_CXX_COMPILER "g++-12")
 
+find_package(TBB REQUIRED)
+
 project ("BACH_demo" LANGUAGES CXX)
 
 include_directories(${PROJECT_SOURCE_DIR})
@@ -26,6 +28,7 @@ set(skiplist_src include/skiplist/src/skiplist.cc)
 add_library(skiplist_lib ${skiplist_src})
 target_include_directories(skiplist_lib PUBLIC include/skiplist/include)
 target_link_libraries(bach PRIVATE skiplist_lib)
+target_link_libraries(bach PRIVATE TBB::tbb)
 
 set(BUILD_TEST OFF)
 set(DEBUG ON)

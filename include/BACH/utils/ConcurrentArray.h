@@ -111,7 +111,7 @@ namespace BACH
 		}
 
 	private:
-		T* array[30] = {0};
+		T* array[30] = { 0 };
 		std::atomic<bool> empty[30];
 		size_t array_size = 0;
 		std::atomic<size_t> cnt = 0;

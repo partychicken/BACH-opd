@@ -6,7 +6,7 @@
 #include <semaphore>
 #include <shared_mutex>
 #include <vector>
-#include "skiplist/include/sl_map.h"
+#include <tbb/concurrent_map.h>
 #include "QueryCounter.h"
 #include "BACH/utils/types.h"
 #include "BACH/utils/ConcurrentArray.h"
@@ -23,12 +23,12 @@ namespace BACH
 	struct SizeEntry
 	{
 		vertex_t begin_vertex_id;
-		//std::vector<sl_map<vertex_t, edge_t>> edge_index;
-		std::vector < ConcurrentArray<EdgeEntry>> edge_pool;
+		std::vector<tbb::concurrent_map<vertex_t, edge_t>> edge_index;
+		ConcurrentArray<EdgeEntry> edge_pool;
 		std::shared_ptr<SizeEntry> last = NULL, next = NULL;
 		std::atomic<bool> immutable;
 		std::counting_semaphore<1024> sema;
-		std::map <vertex_t, time_t> del_table;
+		tbb::concurrent_map <vertex_t, time_t> del_table;
 		std::shared_mutex mutex;
 		size_t size = 0;
 		time_t max_time = 0;

@@ -24,7 +24,7 @@ namespace BACH
 		size_t file_size;
 		bool deletion = false;
 		bool merging = false;
-		bool death = false;
+		std::atomic<bool> death = false;
 		std::shared_ptr<sul::dynamic_bitset<>> filter = NULL;
 		std::atomic<std::shared_ptr<FileReader>> reader;
 		idx_t reader_pos = -1;

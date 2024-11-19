@@ -24,18 +24,21 @@ namespace BACH
 	}
 	DB::~DB()
 	{
-		std::cout << "closed" << std::endl;
 		close = true;
-		std::unique_lock <std::mutex> lock(Files->CloseCVMutex);
-		if (Files->CompactionList.empty())
+		while (true)
 		{
-			Files->CompactionCV.notify_all();
-			//break;
+			std::unique_lock <std::mutex> lock(Files->CloseCVMutex);
+			if (Files->CompactionList.empty())
+			{
+				Files->CompactionCV.notify_all();
+				break;
+			}
+			else
+			{
+				Files->CloseCV.wait(lock);
+			}
 		}
-		else
-		{
-			Files->CloseCV.wait(lock);
-		}
+		std::cout << "closed" << std::endl;
 	}
 	Transaction DB::BeginTransaction()
 	{
@@ -160,8 +163,6 @@ namespace BACH
 			else
 			{
 				Files->CompactionCV.wait(lock);
-				if (close)
-					return;
 			}
 		}
 	}

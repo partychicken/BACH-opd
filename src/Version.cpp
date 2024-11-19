@@ -57,12 +57,14 @@ namespace BACH
 					k->ref.fetch_add(-1, std::memory_order_relaxed);
 					if (k->ref.load() == 0)
 					{
-						unlink((db->options->STORAGE_DIR + "/"
-							+ k->file_name).c_str());
-						if (k->reader_pos != (idx_t)-1)
-							k->death = true;
-						else
-							delete k;
+						bool bo = false;
+						if (k->death.compare_exchange_strong(bo, true))
+						{
+							unlink((db->options->STORAGE_DIR + "/"
+								+ k->file_name).c_str());
+							if (k->reader_pos == (idx_t)-1)
+								delete k;
+						}
 					}
 				}
 	}

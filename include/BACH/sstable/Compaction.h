@@ -12,7 +12,6 @@ namespace BACH
 		std::vector<FileMetaData*> file_list;
 		idx_t target_level;
 		vertex_t vertex_id_b;
-		vertex_t vertex_id_e;
 		idx_t file_id;
 		std::shared_ptr < SizeEntry > Persistence;
 	};

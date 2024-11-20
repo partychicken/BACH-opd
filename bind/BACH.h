@@ -35,6 +35,8 @@ namespace BACH
 		size_t MAX_FILE_READER_CACHE_SIZE = 20;
 		size_t MAX_WORKER_THREAD = 16;
 		double FALSE_POSITIVE = 0.01;
+		size_t MAX_LEVEL = 5;
+		size_t LEVEL_SIZE_RITIO = 10;
 	};
 #else
 	struct Options;

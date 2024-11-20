@@ -25,19 +25,7 @@ namespace BACH
 	DB::~DB()
 	{
 		close = true;
-		while (true)
-		{
-			std::unique_lock <std::mutex> lock(Files->CloseCVMutex);
-			if (Files->CompactionList.empty())
-			{
-				Files->CompactionCV.notify_all();
-				break;
-			}
-			else
-			{
-				Files->CloseCV.wait(lock);
-			}
-		}
+		Files->CompactionCV.notify_all();
 		std::cout << "closed" << std::endl;
 	}
 	Transaction DB::BeginTransaction()
@@ -98,6 +86,7 @@ namespace BACH
 				time_t time = 0;
 				x.file_id = Files->GetFileID(
 					x.label_id, x.target_level, x.vertex_id_b);
+				idx_t type = 2;
 				if (x.Persistence != NULL)
 				{
 					//persistence
@@ -108,7 +97,6 @@ namespace BACH
 				else
 				{
 					//choose merge type
-					idx_t type;
 					switch (options->MERGING_STRATEGY)
 					{
 					case Options::MergingStrategy::LEVELING:
@@ -156,9 +144,8 @@ namespace BACH
 					}
 					edit = Files->MergeSSTable(x);
 				}
-				ProgressVersion(edit, time, x.Persistence);
+				ProgressVersion(edit, time, x.Persistence, type == 1);
 				ProgressReadVersion();
-				Files->CloseCV.notify_one();
 			}
 			else
 			{
@@ -167,7 +154,7 @@ namespace BACH
 		}
 	}
 	void DB::ProgressVersion(VersionEdit* edit, time_t time,
-		std::shared_ptr<SizeEntry> size)
+		std::shared_ptr<SizeEntry> size, bool force_leveling)
 	{
 		std::unique_lock<std::shared_mutex> version_lock(version_mutex);
 		std::shared_ptr<Version> tmp = current_version;
@@ -175,7 +162,7 @@ namespace BACH
 		current_version = std::make_shared<Version>(tmp, edit, time);
 		tmp->next = current_version;
 		tmp->next_epoch = current_version->epoch;
-		auto compact = current_version->GetCompaction(edit);
+		auto compact = current_version->GetCompaction(edit, force_leveling);
 		if (compact != NULL)
 			Files->AddCompaction(*compact);
 		version_lock.unlock();
@@ -192,7 +179,7 @@ namespace BACH
 		while (true)
 		{
 			tail = read_version.load();
-			if (tail->next_epoch == (time_t) - 1 || tail->next_epoch >= nrt)
+			if (tail->next_epoch == (time_t)-1 || tail->next_epoch >= nrt)
 				break;
 			read_version.compare_exchange_weak(tail, tail->next);
 		}

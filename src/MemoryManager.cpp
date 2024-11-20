@@ -219,9 +219,11 @@ namespace BACH
 	}
 	//1: leveling 2:tiering
 	size_t MemoryManager::GetMergeType(label_t label_id,
-		vertex_t src_b, vertex_t src_e)
+		vertex_t src_b, idx_t level)
 	{
-		return EdgeLabelIndex[label_id]->query_counter.GetCompactionType(src_e, src_e);
+		if (level == db->options->MAX_LEVEL - 1)
+			return 1;
+		return EdgeLabelIndex[label_id]->query_counter.GetCompactionType(src_b, level);
 	}
 	time_t MemoryManager::GetVertexDelTime(label_t edge_label_id, vertex_t src) const
 	{

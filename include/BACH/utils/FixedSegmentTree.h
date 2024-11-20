@@ -10,7 +10,7 @@ namespace BACH
 	{
 	public:
 		FixedSegmentTree(std::shared_ptr<Options> options) :
-			tree(5),
+			tree(options->MAX_LEVEL),
 			memory_num(options->MEMORY_MERGE_NUM),
 			merge_num(options->FILE_MERGE_NUM) {}
 		void push_back()
@@ -37,15 +37,11 @@ namespace BACH
 		void add_at(size_t index, size_t value)
 		{
 			index /= memory_num;
-			tree[0][index] += value;
-			index /= merge_num;
-			tree[1][index] += value;
-			index /= merge_num;
-			tree[2][index] += value;
-			index /= merge_num;
-			tree[3][index] += value;
-			index /= merge_num;
-			tree[4][index] += value;
+			for (size_t i = 0; i < tree.size(); ++i)
+			{
+				tree[i][index] += value;
+				index /= merge_num;
+			}
 		}
 		size_t range_query(vertex_t index, idx_t level) const
 		{

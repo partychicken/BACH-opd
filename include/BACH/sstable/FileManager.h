@@ -36,8 +36,6 @@ namespace BACH
 		DB* db;
 		std::mutex CompactionCVMutex;
 		std::condition_variable CompactionCV;
-		std::mutex CloseCVMutex;
-		std::condition_variable CloseCV;
 		std::queue<Compaction> CompactionList;
 		std::vector<      //label
 			std::vector<  //level

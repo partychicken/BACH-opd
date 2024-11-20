@@ -19,7 +19,7 @@ namespace BACH
 		Version(std::shared_ptr<Version> _prev, VersionEdit* edit, time_t time);
 		~Version();
 
-		Compaction* GetCompaction(VersionEdit* edit);
+		Compaction* GetCompaction(VersionEdit* edit, bool force_level = false);
 		void AddSizeEntry(std::shared_ptr < SizeEntry > x);
 
 		std::vector<          //label

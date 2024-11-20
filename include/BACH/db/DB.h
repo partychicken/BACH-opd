@@ -29,7 +29,7 @@ namespace BACH
 		//compact all edge
 		void CompactAll();
 		void ProgressVersion(VersionEdit* edit, time_t time,
-			std::shared_ptr<SizeEntry> size=NULL);
+			std::shared_ptr<SizeEntry> size = NULL, bool force_level = false);
 
 		//void Persistence(std::string_view label, vertex_t merge_id);
 		//void TestMerge(Compaction& x, idx_t type);

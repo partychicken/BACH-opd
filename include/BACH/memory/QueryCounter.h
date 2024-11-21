@@ -24,7 +24,8 @@ namespace BACH
 			deletion.push_back();
 			recent_read.push_back();
 			recent_write.push_back();
-			query_list.push_back(std::make_shared<FixedDoubleBitList<1>>(list_num));
+			query_list.push_back(NULL);
+			query_list_empty.emplace_back_default();
 		}
 		void AddRead(vertex_t src)
 		{
@@ -56,6 +57,7 @@ namespace BACH
 
 	private:
 		ConcurrentArray<std::shared_ptr<FixedDoubleBitList<1>>> query_list;
+		ConcurrentArray<std::atomic<bool>> query_list_empty;
 		FixedSegmentTree recent_read, recent_write;
 		FixedSegmentTree write, deletion;
 		size_t list_num;
@@ -63,8 +65,19 @@ namespace BACH
 		//0: read, 1: write
 		void add_recent_query(vertex_t src, idx_t type)
 		{
+			//std::make_shared<FixedDoubleBitList<1>>(list_num)
 			auto k = src / memory_num;
-			switch (query_list[k]->push_back(type))
+			auto ql = query_list[k];
+			while (ql == NULL)
+			{
+				bool bo = false;
+				if (query_list_empty[k].compare_exchange_weak(bo, true))
+				{
+					query_list[k] = std::make_shared<FixedDoubleBitList<1>>(list_num);
+				}
+				ql = query_list[k];
+			}
+			switch (ql->push_back(type))
 			{
 			case 0:
 				if (type == 1)

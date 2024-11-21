@@ -20,7 +20,7 @@ namespace BACH
 				[&] {CompactLoop(); }));
 			compact_thread[i]->detach();
 		}
-		read_version = current_version = std::make_shared<Version>(this);
+		read_version = current_version = new Version(this);
 	}
 	DB::~DB()
 	{
@@ -157,9 +157,9 @@ namespace BACH
 		std::shared_ptr<SizeEntry> size, bool force_leveling)
 	{
 		std::unique_lock<std::shared_mutex> version_lock(version_mutex);
-		std::shared_ptr<Version> tmp = current_version;
+		Version* tmp = current_version;
 		tmp->AddSizeEntry(size);
-		current_version = std::make_shared<Version>(tmp, edit, time);
+		current_version = new Version(tmp, edit, time);
 		tmp->next = current_version;
 		tmp->next_epoch = current_version->epoch;
 		auto compact = current_version->GetCompaction(edit, force_leveling);
@@ -168,6 +168,7 @@ namespace BACH
 			Files->AddCompaction(*compact);
 			delete compact;
 		}
+		tmp->DecRef();
 		version_lock.unlock();
 	}
 	void DB::ProgressReadVersion()
@@ -178,13 +179,18 @@ namespace BACH
 			time = read_epoch_id.load();
 		} while (!read_epoch_id.compare_exchange_weak(time, nrt) && nrt > time);
 
-		std::shared_ptr<Version> tail;
+		Version* tail;
 		while (true)
 		{
 			tail = read_version.load();
 			if (tail->next_epoch == (time_t)-1 || tail->next_epoch >= nrt)
 				break;
-			read_version.compare_exchange_weak(tail, tail->next);
+			if (read_version.compare_exchange_weak(tail, tail->next))
+			{
+				tail->next->AddRef();
+				tail->DecRef();
+				break;
+			}
 		}
 	}
 	time_t DB::get_read_time()

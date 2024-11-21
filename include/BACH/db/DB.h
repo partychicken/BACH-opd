@@ -45,8 +45,8 @@ namespace BACH
 		ConcurrentList<time_t> write_epoch_table;
 		//deque + lock_free heap?
 		std::shared_mutex version_mutex;
-		std::atomic<std::shared_ptr<Version>> read_version = NULL;
-		std::shared_ptr<Version> current_version = NULL;
+		std::atomic<Version *> read_version = NULL;
+		Version * current_version = NULL;
 		std::vector<std::shared_ptr<std::thread>> compact_thread;
 		bool close = false;
 		//compaction loop for background thread

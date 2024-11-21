@@ -16,17 +16,19 @@ namespace BACH
 	{
 	public:
 		Version(DB* _db);
-		Version(std::shared_ptr<Version> _prev, VersionEdit* edit, time_t time);
+		Version(Version* _prev, VersionEdit* edit, time_t time);
 		~Version();
 
 		Compaction* GetCompaction(VersionEdit* edit, bool force_level = false);
+		void AddRef();
+		void DecRef();
 		void AddSizeEntry(std::shared_ptr < SizeEntry > x);
 
 		std::vector<          //label
 			std::vector<      //level
 			std::vector<
 			FileMetaData*>>> FileIndex;
-		std::shared_ptr<Version> next;
+		Version* next;
 		time_t epoch;
 		time_t next_epoch;
 
@@ -43,13 +45,13 @@ namespace BACH
 	class VersionIterator
 	{
 	public:
-		VersionIterator(std::shared_ptr<Version> _version, label_t _label, vertex_t _src);
+		VersionIterator(Version* _version, label_t _label, vertex_t _src);
 		~VersionIterator() = default;
 		FileMetaData* GetFile() const;
 		bool End() const { return end; }
 		void next();
 	private:
-		std::shared_ptr<Version> version;
+		Version* version;
 		label_t label;
 		vertex_t src;
 		idx_t level = -1;

@@ -5,7 +5,7 @@ namespace BACH
 {
 	Version::Version(DB* _db) :
 		next(NULL), epoch(0), next_epoch(-1), db(_db) {}
-	Version::Version(std::shared_ptr<Version> _prev, VersionEdit* edit, time_t time) :
+	Version::Version(Version* _prev, VersionEdit* edit, time_t time) :
 		next(NULL), epoch(std::max(_prev->epoch, time)), next_epoch(-1),
 		db(_prev->db)
 	{
@@ -67,6 +67,8 @@ namespace BACH
 						}
 					}
 				}
+		if (next != NULL)
+			next->DecRef();
 	}
 
 	Compaction* Version::GetCompaction(VersionEdit* edit, bool force_level)
@@ -95,6 +97,8 @@ namespace BACH
 				}
 			if (c->file_list.size() <= 1)
 			{
+				for (auto i : c->file_list)
+					i->merging = false;
 				delete c;
 				c = NULL;
 			}
@@ -152,12 +156,23 @@ namespace BACH
 		return c;
 	}
 
+	void Version::AddRef()
+	{
+		ref.fetch_add(1, std::memory_order_relaxed);
+	}
+	void Version::DecRef()
+	{
+		bool FALSE = false;
+		auto k = ref.fetch_add(-1, std::memory_order_relaxed);
+		if (k == 1 && deleting.compare_exchange_weak(FALSE, true))
+			delete this;
+	}
 	void Version::AddSizeEntry(std::shared_ptr < SizeEntry > x)
 	{
 		size_entry = x;
 	}
 
-	VersionIterator::VersionIterator(std::shared_ptr<Version> _version, label_t _label, vertex_t _src)
+	VersionIterator::VersionIterator(Version* _version, label_t _label, vertex_t _src)
 		: version(_version), label(_label), src(_src), file_size(1),
 		size(version->db->options->MEMORY_MERGE_NUM)
 	{

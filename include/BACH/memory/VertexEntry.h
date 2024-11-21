@@ -23,12 +23,12 @@ namespace BACH
 	{
 		vertex_t begin_vertex_id;
 		std::vector<std::map<vertex_t, idx_t>> edge_index;
-		std::vector<EdgeEntry> edge_pool;
+		std::vector<std::shared_mutex> mutex;
+		std::vector<std::vector<EdgeEntry>> edge_pool;
 		std::shared_ptr<SizeEntry> last = NULL, next = NULL;
 		std::atomic<bool> immutable;
 		std::counting_semaphore<1024> sema;
 		std::map <vertex_t, time_t> del_table;
-		std::shared_mutex mutex;
 		size_t size = 0;
 		time_t max_time = 0;
 		SizeEntry(vertex_t _begin_k, vertex_t _size, 

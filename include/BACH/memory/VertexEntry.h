@@ -6,7 +6,6 @@
 #include <semaphore>
 #include <shared_mutex>
 #include <vector>
-#include <tbb/concurrent_map.h>
 #include "QueryCounter.h"
 #include "BACH/utils/types.h"
 #include "BACH/utils/ConcurrentArray.h"

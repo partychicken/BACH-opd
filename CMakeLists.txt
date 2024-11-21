@@ -8,8 +8,6 @@ endif()
 SET(CMAKE_C_COMPILER "gcc-12")
 SET(CMAKE_CXX_COMPILER "g++-12")
 
-find_package(TBB REQUIRED)
-
 project ("BACH_demo" LANGUAGES CXX)
 
 include_directories(${PROJECT_SOURCE_DIR})

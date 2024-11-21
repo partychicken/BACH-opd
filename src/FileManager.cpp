@@ -15,7 +15,7 @@ namespace BACH {
 		vertex_t src_id, dst_id;
 		edge_property_t prop;
 		size_t parser_id;
-		idx_t file_id;
+		int16_t file_id;
 		friend bool operator < (SingelEdgeInformation a, SingelEdgeInformation b)
 		{
 			if (a.src_id == b.src_id) {
@@ -28,14 +28,14 @@ namespace BACH {
 	//把多个文件归并后生成一个新的文件，然后生成新的Version并将current_version指向这个新的version，然后旧的version如果ref为0就删除这个version并将这个version对应的文件的ref减1，如果文件ref为0则物理删除
 	VersionEdit* FileManager::MergeSSTable(Compaction& compaction) {
 		std::vector<SSTableParser> parsers;
-		std::vector<idx_t> file_ids;
+		std::vector<int16_t> file_ids;
 		for (auto& file : compaction.file_list)
 		{
 			auto reader = db->ReaderCaches->find(file);
 			parsers.emplace_back(compaction.label_id,
 				reader, db->options);
 			if (file->level == compaction.target_level)
-				file_ids.push_back(0);
+				file_ids.push_back(-file->file_id);
 			else
 				file_ids.push_back(file->file_id + 1);
 		}

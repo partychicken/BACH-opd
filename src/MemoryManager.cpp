@@ -131,8 +131,8 @@ namespace BACH
 			goto RETRY;
 		}
 		edge_t found = find_edge(src, dst, size_entry);
-		size_entry->edge_index[src - size_entry->begin_vertex_id][dst] = size_entry->edge_pool[src - size_entry->begin_vertex_id].size();
-		size_entry->edge_pool[src - size_entry->begin_vertex_id].emplace_back(dst, property, now_time, found);
+		size_entry->edge_index[src - size_entry->begin_vertex_id][dst] = size_entry->edge_pool.size();
+		size_entry->edge_pool.push_back({ dst, property, now_time, found });
 		size_entry->max_time = std::max(now_time,
 			size_entry->max_time);
 		size_entry->size += sizeof(EdgeEntry);
@@ -166,9 +166,9 @@ namespace BACH
 			edge_t found = find_edge(src, dst, size_entry);
 			while (found != NONEINDEX)
 			{
-				if (size_entry->edge_pool[src - size_entry->begin_vertex_id][found].time <= now_time)
-					return size_entry->edge_pool[src - size_entry->begin_vertex_id][found].property;
-				found = size_entry->edge_pool[src - size_entry->begin_vertex_id][found].last_version;
+				if (size_entry->edge_pool[found].time <= now_time)
+					return size_entry->edge_pool[found].property;
+				found = size_entry->edge_pool[found].last_version;
 			}
 			size_entry = size_entry->next;
 		}
@@ -194,18 +194,18 @@ namespace BACH
 				auto dst = i.first;
 				auto index = i.second;
 				while (index != NONEINDEX &&
-					size_entry->edge_pool[src - size_entry->begin_vertex_id][index].time > now_time)
-					index = size_entry->edge_pool[src - size_entry->begin_vertex_id][index].last_version;
+					size_entry->edge_pool[index].time > now_time)
+					index = size_entry->edge_pool[index].last_version;
 				if (index != NONEINDEX
-					&& size_entry->edge_pool[src - size_entry->begin_vertex_id][index].property != TOMBSTONE
-					&& func(size_entry->edge_pool[src - size_entry->begin_vertex_id][index].property))
+					&& size_entry->edge_pool[index].property != TOMBSTONE
+					&& func(size_entry->edge_pool[index].property))
 				{
 					if (answer_cnt >= answer_size)
-						answer_temp[(c + 1) % 3]->emplace_back(dst, size_entry->edge_pool[src - size_entry->begin_vertex_id][index].property);
+						answer_temp[(c + 1) % 3]->emplace_back(dst, size_entry->edge_pool[index].property);
 					else
 					{
 						(*answer_temp[(c + 1) % 3])[answer_cnt].first = dst;
-						(*answer_temp[(c + 1) % 3])[answer_cnt++].second = size_entry->edge_pool[src - size_entry->begin_vertex_id][index].property;
+						(*answer_temp[(c + 1) % 3])[answer_cnt++].second = size_entry->edge_pool[index].property;
 					}
 				}
 				//filter[dst] = true;
@@ -253,7 +253,7 @@ namespace BACH
 			for (auto& x : size_info->edge_index[index])
 			{
 				auto& v = x.second;
-				sst->AddEdge(index, x.first, size_info->edge_pool[index][v].property);
+				sst->AddEdge(index, x.first, size_info->edge_pool[v].property);
 			}
 			sst->ArrangeCurrentSrcInfo();
 		}

@@ -24,7 +24,7 @@ namespace BACH
 		vertex_t begin_vertex_id;
 		std::vector<std::map<vertex_t, idx_t>> edge_index;
 		std::vector<std::shared_mutex> mutex;
-		std::vector<std::vector<EdgeEntry>> edge_pool;
+		ConcurrentArray<EdgeEntry> edge_pool;
 		std::shared_ptr<SizeEntry> last = NULL, next = NULL;
 		std::atomic<bool> immutable;
 		std::counting_semaphore<1024> sema;

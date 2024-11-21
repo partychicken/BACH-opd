@@ -164,7 +164,10 @@ namespace BACH
 		tmp->next_epoch = current_version->epoch;
 		auto compact = current_version->GetCompaction(edit, force_leveling);
 		if (compact != NULL)
+		{
 			Files->AddCompaction(*compact);
+			delete compact;
+		}
 		version_lock.unlock();
 	}
 	void DB::ProgressReadVersion()

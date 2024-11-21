@@ -74,28 +74,34 @@ namespace BACH
 		label_t label = edit->EditFileList.begin()->label;
 		idx_t level = edit->EditFileList.begin()->level;
 		vertex_t src_b = edit->EditFileList.begin()->vertex_id_b;
+		Compaction* c = NULL;
 		if (force_level)
 		{
+			c = new Compaction();
+			c->vertex_id_b = src_b;
+			c->label_id = label;
+			c->target_level = level;
 			auto iter = std::lower_bound(FileIndex[label][level].begin(),
 				FileIndex[label][level].end(),
 				std::make_pair(src_b, (idx_t)0),
 				FileCompareWithPair);
 			if (iter == FileIndex[label][level].end() || (*iter)->vertex_id_b != src_b)
 				return NULL;
-			Compaction* c = new Compaction();
-			c->vertex_id_b = src_b;
-			c->label_id = label;
-			c->target_level = level;
 			for (; iter != FileIndex[label][level].end() && (*iter)->vertex_id_b == src_b; ++iter)
 				if (!(*iter)->merging)
 				{
 					c->file_list.push_back(*iter);
 					(*iter)->merging = true;
 				}
+			if (c->file_list.size() <= 1)
+			{
+				delete c;
+				c = NULL;
+			}
 		}
 		if (level == db->options->MAX_LEVEL - 1)
 		{
-			return NULL;
+			return c;
 		}
 		vertex_t num = util::ClacFileSize(
 			db->options, level) * db->options->FILE_MERGE_NUM;
@@ -117,7 +123,7 @@ namespace BACH
 		{
 			if (FileTotalSize[label][level] < db->options->LEVEL_0_MAX_SIZE
 				* util::fast_pow(db->options->LEVEL_SIZE_RITIO, level))
-				return NULL;
+				return c;
 			vertex_t index = rand() % FileIndex[label][level].size();
 			src_b = FileIndex[label][level][index]->vertex_id_b;
 			tmp = src_b / num;
@@ -130,9 +136,10 @@ namespace BACH
 				std::make_pair((tmp + 1) * num, (idx_t)0),
 				FileCompareWithPair);
 			if (iter1 == iter2)
-				return NULL;
+				return c;
 		}
-		Compaction* c = new Compaction();
+		if (c == NULL)
+			c = new Compaction();
 		c->vertex_id_b = tmp * num;
 		c->label_id = label;
 		c->target_level = level + 1;

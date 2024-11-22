@@ -41,9 +41,7 @@ namespace BACH
 		std::unique_ptr<FileReaderCache> ReaderCaches;
 	private:
 		std::atomic<time_t> epoch_id;
-		std::atomic<time_t> read_epoch_id;
 		ConcurrentList<time_t> write_epoch_table;
-		//deque + lock_free heap?
 		std::shared_mutex version_mutex;
 		std::atomic<Version *> read_version = NULL;
 		Version * current_version = NULL;

@@ -5,7 +5,11 @@ namespace BACH
 	SizeEntry::SizeEntry(vertex_t _begin_k, vertex_t _size,
 		std::shared_ptr<SizeEntry>_next) :
 		begin_vertex_id(_begin_k* _size), edge_index(_size), mutex(_size),
-		next(_next), immutable(false), sema(0) {}
+		next(_next), immutable(false), sema(0) 
+	{
+		for (auto& i : edge_index)
+			i = SkipList::createInstance(10);
+	}
 	void SizeEntry::delete_entry()
 	{
 		last->next = NULL;

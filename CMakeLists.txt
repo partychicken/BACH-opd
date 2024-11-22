@@ -7,6 +7,7 @@ endif()
 
 SET(CMAKE_C_COMPILER "gcc-12")
 SET(CMAKE_CXX_COMPILER "g++-12")
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 project ("BACH_demo" LANGUAGES CXX)
 
@@ -20,6 +21,8 @@ target_compile_features(bach PUBLIC cxx_std_20)
 
 add_subdirectory(include/dynamic_bitset)
 target_link_libraries(bach PRIVATE sul::dynamic_bitset)
+add_subdirectory(include/folly)
+target_link_libraries(bach PRIVATE folly)
 
 set(BUILD_TEST OFF)
 set(DEBUG ON)

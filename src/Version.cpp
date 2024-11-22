@@ -11,6 +11,8 @@ namespace BACH
 	{
 		FileIndex = _prev->FileIndex;
 		FileTotalSize = _prev->FileTotalSize;
+		_prev->next = this;
+		_prev->next_epoch = epoch;
 		for (auto& i : edit->EditFileList)
 		{
 			if (i.deletion)

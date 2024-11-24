@@ -11,13 +11,13 @@ namespace BACH
 	class PropertyFileBuilder
 	{
 	public:
-		PropertyFileBuilder(std::shared_ptr<FileWriter> _filewriter);
+		PropertyFileBuilder(FileWriter* _filewriter);
 		~PropertyFileBuilder() = default;
 		void AddProperty(std::string_view property);
 		void FinishFile();
 
 	private:
-		std::shared_ptr <FileWriter> writer = nullptr;
+		FileWriter* writer = nullptr;
 		std::vector<size_t> offset_info;
 		size_t offset = 0;
 	};

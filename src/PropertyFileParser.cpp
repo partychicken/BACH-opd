@@ -2,7 +2,7 @@
 
 namespace BACH
 {
-	PropertyFileParser::PropertyFileParser(std::shared_ptr<FileReader> fr) :
+	PropertyFileParser::PropertyFileParser(FileReader* fr) :
 		reader(fr)
 	{
 		char buf[sizeof(size_t)];

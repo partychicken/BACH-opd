@@ -73,13 +73,13 @@ namespace BACH
 			else
 			{
 				idx_t file_no = VertexLabelIndex[label]->FileIndex.rlowerbound(property_id);
-				auto reader = std::make_shared<FileReader>(
+				auto reader = new FileReader(
 					db->options->STORAGE_DIR + "/" + static_cast<std::string>(
 						db->Labels->GetVertexLabel(label)) + "_"
 					+ std::to_string(file_no) + ".property");
-				auto parser = std::make_shared<PropertyFileParser>(
-					reader);
-				return parser->GetProperty(property_id - file_no);
+				PropertyFileParser parser(reader);
+				delete reader;
+				return parser.GetProperty(property_id - file_no);
 			}
 		}
 		else
@@ -243,8 +243,8 @@ namespace BACH
 			db->Labels->GetEdgeLabel(label_id));
 		std::string file_name = temp_file_metadata->file_name;
 		auto fw = std::make_shared<FileWriter>(db->options->STORAGE_DIR + "/" + file_name, false);
-		auto sst = std::make_shared<SSTableBuilder>(fw, db->options);
-		sst->SetSrcRange(size_info->begin_vertex_id,
+		SSTableBuilder sst(fw, db->options);
+		sst.SetSrcRange(size_info->begin_vertex_id,
 			size_info->begin_vertex_id
 			+ db->options->MEMORY_MERGE_NUM - 1);
 		for (vertex_t index = 0; index < size_info->edge_index.size(); ++index)
@@ -253,11 +253,11 @@ namespace BACH
 			for (auto& x : size_info->edge_index[index])
 			{
 				auto& v = x.second;
-				sst->AddEdge(index, x.first, size_info->edge_pool[v].property);
+				sst.AddEdge(index, x.first, size_info->edge_pool[v].property);
 			}
-			sst->ArrangeCurrentSrcInfo();
+			sst.ArrangeCurrentSrcInfo();
 		}
-		temp_file_metadata->filter = sst->ArrangeSSTableInfo();
+		temp_file_metadata->filter = sst.ArrangeSSTableInfo();
 		auto vedit = new VersionEdit();
 		temp_file_metadata->file_size = fw->file_size();
 		vedit->EditFileList.push_back(*temp_file_metadata);
@@ -310,13 +310,14 @@ namespace BACH
 		std::string file_name = db->options->STORAGE_DIR + "/"
 			+ static_cast<std::string>(db->Labels->GetVertexLabel(label_id)) + "_"
 			+ std::to_string(VertexLabelIndex[label_id]->unpersistence) + ".property";
-		auto fw = std::make_shared<FileWriter>(file_name, false);
-		auto pf = std::make_shared<PropertyFileBuilder>(fw);
+		auto fw = new FileWriter(file_name, false);
+		PropertyFileBuilder pf(fw);
 		for (auto& i : VertexLabelIndex[label_id]->VertexProperty)
 		{
-			pf->AddProperty(i);
+			pf.AddProperty(i);
 		}
-		pf->FinishFile();
+		pf.FinishFile();
+		delete fw;
 		VertexLabelIndex[label_id]->property_size = 0;
 		VertexLabelIndex[label_id]->FileIndex.push_back(
 			VertexLabelIndex[label_id]->unpersistence);

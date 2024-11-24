@@ -11,6 +11,8 @@ namespace BACH
 	{
 		FileIndex = _prev->FileIndex;
 		FileTotalSize = _prev->FileTotalSize;
+		_prev->next = this;
+		_prev->next_epoch = epoch;
 		for (auto& i : edit->EditFileList)
 		{
 			if (i.deletion)
@@ -62,6 +64,7 @@ namespace BACH
 						{
 							unlink((db->options->STORAGE_DIR + "/"
 								+ k->file_name).c_str());
+							delete k->filter;
 							if (k->reader_pos == (idx_t)-1)
 								delete k;
 						}

@@ -35,7 +35,7 @@ namespace BACH {
 			parsers.emplace_back(compaction.label_id,
 				reader, db->options);
 			if (file->level == compaction.target_level)
-				file_ids.push_back(-file->file_id);
+				file_ids.push_back(-db->options->FILE_MERGE_NUM - 10 + file->file_id);
 			else
 				file_ids.push_back(file->file_id + 1);
 		}
@@ -59,7 +59,7 @@ namespace BACH {
 		std::string file_name = temp_file_metadata->file_name;
 		auto fw = std::make_shared<FileWriter>(db->options->STORAGE_DIR + "/"
 			+ file_name);
-		auto sst_builder = std::make_shared<SSTableBuilder>(fw, db->options);
+		auto sst_builder = new SSTableBuilder(fw, db->options);
 		// 归并
 		// 归并的时候如果碰到两个或者多个相同的边，只保留file_id最大的边；墓碑标记不能消掉，除非新生成的文件在最后一层了
 		vertex_t now_src_vertex_id = new_file_src_begin;
@@ -97,6 +97,7 @@ namespace BACH {
 		sst_builder->ArrangeCurrentSrcInfo();
 		sst_builder->SetSrcRange(new_file_src_begin, now_src_vertex_id);
 		temp_file_metadata->filter = sst_builder->ArrangeSSTableInfo();
+		delete sst_builder;
 		temp_file_metadata->file_size = fw->file_size();
 
 		VersionEdit* edit = new VersionEdit();

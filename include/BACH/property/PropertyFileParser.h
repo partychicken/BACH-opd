@@ -11,12 +11,12 @@ namespace BACH
 	class PropertyFileParser
 	{
 	public:
-		PropertyFileParser(std::shared_ptr<FileReader> fr);
+		PropertyFileParser(FileReader* fr);
 		~PropertyFileParser() = default;
 		std::shared_ptr<std::string> GetProperty(idx_t index);
 
 	private:
-		std::shared_ptr<FileReader> reader;
+		FileReader* reader;
 		size_t count;
 	};
 }

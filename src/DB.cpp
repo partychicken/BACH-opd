@@ -6,7 +6,6 @@ namespace BACH
 	DB::DB(std::shared_ptr<Options> _options) :
 		options(_options),
 		epoch_id(1),
-		read_epoch_id(0),
 		write_epoch_table(_options->MAX_WORKER_THREAD)
 	{
 		Labels = std::make_unique<LabelManager>();
@@ -26,6 +25,9 @@ namespace BACH
 	{
 		close = true;
 		Files->CompactionCV.notify_all();
+		for(auto &i: compact_thread)
+			if (i->joinable())
+				i->join();
 		std::cout << "closed" << std::endl;
 	}
 	Transaction DB::BeginTransaction()
@@ -160,8 +162,6 @@ namespace BACH
 		Version* tmp = current_version;
 		tmp->AddSizeEntry(size);
 		current_version = new Version(tmp, edit, time);
-		tmp->next = current_version;
-		tmp->next_epoch = current_version->epoch;
 		auto compact = current_version->GetCompaction(edit, force_leveling);
 		if (compact != NULL)
 		{
@@ -173,12 +173,7 @@ namespace BACH
 	}
 	void DB::ProgressReadVersion()
 	{
-		time_t time, nrt = get_read_time();
-		do
-		{
-			time = read_epoch_id.load();
-		} while (!read_epoch_id.compare_exchange_weak(time, nrt) && nrt > time);
-
+		time_t nrt = get_read_time();
 		Version* tail;
 		while (true)
 		{

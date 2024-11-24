@@ -2,7 +2,7 @@
 
 namespace BACH
 {
-	PropertyFileBuilder::PropertyFileBuilder(std::shared_ptr<FileWriter> _filewriter) :
+	PropertyFileBuilder::PropertyFileBuilder(FileWriter* _filewriter) :
 		writer(_filewriter)
 	{
 

@@ -36,9 +36,9 @@ namespace BACH
 		//}
 		//this->edge_dst_id_list.clear();
 	}
-	std::shared_ptr<sul::dynamic_bitset<>> SSTableBuilder::ArrangeSSTableInfo()
+	sul::dynamic_bitset<>* SSTableBuilder::ArrangeSSTableInfo()
 	{
-		auto bitmap = std::make_shared<sul::dynamic_bitset<>>();
+		auto bitmap = new sul::dynamic_bitset<>();
 		edge_num_t edge_num_prefix_sum = 0;
 		for (auto num : this->edge_allocation_list)
 		{

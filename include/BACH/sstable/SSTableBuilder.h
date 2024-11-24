@@ -19,7 +19,7 @@ namespace BACH
 		//void AddFilter(idx_t keys_num, double false_positive);
 		void SetSrcRange(vertex_t src_b, vertex_t src_e);
 		void ArrangeCurrentSrcInfo();
-		std::shared_ptr<sul::dynamic_bitset<>>  ArrangeSSTableInfo();
+		sul::dynamic_bitset<>*  ArrangeSSTableInfo();
 		void AddEdge(vertex_t src, vertex_t dst, edge_property_t edge_property);
 	private:
 		std::shared_ptr <FileWriter> writer;

@@ -101,8 +101,8 @@ namespace BACH
 				if ((*iter.GetFile()->filter)[src - iter.GetFile()->vertex_id_b])
 				{
 					auto fr = db->ReaderCaches->find(iter.GetFile());
-					auto parser = std::make_shared<SSTableParser>(label, fr, db->options);
-					auto found = parser->GetEdge(src, dst);
+					SSTableParser parser(label, fr, db->options);
+					auto found = parser.GetEdge(src, dst);
 					if (!std::isnan(found))
 						return found;
 				}
@@ -134,8 +134,8 @@ namespace BACH
 				if ((*iter.GetFile()->filter)[src - iter.GetFile()->vertex_id_b])
 				{
 					auto fr = db->ReaderCaches->find(iter.GetFile());
-					auto parser = std::make_shared<SSTableParser>(label, fr, db->options);
-					parser->GetEdges(src, answer_temp[(c + 1) % 3], /*filter, */func);
+					SSTableParser parser(label, fr, db->options);
+					parser.GetEdges(src, answer_temp[(c + 1) % 3], /*filter, */func);
 					db->Memtable->merge_answer(answer_temp, c);
 				}
 			iter.next();

@@ -1,11 +1,11 @@
 #pragma once
 
 #include <atomic>
-#include <map>
 #include <memory>
 #include <semaphore>
 #include <shared_mutex>
 #include <vector>
+#include <folly/ConcurrentSkipList.h>
 #include "QueryCounter.h"
 #include "BACH/utils/types.h"
 #include "BACH/utils/ConcurrentArray.h"
@@ -19,10 +19,11 @@ namespace BACH
 		time_t time;
 		edge_t last_version;
 	};
+	typedef folly::ConcurrentSkipList<std::pair<vertex_t, idx_t>> SkipList;
 	struct SizeEntry
 	{
 		vertex_t begin_vertex_id;
-		std::vector<std::map<vertex_t, idx_t>> edge_index;
+		std::vector <std::shared_ptr< SkipList >> edge_index;
 		std::vector<std::shared_mutex> mutex;
 		ConcurrentArray<EdgeEntry> edge_pool;
 		std::shared_ptr<SizeEntry> last = NULL, next = NULL;

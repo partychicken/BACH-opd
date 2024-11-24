@@ -123,16 +123,28 @@ namespace BACH
 			}
 			size_entry = EdgeLabelIndex[label]->SizeIndex[k];
 		}
-		std::unique_lock<std::shared_mutex> src_lock(size_entry->mutex[src - size_entry->begin_vertex_id]);
+		std::shared_lock<std::shared_mutex> src_lock(size_entry->mutex[src - size_entry->begin_vertex_id]);
 		if (size_entry->immutable)
 		{
 			src_lock.unlock();
 			size_entry->sema.try_acquire();
 			goto RETRY;
 		}
-		edge_t found = find_edge(src, dst, size_entry);
-		size_entry->edge_index[src - size_entry->begin_vertex_id][dst] = size_entry->edge_pool.size();
-		size_entry->edge_pool.push_back({ dst, property, now_time, found });
+		{
+			edge_t found;
+			SkipList::Accessor accessor(size_entry->edge_index[src - size_entry->begin_vertex_id]);
+			SkipList::Skipper skipper(accessor);
+			skipper.to(std::make_pair(dst, 0));
+			if (!skipper.good() || skipper->first != dst)
+				found = NONEINDEX;
+			else
+				found = skipper->second;
+			auto pos = size_entry->edge_pool.push_back({ dst, property, now_time, found });
+			if (found == NONEINDEX)
+				accessor.insert(std::make_pair(dst, pos));
+			else
+				skipper->second = pos;
+		}
 		size_entry->max_time = std::max(now_time,
 			size_entry->max_time);
 		size_entry->size += sizeof(EdgeEntry);
@@ -189,7 +201,8 @@ namespace BACH
 			std::shared_lock<std::shared_mutex> src_lock(size_entry->mutex[src - size_entry->begin_vertex_id]);
 			vertex_t answer_size = answer_temp[(c + 1) % 3]->size();
 			vertex_t answer_cnt = 0;
-			for (auto& i : size_entry->edge_index[src - size_entry->begin_vertex_id])
+			SkipList::Accessor accessor(size_entry->edge_index[src - size_entry->begin_vertex_id]);
+			for (auto& i : accessor)
 			{
 				auto dst = i.first;
 				auto index = i.second;
@@ -250,7 +263,8 @@ namespace BACH
 		for (vertex_t index = 0; index < size_info->edge_index.size(); ++index)
 		{
 			std::unique_lock<std::shared_mutex> lock(size_info->mutex[index]);
-			for (auto& x : size_info->edge_index[index])
+			SkipList::Accessor accessor(size_info->edge_index[index]);
+			for (auto& x : accessor)
 			{
 				auto& v = x.second;
 				sst.AddEdge(index, x.first, size_info->edge_pool[v].property);
@@ -342,10 +356,13 @@ namespace BACH
 	}
 	edge_t MemoryManager::find_edge(vertex_t src, vertex_t dst, std::shared_ptr < SizeEntry > entry)
 	{
-		auto edge_index_iter = entry->edge_index[src - entry->begin_vertex_id].find(dst);
-		if (edge_index_iter == entry->edge_index[src - entry->begin_vertex_id].end())
+		SkipList::Skipper skipper(entry->edge_index[src - entry->begin_vertex_id]);
+		skipper.to(std::make_pair(dst, 0));
+		if (!skipper.good())
 			return NONEINDEX;
+		if (skipper->first == dst)
+			return skipper->second;
 		else
-			return edge_index_iter->second;
+			return NONEINDEX;
 	}
 }

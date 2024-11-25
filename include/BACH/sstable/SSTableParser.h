@@ -24,8 +24,7 @@ namespace BACH
 		edge_property_t GetEdge(vertex_t src, vertex_t dst);
 		void GetEdges(vertex_t src, std::shared_ptr<std::vector<
 			std::pair<vertex_t, edge_property_t>>> answer,
-			//sul::dynamic_bitset<>& filter,
-			bool (*func)(edge_property_t));
+			const std::function<bool(edge_property_t&)>&func);
 		void ReadEdgeAllocationBuffer();
 		void ReadEdgeMsgBuffer();
 		bool GetFirstEdge();

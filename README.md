@@ -2,7 +2,7 @@
 
 An open-source implementation for BACH: <u>B</u>ridging <u>A</u>djacency List and <u>C</u>SR Format using LSM-Trees for <u>H</u>GTAP Workloads.
 
-G++12 needed.
+G++12 and [Folly](https://github.com/facebook/folly) needed.
 
 ## Building
 ```bash
@@ -13,7 +13,8 @@ make -j 8
 
 ## Structure
 - `include/BACH` the header file of BACH.
-- `include/dynamic_bitset` dynamic_bitset library from https://github.com/pinam45/dynamic_bitset
+- `include/dynamic_bitset` [dynamic_bitset](https://github.com/pinam45/dynamic_bitset) library
+- `include/folly` [Folly](https://github.com/facebook/folly) library
 - `src` the source code of BACH.
 
 ## Benchmark
@@ -46,9 +47,3 @@ Then add the linking options during building:
 ```bash
 -lbach -L/path/to/BACH_demo/build 
 ```
-
-<!-- oneTBB https://github.com/oneapi-src/oneTBB -->
-
-<!-- PMA https://github.com/2600254/Packed-Memory-Array -->
-
-<!-- dynamic_bitset https://github.com/pinam45/dynamic_bitset -->

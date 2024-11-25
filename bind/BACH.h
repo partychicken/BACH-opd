@@ -2,6 +2,7 @@
 #include <memory>
 #include <math.h>
 #include <vector>
+#include <functional>
 
 #pragma once
 
@@ -83,7 +84,9 @@ namespace bach
 			vertex_t src, vertex_t dst, label_t label);
 		std::shared_ptr<std::vector<std::pair<vertex_t, edge_property_t>>>
 			GetEdges(vertex_t src, label_t label,
-				bool (*func)(edge_property_t) = [](edge_property_t x) {return true; });
+				const std::function<bool(edge_property_t&)>& func = [](edge_property_t x) {return true; });
+		void EdgeLabelScan(label_t label,
+			const std::function<void(vertex_t&, vertex_t&, edge_property_t&)>& func);
 
 	private:
 		const std::unique_ptr<BACH::Transaction> txn;

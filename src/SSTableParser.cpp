@@ -109,8 +109,7 @@ namespace BACH
 	// 在一个文件中批量查找以src为起点的所有边，边属性的条件过滤函数以参数形式放入，过滤之后的边信息放在answer指向的vector中
 	void SSTableParser::GetEdges(vertex_t src, std::shared_ptr<std::vector<
 		std::pair<vertex_t, edge_property_t>>> answer,
-		//sul::dynamic_bitset<>& filter,
-		bool (*func)(edge_property_t))
+		const std::function<bool(edge_property_t&)>& func)
 	{
 		GetEdgeRangeBySrcId(src);
 		if (!this->src_edge_len)

@@ -64,6 +64,8 @@ namespace BACH
 			|| x->second > now_time)
 		{
 			auto property_id = VertexLabelIndex[label]->PropertyID[vertex];
+			if (property_id == (vertex_t) - 1)
+				return NULL;
 			if (property_id >= VertexLabelIndex[label]->unpersistence)
 			{
 				return std::make_shared<std::string>(
@@ -190,8 +192,7 @@ namespace BACH
 		std::shared_ptr<std::vector<
 		std::pair<vertex_t, edge_property_t>>> answer_temp[],
 		vertex_t& c,
-		//sul::dynamic_bitset<>& filter,
-		bool (*func)(edge_property_t))
+		const std::function<bool(edge_property_t&)>& func)
 	{
 		EdgeLabelIndex[label]->query_counter.AddRead(src);
 		auto k = src / db->options->MEMORY_MERGE_NUM;
@@ -231,6 +232,33 @@ namespace BACH
 			size_entry = size_entry->next;
 		}
 	}
+	void MemoryManager::EdgeLabelScan(label_t label,
+		const std::function<void(vertex_t&, vertex_t&, edge_property_t&)>& func)
+	{
+		for (vertex_t i = 0; i < EdgeLabelIndex[label]->SizeIndex.size(); ++i)
+		{
+			auto size_entry = EdgeLabelIndex[label]->SizeIndex[i];
+			while (size_entry != NULL)
+			{
+				for (vertex_t src = size_entry->begin_vertex_id;
+					src < size_entry->begin_vertex_id + db->options->MEMORY_MERGE_NUM;
+					++src)
+				{
+					std::shared_lock<std::shared_mutex> src_lock(size_entry->mutex[src - size_entry->begin_vertex_id]);
+					SkipList::Accessor accessor(size_entry->edge_index[src - size_entry->begin_vertex_id]);
+					for (auto& i : accessor)
+					{
+						auto dst = i.first;
+						auto index = i.second;
+						auto& edge = size_entry->edge_pool[index];
+						func(src, dst, edge.property);
+					}
+				}
+				size_entry = size_entry->next;
+			}
+		}
+	}
+
 	//1: leveling 2:tiering
 	size_t MemoryManager::GetMergeType(label_t label_id,
 		vertex_t src_b, idx_t level)

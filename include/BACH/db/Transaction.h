@@ -31,7 +31,11 @@ namespace BACH
 			vertex_t src, vertex_t dst, label_t label);
 		std::shared_ptr<std::vector<std::pair<vertex_t, edge_property_t>>>
 			GetEdges(vertex_t src, label_t label,
-				bool (*func)(edge_property_t) = [](edge_property_t x) {return true; });
+				const std::function<bool(edge_property_t&)>& func
+				= [](edge_property_t x) {return true; });
+		//only work when there is only one version for any edge
+		void EdgeLabelScan(label_t label,
+			const std::function<void(vertex_t&, vertex_t&,edge_property_t&)>& func);
 
 	private:
 		time_t write_epoch;

@@ -47,8 +47,9 @@ namespace BACH
 			std::shared_ptr<std::vector
 			<std::pair<vertex_t, edge_property_t>>> answer_temp[3],
 			vertex_t& c,
-			//sul::dynamic_bitset<>& filter,
-			bool (*func)(edge_property_t));
+			const std::function<bool(edge_property_t&)>& func);
+		void EdgeLabelScan(label_t label,
+			const std::function<void(vertex_t&, vertex_t&, edge_property_t&)>& func);
 
 		size_t GetMergeType(label_t label_id, vertex_t src_b, idx_t level);
 		time_t GetVertexDelTime(label_t edge_label_id, vertex_t src) const;

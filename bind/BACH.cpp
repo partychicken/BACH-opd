@@ -63,8 +63,13 @@ namespace bach
 	}
 	std::shared_ptr<std::vector<std::pair<vertex_t, edge_property_t>>>
 		Transaction::GetEdges(vertex_t src, label_t label,
-			bool (*func)(edge_property_t))
+			const std::function<bool(edge_property_t&)>& func)
 	{
 		return txn->GetEdges(src, label, func);
+	}
+	void Transaction::EdgeLabelScan(label_t label,
+		const std::function<void(vertex_t&, vertex_t&, edge_property_t&)>& func)
+	{
+		return txn->EdgeLabelScan(label, func);
 	}
 }

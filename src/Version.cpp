@@ -4,7 +4,8 @@
 namespace BACH
 {
 	Version::Version(DB* _db) :
-		next(NULL), epoch(0), next_epoch(-1), db(_db) {}
+		next(NULL), epoch(0), next_epoch(-1), db(_db) {
+	}
 	Version::Version(Version* _prev, VersionEdit* edit, time_t time) :
 		next(NULL), epoch(std::max(_prev->epoch, time)), next_epoch(-1),
 		db(_prev->db)
@@ -88,15 +89,21 @@ namespace BACH
 			c->target_level = level;
 			auto iter = std::lower_bound(FileIndex[label][level].begin(),
 				FileIndex[label][level].end(),
-				std::make_pair(src_b, (idx_t)0),
+				std::make_pair(src_b + 1, (idx_t)0),
 				FileCompareWithPair);
 			if (iter == FileIndex[label][level].end() || (*iter)->vertex_id_b != src_b)
 				return NULL;
-			for (; iter != FileIndex[label][level].end() && (*iter)->vertex_id_b == src_b; ++iter)
+			for (; iter != FileIndex[label][level].end() && (*iter)->vertex_id_b == src_b; --iter)
 				if (!(*iter)->merging)
 				{
 					c->file_list.push_back(*iter);
 					(*iter)->merging = true;
+					if (iter == FileIndex[label][level].begin())
+						break;
+				}
+				else
+				{
+					break;
 				}
 			if (c->file_list.size() <= 1)
 			{

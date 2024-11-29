@@ -184,7 +184,6 @@ namespace BACH
 			{
 				tail->next->AddRef();
 				tail->DecRef();
-				break;
 			}
 		}
 	}

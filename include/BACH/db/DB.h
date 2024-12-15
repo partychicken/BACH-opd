@@ -46,6 +46,7 @@ namespace BACH
 		std::atomic<Version *> read_version = NULL;
 		Version * current_version = NULL;
 		std::vector<std::shared_ptr<std::thread>> compact_thread;
+		std::atomic<size_t> working_compact_thread = 0;
 		bool close = false;
 		//compaction loop for background thread
 		void CompactLoop();

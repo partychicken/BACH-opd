@@ -63,6 +63,7 @@ namespace bach
 		void AddVertexLabel(std::string label_name);
 		void AddEdgeLabel(std::string label_name,
 			std::string src_label_name, std::string dst_label_name);
+		void CompactAll();
 	private:
 		const std::unique_ptr<BACH::DB> db;
 	};

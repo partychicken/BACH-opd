@@ -65,12 +65,59 @@ namespace BACH
 	}
 	void DB::CompactAll()
 	{
-		//Memtable->PersistenceAll();
-		//bool done;
-		//do
-		//{
-		//	done = true;
-		//}while (done);
+		if(options->MERGING_STRATEGY != Options::MergingStrategy::LEVELING)
+			return;
+		while (working_compact_thread.load() > 0 || !Files->CompactionList.empty())
+		{
+			std::this_thread::sleep_for(std::chrono::milliseconds(100));
+		}
+		auto v = current_version;
+		v->AddRef();
+		for(auto &i: v->FileIndex)
+			for(auto &j: i)
+				if(j.size() > 0)
+				{
+					vertex_t last = 0;
+					for(size_t idx = 1; idx < j.size(); idx++)
+						if(j[idx]->vertex_id_b != j[last]->vertex_id_b)
+						{
+							if(idx - last > 1)
+							{
+								Compaction x;
+								x.file_id = -1;
+								x.label_id = j[last]->label;
+								x.target_level = j[last]->level;
+								x.vertex_id_b = j[last]->vertex_id_b;
+								for(size_t k = last; k < idx; k++)
+								{
+									j[k]->merging = true;
+									x.file_list.push_back(j[k]);
+								}
+								Files->CompactionList.push(x);
+							}
+							last = idx;
+						}
+					if(j.size() - last > 1)
+					{
+						Compaction x;
+						x.file_id = -1;
+						x.label_id = j[last]->label;
+						x.target_level = j[last]->level;
+						x.vertex_id_b = j[last]->vertex_id_b;
+						for(size_t k = last; k < j.size(); k++)
+						{
+							j[k]->merging = true;
+							x.file_list.push_back(j[k]);
+						}
+						Files->CompactionList.push(x);
+					}
+				}
+		v->DecRef();
+		Files->CompactionCV.notify_all();
+		while (working_compact_thread.load() > 0 || !Files->CompactionList.empty())
+		{
+			std::this_thread::sleep_for(std::chrono::milliseconds(100));
+		}
 	}
 	void DB::CompactLoop()
 	{
@@ -81,6 +128,7 @@ namespace BACH
 			std::unique_lock <std::mutex> lock(Files->CompactionCVMutex);
 			if (!Files->CompactionList.empty())
 			{
+				working_compact_thread.fetch_add(1, std::memory_order_relaxed);
 				Compaction x(Files->CompactionList.front());
 				Files->CompactionList.pop();
 				lock.unlock();
@@ -148,6 +196,7 @@ namespace BACH
 				}
 				ProgressVersion(edit, time, x.Persistence, type == 1);
 				ProgressReadVersion();
+				working_compact_thread.fetch_add(-1, std::memory_order_relaxed);
 			}
 			else
 			{

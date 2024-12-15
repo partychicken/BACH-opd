@@ -24,6 +24,7 @@ namespace BACH
 					(*x)->vertex_id_b != i.vertex_id_b)
 				{
 					//error
+					std::cout<<"delete a file that not exist"<<std::endl;
 					exit(-1);
 				}
 				FileIndex[i.label][i.level].erase(x);
@@ -39,7 +40,7 @@ namespace BACH
 					FileTotalSize[i.label].emplace_back(0);
 				auto x = std::upper_bound(FileIndex[i.label][i.level].begin(),
 					FileIndex[i.label][i.level].end(), &i, FileCompare);
-				auto f = new FileMetaData(i);
+				auto f = new FileMetaData(std::move(i));
 				FileIndex[i.label][i.level].insert(x, f);
 				FileTotalSize[i.label][i.level] += i.file_size;
 			}
@@ -57,19 +58,18 @@ namespace BACH
 			for (auto& j : i)
 				for (auto& k : j)
 				{
-					k->ref.fetch_add(-1, std::memory_order_relaxed);
-					if (k->ref.load() == 0)
+					auto r = k->ref.fetch_add(-1, std::memory_order_relaxed);
+					bool bo = false;
+					if (r == 1 && k->death.compare_exchange_strong(bo, true))
 					{
-						bool bo = false;
-						if (k->death.compare_exchange_strong(bo, true))
-						{
-							unlink((db->options->STORAGE_DIR + "/"
-								+ k->file_name).c_str());
-							delete k->filter;
-							if (k->reader_pos == (idx_t)-1)
-								delete k;
-						}
+						unlink((db->options->STORAGE_DIR + "/"
+							+ k->file_name).c_str());
+						delete k->filter;
+						k->filter = NULL;
+						if (k->reader_pos == (idx_t)-1)
+							delete k;
 					}
+					
 				}
 		if (next != NULL)
 			next->DecRef();
@@ -81,38 +81,38 @@ namespace BACH
 		idx_t level = edit->EditFileList.begin()->level;
 		vertex_t src_b = edit->EditFileList.begin()->vertex_id_b;
 		Compaction* c = NULL;
-		if (force_level)
-		{
-			c = new Compaction();
-			c->vertex_id_b = src_b;
-			c->label_id = label;
-			c->target_level = level;
-			auto iter = std::lower_bound(FileIndex[label][level].begin(),
-				FileIndex[label][level].end(),
-				std::make_pair(src_b + 1, (idx_t)0),
-				FileCompareWithPair);
-			if (iter == FileIndex[label][level].end() || (*iter)->vertex_id_b != src_b)
-				return NULL;
-			for (; iter != FileIndex[label][level].end() && (*iter)->vertex_id_b == src_b; --iter)
-				if (!(*iter)->merging)
-				{
-					c->file_list.push_back(*iter);
-					(*iter)->merging = true;
-					if (iter == FileIndex[label][level].begin())
-						break;
-				}
-				else
-				{
-					break;
-				}
-			if (c->file_list.size() <= 1)
-			{
-				for (auto i : c->file_list)
-					i->merging = false;
-				delete c;
-				c = NULL;
-			}
-		}
+		// if (force_level)
+		// {
+		// 	c = new Compaction();
+		// 	c->vertex_id_b = src_b;
+		// 	c->label_id = label;
+		// 	c->target_level = level;
+		// 	auto iter = std::lower_bound(FileIndex[label][level].begin(),
+		// 		FileIndex[label][level].end(),
+		// 		std::make_pair(src_b + 1, (idx_t)0),
+		// 		FileCompareWithPair);
+		// 	if (iter == FileIndex[label][level].end() || (*iter)->vertex_id_b != src_b)
+		// 		return NULL;
+		// 	for (; iter != FileIndex[label][level].end() && (*iter)->vertex_id_b == src_b; --iter)
+		// 		if (!(*iter)->merging)
+		// 		{
+		// 			c->file_list.push_back(*iter);
+		// 			(*iter)->merging = true;
+		// 			if (iter == FileIndex[label][level].begin())
+		// 				break;
+		// 		}
+		// 		else
+		// 		{
+		// 			break;
+		// 		}
+		// 	if (c->file_list.size() <= 1)
+		// 	{
+		// 		for (auto i : c->file_list)
+		// 			i->merging = false;
+		// 		delete c;
+		// 		c = NULL;
+		// 	}
+		// }
 		if (level == db->options->MAX_LEVEL - 1)
 		{
 			return c;
@@ -138,19 +138,28 @@ namespace BACH
 			if (FileTotalSize[label][level] < db->options->LEVEL_0_MAX_SIZE
 				* util::fast_pow(db->options->LEVEL_SIZE_RITIO, level))
 				return c;
-			vertex_t index = rand() % FileIndex[label][level].size();
-			src_b = FileIndex[label][level][index]->vertex_id_b;
-			tmp = src_b / num;
-			iter1 = std::lower_bound(FileIndex[label][level].begin(),
-				FileIndex[label][level].end(),
-				std::make_pair(tmp * num, (idx_t)0),
-				FileCompareWithPair);
-			iter2 = std::lower_bound(FileIndex[label][level].begin(),
-				FileIndex[label][level].end(),
-				std::make_pair((tmp + 1) * num, (idx_t)0),
-				FileCompareWithPair);
-			if (iter1 == iter2)
-				return c;
+			bool flag;
+			do
+			{
+				flag = true;
+				vertex_t index = rand() % FileIndex[label][level].size();
+				src_b = FileIndex[label][level][index]->vertex_id_b;
+				tmp = src_b / num;
+				iter1 = std::lower_bound(FileIndex[label][level].begin(),
+					FileIndex[label][level].end(),
+					std::make_pair(tmp * num, (idx_t)0),
+					FileCompareWithPair);
+				iter2 = std::lower_bound(FileIndex[label][level].begin(),
+					FileIndex[label][level].end(),
+					std::make_pair((tmp + 1) * num, (idx_t)0),
+					FileCompareWithPair);
+				for (auto i = iter1; i != iter2; ++i)
+					if (!(*i)->merging)
+					{
+						flag = false;
+						break;
+					}
+			} while (flag);
 		}
 		if (c == NULL)
 			c = new Compaction();
@@ -174,7 +183,7 @@ namespace BACH
 	{
 		bool FALSE = false;
 		auto k = ref.fetch_add(-1, std::memory_order_relaxed);
-		if (k == 1 && deleting.compare_exchange_weak(FALSE, true))
+		if (k == 1 && deleting.compare_exchange_strong(FALSE, true))
 			delete this;
 	}
 	void Version::AddSizeEntry(std::shared_ptr < SizeEntry > x)

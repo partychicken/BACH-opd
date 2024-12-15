@@ -23,6 +23,10 @@ namespace bach
 	{
 		db->AddEdgeLabel(label, src_label, dst_label);
 	}
+	void DB::CompactAll()
+	{
+		db->CompactAll();
+	}
 	Transaction::Transaction(std::unique_ptr<BACH::Transaction> _txn) :
 		txn(std::move(_txn)) {}
 	Transaction::~Transaction() = default;

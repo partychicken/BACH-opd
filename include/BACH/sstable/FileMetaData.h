@@ -30,7 +30,7 @@ namespace BACH
 		idx_t reader_pos = -1;
 
 		FileMetaData() = default;
-		FileMetaData(const FileMetaData& x) :
+		FileMetaData(FileMetaData&& x) :
 			file_name(x.file_name), label(x.label), level(x.level),
 			vertex_id_b(x.vertex_id_b), file_id(x.file_id), ref(x.ref.load()),
 			file_size(x.file_size), deletion(x.deletion), filter(x.filter) {}

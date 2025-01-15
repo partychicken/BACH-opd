@@ -27,7 +27,7 @@ namespace BACH
 		label_t AddEdgeLabel(std::string edge_label_name,
 			std::string src_label_name, std::string dst_label_name);
 		//compact all edge
-		void CompactAll();
+		void CompactAll(double_t ratio = 0.0);
 		void ProgressVersion(VersionEdit* edit, time_t time,
 			std::shared_ptr<SizeEntry> size = NULL, bool force_level = false);
 

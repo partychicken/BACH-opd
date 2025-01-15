@@ -305,6 +305,20 @@ namespace BACH
 		vedit->EditFileList.push_back(std::move(*temp_file_metadata));
 		return vedit;
 	}
+	void MemoryManager::PersistenceAll()
+	{
+		for (label_t i = 0; i < EdgeLabelIndex.size(); ++i)
+		{
+			for (vertex_t j = 0; j < EdgeLabelIndex[i]->SizeIndex.size(); ++j)
+			{
+				auto size_info = EdgeLabelIndex[i]->SizeIndex[j];
+				if (size_info != NULL)
+				{
+					immute_memtable(size_info, i);
+				}
+			}
+		}
+	}
 
 	void MemoryManager::merge_answer(std::shared_ptr<std::vector
 		<std::pair<vertex_t, edge_property_t>>> answer_temp[3],

@@ -16,7 +16,8 @@ namespace BACH
 		char infobuf[offset];
 		if (!reader->rread(infobuf, offset, offset))
 		{
-			std::cout << "read fail begin" << std::endl;
+			//std::cout << "read fail begin" << std::endl;
+			exit(-1);
 		}
 		util::DecodeFixed(infobuf, src_b);
 		util::DecodeFixed(infobuf + sizeof(vertex_t), src_e);
@@ -91,7 +92,8 @@ namespace BACH
 			size_t len = (i != read_num) ? singel_read_max_len : this->src_edge_len % singel_read_max_len;
 			char buffer[len];
 			if (!reader->fread(buffer, len, this->src_edge_info_offset)) {
-				std::cout << "read fail dst" << std::endl;
+				//std::cout << "read fail dst" << std::endl;
+				exit(-1);
 			}
 			size_t offset = 0;
 			this->src_edge_info_offset += len;
@@ -127,7 +129,8 @@ namespace BACH
 			size_t len = (i != read_num) ? singel_read_max_len : this->src_edge_len % singel_read_max_len;
 			char buffer[len];
 			if (!reader->fread(buffer, len, this->src_edge_info_offset)) {
-				std::cout << "read fail dsts" << std::endl;
+				//std::cout << "read fail dsts" << std::endl;
+				exit(-1);
 			}
 			size_t offset = 0;
 			this->src_edge_info_offset += len;
@@ -164,7 +167,8 @@ namespace BACH
 			char buffer[len];
 			if (!reader->fread(buffer, len, offset))
 			{
-				std::cout << "read fail range 0" << std::endl;
+				//std::cout << "read fail range 0" << std::endl;
+				exit(-1);
 			}
 			this->src_edge_info_offset = 0;
 			this->src_edge_len = util::GetDecodeFixed<edge_num_t>(buffer) * singel_edge_total_info_size;
@@ -176,8 +180,8 @@ namespace BACH
 			char buffer[len];
 			if (!reader->fread(buffer, len, offset))
 			{
-				std::cout << "read fail range" << std::endl;
-
+				//std::cout << "read fail range" << std::endl;
+				exit(-1);
 			}
 			this->src_edge_info_offset = util::GetDecodeFixed<edge_num_t>(buffer) * singel_edge_total_info_size;
 			this->src_edge_len = (util::GetDecodeFixed<edge_num_t>(buffer + sizeof(edge_num_t)) - util::GetDecodeFixed<edge_num_t>(buffer)) * singel_edge_total_info_size;
@@ -191,7 +195,8 @@ namespace BACH
 		this->edge_allocation_read_buffer.resize(this->edge_allocation_buffer_len * sizeof(edge_num_t));
 		if (!reader->fread(edge_allocation_read_buffer.data(), this->edge_allocation_buffer_len * sizeof(edge_num_t), this->edge_msg_end_pos + this->edge_allocation_now_pos * sizeof(edge_num_t)))
 		{
-			std::cout << "read fail alloca" << std::endl;
+			//std::cout << "read fail alloca" << std::endl;
+			exit(-1);
 		}
 	}
 	void SSTableParser::ReadEdgeMsgBuffer()
@@ -203,7 +208,8 @@ namespace BACH
 		if (!reader->fread(edge_msg_read_buffer.data(), this->edge_msg_buffer_len * singel_edge_total_info_size,
 			this->edge_msg_now_pos * singel_edge_total_info_size))
 		{
-			std::cout << "read fail msg" << std::endl;
+			//std::cout << "read fail msg" << std::endl;
+			exit(-1);
 		}
 	}
 	// 得到一个文件的第一条边的信息,如果文件是空的就返回false

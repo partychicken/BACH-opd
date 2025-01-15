@@ -26,14 +26,16 @@ namespace BACH
 		bool merging = false;
 		std::atomic<bool> death = false;
 		sul::dynamic_bitset<>* filter = NULL;
-		std::atomic<std::shared_ptr<FileReader>> reader;
+		std::shared_ptr<FileReader> reader = NULL;
+		std::atomic<bool> reader_empty = false;
 		idx_t reader_pos = -1;
 
 		FileMetaData() = default;
 		FileMetaData(FileMetaData&& x) :
 			file_name(x.file_name), label(x.label), level(x.level),
 			vertex_id_b(x.vertex_id_b), file_id(x.file_id), ref(x.ref.load()),
-			file_size(x.file_size), deletion(x.deletion), filter(x.filter) {}
+			file_size(x.file_size), deletion(x.deletion), filter(x.filter),
+			reader(x.reader), reader_empty(x.reader_empty.load()) {}
 		FileMetaData(label_t _label, idx_t _level, vertex_t _vertex_id_b,
 			idx_t _file_id, std::string_view label_name) :
 			label(_label), level(_level), vertex_id_b(_vertex_id_b),

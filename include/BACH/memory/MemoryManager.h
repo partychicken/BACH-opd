@@ -55,7 +55,7 @@ namespace BACH
 		time_t GetVertexDelTime(label_t edge_label_id, vertex_t src) const;
 		VersionEdit* MemTablePersistence(label_t label_id,
 			idx_t file_id, std::shared_ptr < SizeEntry > size_info);
-		//void PersistenceAll();
+		void PersistenceAll();
 
 		void merge_answer(std::shared_ptr<std::vector
 			<std::pair<vertex_t, edge_property_t>>> answer_temp[3],

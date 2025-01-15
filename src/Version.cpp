@@ -64,10 +64,12 @@ namespace BACH
 					{
 						unlink((db->options->STORAGE_DIR + "/"
 							+ k->file_name).c_str());
-						delete k->filter;
+						if(k->filter->size() == util::ClacFileSize(db->options, k->level))
+							delete k->filter;
+						k->reader = NULL;
 						k->filter = NULL;
-						if (k->reader_pos == (idx_t)-1)
-							delete k;
+						db->ReaderCaches->deletecache(k);
+						delete k;
 					}
 					
 				}

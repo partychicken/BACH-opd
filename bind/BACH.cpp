@@ -23,9 +23,9 @@ namespace bach
 	{
 		db->AddEdgeLabel(label, src_label, dst_label);
 	}
-	void DB::CompactAll()
+	void DB::CompactAll(double_t ratio)
 	{
-		db->CompactAll();
+		db->CompactAll(ratio);
 	}
 	Transaction::Transaction(std::unique_ptr<BACH::Transaction> _txn) :
 		txn(std::move(_txn)) {}

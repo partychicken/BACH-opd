@@ -28,7 +28,9 @@ namespace BACH
 		for(auto &i: compact_thread)
 			if (i->joinable())
 				i->join();
-		std::cout << "closed" << std::endl;
+		read_version.load()->DecRef();
+		current_version->DecRef();
+		//std::cout << "closed" << std::endl;
 	}
 	Transaction DB::BeginTransaction()
 	{
@@ -63,16 +65,73 @@ namespace BACH
 		Memtable->AddEdgeLabel(std::get<1>(x), std::get<2>(x));
 		return std::get<0>(x);
 	}
-	void DB::CompactAll()
+	void DB::CompactAll(double_t ratio)
 	{
 		if(options->MERGING_STRATEGY != Options::MergingStrategy::LEVELING)
 			return;
+		//Memtable->PersistenceAll();
 		while (working_compact_thread.load() > 0 || !Files->CompactionList.empty())
 		{
 			std::this_thread::sleep_for(std::chrono::milliseconds(100));
 		}
+		for (idx_t level = 0; level < options->MAX_LEVEL - 1; level++)
+		{
+			auto v = current_version;
+			for(label_t label = 0; label < v->FileIndex.size(); label++)
+			{
+				if(v->FileIndex[label].size() <= level)
+					continue;
+				if(v->FileIndex[label][level].size() == 1)
+					continue;
+				auto &i = v->FileIndex[label];
+				vertex_t last = 0;
+				auto &j = i[level];
+				if(j.size() == 0)
+					continue;
+				size_t idx = 1;
+				vertex_t bound = std::round(ratio * j.size());
+				if(bound == 0)
+					continue;
+				for(; idx < j.size() && idx < bound; idx++)
+					if((j[idx]->vertex_id_b - j[last]->vertex_id_b)
+						/ util::ClacFileSize(options, level + 1) != 0)
+					{
+						Compaction x;
+						x.file_id = -1;
+						x.label_id = j[last]->label;
+						x.target_level = j[last]->level + 1;
+						x.vertex_id_b = j[last]->vertex_id_b;
+						for(size_t k = last; k < idx; k++)
+						{
+							j[k]->merging = true;
+							x.file_list.push_back(j[k]);
+						}
+						Files->CompactionList.push(x);
+						last = idx;
+					}
+				for(; idx < j.size() - 1 && j[idx]->vertex_id_b == j[idx + 1]->vertex_id_b; idx++);
+				if(idx - last > 1)
+				{
+					Compaction x;
+					x.file_id = -1;
+					x.label_id = j[last]->label;
+					x.target_level = j[last]->level + 1;
+					x.vertex_id_b = j[last]->vertex_id_b;
+					for(size_t k = last; k < idx; k++)
+					{
+						j[k]->merging = true;
+						x.file_list.push_back(j[k]);
+					}
+					Files->CompactionList.push(x);
+				}
+			}
+			Files->CompactionCV.notify_all();
+			while (working_compact_thread.load() > 0 || !Files->CompactionList.empty())
+			{
+				std::this_thread::sleep_for(std::chrono::milliseconds(100));
+			}
+		}
 		auto v = current_version;
-		v->AddRef();
 		for(auto &i: v->FileIndex)
 			for(auto &j: i)
 				if(j.size() > 0)
@@ -112,7 +171,6 @@ namespace BACH
 						Files->CompactionList.push(x);
 					}
 				}
-		v->DecRef();
 		Files->CompactionCV.notify_all();
 		while (working_compact_thread.load() > 0 || !Files->CompactionList.empty())
 		{
@@ -195,6 +253,7 @@ namespace BACH
 					edit = Files->MergeSSTable(x);
 				}
 				ProgressVersion(edit, time, x.Persistence, type == 1);
+				delete edit;
 				ProgressReadVersion();
 				working_compact_thread.fetch_add(-1, std::memory_order_relaxed);
 			}

@@ -24,11 +24,11 @@ namespace BACH
 			ELASTIC
 		}
 		MERGING_STRATEGY = MergingStrategy::ELASTIC;
-		size_t MEM_TABLE_MAX_SIZE = 32 * 1024;
+		size_t MEM_TABLE_MAX_SIZE = 1 * 1024 * 1024;
 		size_t LEVEL_0_MAX_SIZE = 512 * 1024 * 1024;
-		size_t VERTEX_PROPERTY_MAX_SIZE = 64 * 1024 * 1024;
-		vertex_t MEMORY_MERGE_NUM = 32;
-		vertex_t FILE_MERGE_NUM = 4;
+		size_t VERTEX_PROPERTY_MAX_SIZE = 512 * 1024 * 1024;
+		vertex_t MEMORY_MERGE_NUM = 8192;
+		vertex_t FILE_MERGE_NUM = 16;
 		size_t READ_BUFFER_SIZE = 1024 * 1024;
 		size_t WRITE_BUFFER_SIZE = 1024 * 1024;
 		size_t NUM_OF_COMPACTION_THREAD = 1;
@@ -63,7 +63,7 @@ namespace bach
 		void AddVertexLabel(std::string label_name);
 		void AddEdgeLabel(std::string label_name,
 			std::string src_label_name, std::string dst_label_name);
-		void CompactAll();
+		void CompactAll(double_t ratio);
 	private:
 		const std::unique_ptr<BACH::DB> db;
 	};

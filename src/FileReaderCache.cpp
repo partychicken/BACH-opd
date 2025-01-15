@@ -4,19 +4,20 @@
 namespace BACH
 {
 	FileReaderCache::FileReaderCache(idx_t _max_size, std::string _prefix) :
-		cache(_max_size), cache_deleting(_max_size),
+		cache(_max_size, NULL), cache_deleting(_max_size),
 		max_size(_max_size), prefix(_prefix),
 		writing(std::make_shared<FileReader>("")) {}
 	std::shared_ptr<FileReader> FileReaderCache::find(FileMetaData* file_data)
 	{
-		std::shared_ptr<FileReader> x;
-		do
+		std::shared_ptr<FileReader> x = NULL;
+		while (x == NULL)
 		{
-			x = NULL;
-			if (file_data->reader.compare_exchange_weak(x, writing))
+			bool bo = false;
+			if (file_data->reader_empty.compare_exchange_weak(bo, true))
 			{
-				file_data->reader.store(x = std::make_shared<FileReader>(
-					prefix + file_data->file_name));
+				std::shared_ptr<FileReader> new_reader = std::make_shared<FileReader>(
+					prefix + file_data->file_name);
+				file_data->reader = new_reader;
 				idx_t pos;
 				bool FALSE;
 				do
@@ -29,18 +30,29 @@ namespace BACH
 				} while (!cache_deleting[pos].compare_exchange_weak(FALSE, true));
 				if (cache[pos] != NULL)
 				{
-					cache[pos]->reader.store(NULL);
+					cache[pos]->reader = NULL;
 					cache[pos]->reader_pos = -1;
-					if (cache[pos]->death)
-						delete cache[pos];
+					cache[pos]->reader_empty.store(false);
 				}
 				cache[pos] = file_data;
 				file_data->reader_pos = pos;
 				cache_deleting[pos].store(false);
 			}
-			if (x == NULL || x == writing)
-				continue;
-			return x;
-		} while (true);
+			x = file_data->reader;
+		}
+		return x;
+	}
+	void FileReaderCache::deletecache(FileMetaData* file_data)
+	{
+		bool FALSE = false;
+		while (file_data->reader_pos != (idx_t)-1 
+			&&!cache_deleting[file_data->reader_pos].compare_exchange_strong(FALSE, true))
+		{
+			FALSE = false;
+		}
+		if(file_data->reader_pos == (idx_t)-1)
+			return;
+		cache[file_data->reader_pos] = NULL;
+		cache_deleting[file_data->reader_pos].store(false);
 	}
 }

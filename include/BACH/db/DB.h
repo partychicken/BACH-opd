@@ -42,17 +42,19 @@ namespace BACH
 	private:
 		std::atomic<time_t> epoch_id;
 		ConcurrentList<time_t> write_epoch_table;
-		std::shared_mutex version_mutex;
+		std::mutex version_mutex;
 		std::atomic<Version *> read_version = NULL;
 		Version * current_version = NULL;
 		std::vector<std::shared_ptr<std::thread>> compact_thread;
 		std::atomic<size_t> working_compact_thread = 0;
+		std::atomic<bool> progressing_read_version = false;
 		bool close = false;
 		//compaction loop for background thread
 		void CompactLoop();
 		void ProgressReadVersion();
 		time_t get_read_time();
-
+		Version* get_read_version();
+		
 		friend class Transaction;
 	};
 }

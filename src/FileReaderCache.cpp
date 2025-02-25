@@ -1,6 +1,6 @@
 #include "BACH/file/FileReaderCache.h"
 #include "BACH/sstable/FileMetaData.h"
-#include <iostream>
+
 namespace BACH
 {
 	FileReaderCache::FileReaderCache(idx_t _max_size, std::string _prefix) :
@@ -49,6 +49,7 @@ namespace BACH
 			&&!cache_deleting[file_data->reader_pos].compare_exchange_strong(FALSE, true))
 		{
 			FALSE = false;
+			std::this_thread::yield();
 		}
 		if(file_data->reader_pos == (idx_t)-1)
 			return;

@@ -58,7 +58,7 @@ namespace BACH
 			for (auto& j : i)
 				for (auto& k : j)
 				{
-					auto r = k->ref.fetch_add(-1, std::memory_order_relaxed);
+					auto r = k->ref.fetch_add(-1);
 					bool bo = false;
 					if (r == 1 && k->death.compare_exchange_strong(bo, true))
 					{
@@ -71,7 +71,10 @@ namespace BACH
 						db->ReaderCaches->deletecache(k);
 						delete k;
 					}
-					
+					else if(r == 1)
+					{
+						std::cout<<"twice delete a file"<<std::endl;
+					}
 				}
 		if (next != NULL)
 			next->DecRef();
@@ -177,16 +180,25 @@ namespace BACH
 		return c;
 	}
 
-	void Version::AddRef()
+	bool Version::AddRef()
 	{
-		ref.fetch_add(1, std::memory_order_relaxed);
+		idx_t k;
+		do
+		{
+			k = ref.load();
+			if(k == 0)
+				return false;
+		} while (!ref.compare_exchange_weak(k, k + 1));
+		return true;
 	}
 	void Version::DecRef()
 	{
 		bool FALSE = false;
-		auto k = ref.fetch_add(-1, std::memory_order_relaxed);
+		auto k = ref.fetch_add(-1);
 		if (k == 1 && deleting.compare_exchange_strong(FALSE, true))
 			delete this;
+		else if (k == 1)
+			std::cout<<"twice delete a version"<<std::endl;
 	}
 	void Version::AddSizeEntry(std::shared_ptr < SizeEntry > x)
 	{

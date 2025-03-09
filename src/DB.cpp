@@ -178,7 +178,6 @@ namespace BACH
 	}
 	void DB::CompactLoop()
 	{
-		working_compact_thread.fetch_add(1, std::memory_order_relaxed);
 		while (true)
 		{
 			if (close)
@@ -186,6 +185,7 @@ namespace BACH
 			std::unique_lock <std::mutex> lock(Files->CompactionCVMutex);
 			if (!Files->CompactionList.empty())
 			{
+				working_compact_thread.fetch_add(1, std::memory_order_relaxed);
 				Compaction x(Files->CompactionList.front());
 				Files->CompactionList.pop();
 				lock.unlock();
@@ -253,13 +253,13 @@ namespace BACH
 				}
 				ProgressVersion(edit, time, x.Persistence, type == 1);
 				delete edit;
+				working_compact_thread.fetch_add(-1, std::memory_order_relaxed);
 				ProgressReadVersion();
 			}
 			else
 			{
-				working_compact_thread.fetch_add(-1, std::memory_order_relaxed);
-				Files->CompactionCV.wait(lock);
-				working_compact_thread.fetch_add(1, std::memory_order_relaxed);
+				Files->CompactionCV.wait_for(lock, std::chrono::milliseconds(200));
+				//ProgressReadVersion();
 			}
 		}
 	}
@@ -281,11 +281,10 @@ namespace BACH
 	}
 	void DB::ProgressReadVersion()
 	{
-		time_t nrt = get_read_time();
-		Version* tail;
 		while (true)
 		{
-			tail = read_version.load();
+			time_t nrt = get_read_time();
+			Version* tail = read_version.load();
 			if (tail->next_epoch == (time_t)-1 || tail->next_epoch >= nrt)
 				break;
 			if (read_version.compare_exchange_weak(tail, tail->next))
@@ -307,14 +306,11 @@ namespace BACH
 	Version* DB::get_read_version()
 	{
 		Version* version;
-		do
+		while(true)
 		{
 			version = read_version.load();
-			version->AddRef();
-			if(read_version.load() != version)
-				version->DecRef();
-			else
+			if(version->AddRef())
 				return version;
-		} while (true);
+		}
 	}
 }

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <bit>
 #include <math.h>
 #include <memory>
 #include <string>
@@ -137,10 +138,7 @@ namespace BACH
 		}
 		inline size_t highbit(size_t x)
 		{
-			for (size_t i = 1; i < 64; ++i)
-				if (x >> i == 0)
-					return i - 1;
-			return 64;
+			return std::bit_width(x) - 1;
 		}
 		template<typename T>
 		inline T GetDecodeFixed(const char* data)

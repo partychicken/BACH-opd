@@ -8,7 +8,7 @@ namespace BACH
 		next(_next), immutable(false), sema(0) 
 	{
 		for (auto& i : edge_index)
-			i = SkipList::createInstance(24);
+			i = SkipList::createInstance();
 	}
 	void SizeEntry::delete_entry()
 	{

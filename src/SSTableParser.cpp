@@ -122,6 +122,7 @@ namespace BACH
 		// 批量读边，将边属性过滤后的边放入answer中
 		size_t singel_read_max_len = this->options->READ_BUFFER_SIZE / singel_edge_total_info_size * singel_edge_total_info_size;
 		edge_len_t read_num = (this->src_edge_len - 1) / singel_read_max_len + 1;
+		//answer->reserve(src_edge_len / singel_edge_total_info_size);
 		vertex_t answer_size = answer->size();
 		vertex_t answer_cnt = 0;
 		for (edge_len_t i = 1; i <= read_num; i++)

@@ -3,6 +3,7 @@
 #include <atomic>
 #include <memory>
 #include <string_view>
+#include <thread>
 #include <vector>
 #include "FileReader.h"
 #include "BACH/utils/Options.h"

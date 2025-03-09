@@ -4,10 +4,7 @@ namespace BACH
 {
 	Transaction::Transaction(time_t _write_epoch, time_t _read_epoch,
 		DB* db, Version* _version, time_t pos) :
-		write_epoch(_write_epoch), read_epoch(_read_epoch), db(db), version(_version), time_pos(pos)
-	{
-		version->AddRef();
-	}
+		write_epoch(_write_epoch), read_epoch(_read_epoch), db(db), version(_version), time_pos(pos) {}
 	Transaction::Transaction(Transaction&& txn) :
 		write_epoch(txn.write_epoch), read_epoch(txn.read_epoch),
 		db(txn.db), version(txn.version), time_pos(txn.time_pos)
@@ -98,8 +95,7 @@ namespace BACH
 			if (src - iter.GetFile()->vertex_id_b < iter.GetFile()->filter->size())
 				if ((*iter.GetFile()->filter)[src - iter.GetFile()->vertex_id_b])
 				{
-					auto fr = db->ReaderCaches->find(iter.GetFile());
-					SSTableParser parser(label, fr, db->options);
+					SSTableParser parser(label, db->ReaderCaches->find(iter.GetFile()), db->options);
 					auto found = parser.GetEdge(src, dst);
 					if (!std::isnan(found))
 						return found;
@@ -125,8 +121,7 @@ namespace BACH
 			if (src - iter.GetFile()->vertex_id_b < iter.GetFile()->filter->size())
 				if ((*iter.GetFile()->filter)[src - iter.GetFile()->vertex_id_b])
 				{
-					auto fr = db->ReaderCaches->find(iter.GetFile());
-					SSTableParser parser(label, fr, db->options);
+					SSTableParser parser(label, db->ReaderCaches->find(iter.GetFile()), db->options);
 					parser.GetEdges(src, answer_temp[(c + 1) % 3], func);
 					db->Memtable->merge_answer(answer_temp, c);
 				}
@@ -143,8 +138,7 @@ namespace BACH
 		for (auto& i : version->FileIndex[label])
 			for (auto& j : i)
 			{
-				auto fr = db->ReaderCaches->find(j);
-				SSTableParser parser(label, fr, db->options);
+				SSTableParser parser(label, db->ReaderCaches->find(j), db->options);
 				if (!parser.GetFirstEdge())
 					continue;
 				do

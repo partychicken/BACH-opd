@@ -41,15 +41,14 @@ namespace BACH
 		local_read_epoch_id = write_epoch_table.find_min() - 1;
 		//local_read_epoch_id = (*write_epoch_table.begin()) - 1;
 		//wlock.unlock();
-		std::shared_lock<std::shared_mutex>versionlock(version_mutex);
 		return Transaction(local_write_epoch_id, local_read_epoch_id, this,
-			read_version, pos);
+			get_read_version(), pos);
 	}
 	Transaction DB::BeginReadOnlyTransaction()
 	{
 		time_t local_epoch_id = get_read_time();
-		std::shared_lock<std::shared_mutex>versionlock(version_mutex);
-		return Transaction(MAXTIME, local_epoch_id, this, read_version);
+		//std::shared_lock<std::shared_mutex>versionlock(version_mutex);
+		return Transaction(MAXTIME, local_epoch_id, this, get_read_version());
 	}
 
 	label_t DB::AddVertexLabel(std::string label_name)
@@ -225,7 +224,7 @@ namespace BACH
 					case 2:
 						break;
 					case 1:
-						std::unique_lock<std::shared_mutex> versionlock(version_mutex);
+						std::unique_lock<std::mutex> versionlock(version_mutex);
 						if (current_version->FileIndex[x.label_id].size() <= x.target_level)
 							break;
 						auto iter = std::lower_bound(
@@ -254,19 +253,20 @@ namespace BACH
 				}
 				ProgressVersion(edit, time, x.Persistence, type == 1);
 				delete edit;
-				ProgressReadVersion();
 				working_compact_thread.fetch_add(-1, std::memory_order_relaxed);
+				ProgressReadVersion();
 			}
 			else
 			{
-				Files->CompactionCV.wait(lock);
+				Files->CompactionCV.wait_for(lock, std::chrono::milliseconds(200));
+				//ProgressReadVersion();
 			}
 		}
 	}
 	void DB::ProgressVersion(VersionEdit* edit, time_t time,
 		std::shared_ptr<SizeEntry> size, bool force_leveling)
 	{
-		std::unique_lock<std::shared_mutex> version_lock(version_mutex);
+		std::unique_lock<std::mutex> version_lock(version_mutex);
 		Version* tmp = current_version;
 		tmp->AddSizeEntry(size);
 		current_version = new Version(tmp, edit, time);
@@ -281,11 +281,10 @@ namespace BACH
 	}
 	void DB::ProgressReadVersion()
 	{
-		time_t nrt = get_read_time();
-		Version* tail;
 		while (true)
 		{
-			tail = read_version.load();
+			time_t nrt = get_read_time();
+			Version* tail = read_version.load();
 			if (tail->next_epoch == (time_t)-1 || tail->next_epoch >= nrt)
 				break;
 			if (read_version.compare_exchange_weak(tail, tail->next))
@@ -303,5 +302,15 @@ namespace BACH
 		else
 			//return (*write_epoch_table.begin()) - 1;
 			return write_epoch_table.find_min() - 1;
+	}
+	Version* DB::get_read_version()
+	{
+		Version* version;
+		while(true)
+		{
+			version = read_version.load();
+			if(version->AddRef())
+				return version;
+		}
 	}
 }

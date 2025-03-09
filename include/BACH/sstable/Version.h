@@ -20,7 +20,7 @@ namespace BACH
 		~Version();
 
 		Compaction* GetCompaction(VersionEdit* edit, bool force_level = false);
-		void AddRef();
+		bool AddRef();
 		void DecRef();
 		void AddSizeEntry(std::shared_ptr < SizeEntry > x);
 

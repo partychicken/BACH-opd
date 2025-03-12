@@ -3,7 +3,7 @@
 #include <string>
 
 namespace BACH {
-    struct tuple {
+    struct Tuple {
         int col_num;
         ConcurrentArray <std::string> row;
 

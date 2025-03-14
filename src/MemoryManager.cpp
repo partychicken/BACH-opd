@@ -135,17 +135,16 @@ namespace BACH
 		{
 			edge_t found;
 			SkipList::Accessor accessor(size_entry->edge_index[src - size_entry->begin_vertex_id]);
-			SkipList::Skipper skipper(accessor);
-			skipper.to(std::make_pair(dst, 0));
-			if (!skipper.good() || skipper->first != dst)
-				found = NONEINDEX;
+			auto it = accessor.find(std::make_pair(dst, 0));
+			if(it != accessor.end())
+				found = it->second;
 			else
-				found = skipper->second;
+				found = NONEINDEX;
 			auto pos = size_entry->edge_pool.push_back({ dst, property, now_time, found });
 			if (found == NONEINDEX)
 				accessor.insert(std::make_pair(dst, pos));
 			else
-				skipper->second = pos;
+				it->second = pos;
 		}
 		size_entry->max_time = std::max(now_time,
 			size_entry->max_time);

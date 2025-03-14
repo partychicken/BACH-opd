@@ -19,7 +19,15 @@ namespace BACH
 		time_t time;
 		edge_t last_version;
 	};
-	typedef folly::ConcurrentSkipList<std::pair<vertex_t, idx_t>> SkipList;
+	struct ComparePair
+	{
+		bool operator()(const std::pair<vertex_t, edge_property_t>& a,
+			const std::pair<vertex_t, edge_property_t>& b) const
+		{
+			return a.first < b.first;
+		}
+	};
+	typedef folly::ConcurrentSkipList<std::pair<vertex_t, idx_t>, ComparePair> SkipList;
 	struct SizeEntry
 	{
 		vertex_t begin_vertex_id;

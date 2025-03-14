@@ -3,7 +3,7 @@
 namespace BACH
 {
 	SSTableParser::SSTableParser(label_t _label,
-		std::shared_ptr<FileReader> _fileReader,
+		FileReader* _fileReader,
 		std::shared_ptr<Options> _options) :
 		label(_label),
 		reader(_fileReader),
@@ -16,8 +16,8 @@ namespace BACH
 		char infobuf[offset];
 		if (!reader->rread(infobuf, offset, offset))
 		{
-			//std::cout << "read fail begin" << std::endl;
-			exit(-1);
+			std::cout << "read fail begin" << std::endl;
+			++*(int *)NULL;
 		}
 		util::DecodeFixed(infobuf, src_b);
 		util::DecodeFixed(infobuf + sizeof(vertex_t), src_e);
@@ -35,6 +35,20 @@ namespace BACH
 
 		//filter_end_pos = filter_allocation_end_pos - (sizeof(size_t) + sizeof(idx_t)) * (src_e - src_b + 1);
 		// 第三部分是布隆过滤器的信息，每一个src分配一个布隆过滤器，布隆过滤器不是定长的，因此需要第四部分的过滤器分配数组来标识src对应的布隆过滤器,并且由filter_len来标识过滤器长度
+	}
+	SSTableParser::SSTableParser(SSTableParser &&x):
+		label(x.label), reader(x.reader), options(x.options),
+		edge_cnt(x.edge_cnt), edge_msg_end_pos(x.edge_msg_end_pos),
+		edge_allocation_end_pos(x.edge_allocation_end_pos),
+		src_b(x.src_b), src_e(x.src_e), file_size(x.file_size)
+	{
+		x.valid = false;
+	}
+	
+	SSTableParser::~SSTableParser()
+	{
+		if(valid)
+			reader->DecRef();
 	}
 	// 在此文件中查找特定src->dst的边，如果不存在则返回null，存在返回一个指向(vertex_id,edge_property)的指针
 	edge_property_t SSTableParser::GetEdge(vertex_t src, vertex_t dst)
@@ -92,8 +106,8 @@ namespace BACH
 			size_t len = (i != read_num) ? singel_read_max_len : this->src_edge_len % singel_read_max_len;
 			char buffer[len];
 			if (!reader->fread(buffer, len, this->src_edge_info_offset)) {
-				//std::cout << "read fail dst" << std::endl;
-				exit(-1);
+				std::cout << "read fail dst" << std::endl;
+				++*(int *)NULL;
 			}
 			size_t offset = 0;
 			this->src_edge_info_offset += len;
@@ -130,8 +144,8 @@ namespace BACH
 			size_t len = (i != read_num) ? singel_read_max_len : this->src_edge_len % singel_read_max_len;
 			char buffer[len];
 			if (!reader->fread(buffer, len, this->src_edge_info_offset)) {
-				//std::cout << "read fail dsts" << std::endl;
-				exit(-1);
+				std::cout << "read fail dsts" << std::endl;
+				++*(int *)NULL;
 			}
 			size_t offset = 0;
 			this->src_edge_info_offset += len;
@@ -168,8 +182,8 @@ namespace BACH
 			char buffer[len];
 			if (!reader->fread(buffer, len, offset))
 			{
-				//std::cout << "read fail range 0" << std::endl;
-				exit(-1);
+				std::cout << "read fail range 0" << std::endl;
+				++*(int *)NULL;
 			}
 			this->src_edge_info_offset = 0;
 			this->src_edge_len = util::GetDecodeFixed<edge_num_t>(buffer) * singel_edge_total_info_size;
@@ -181,8 +195,8 @@ namespace BACH
 			char buffer[len];
 			if (!reader->fread(buffer, len, offset))
 			{
-				//std::cout << "read fail range" << std::endl;
-				exit(-1);
+				std::cout << "read fail range" << std::endl;
+				++*(int *)NULL;
 			}
 			this->src_edge_info_offset = util::GetDecodeFixed<edge_num_t>(buffer) * singel_edge_total_info_size;
 			this->src_edge_len = (util::GetDecodeFixed<edge_num_t>(buffer + sizeof(edge_num_t)) - util::GetDecodeFixed<edge_num_t>(buffer)) * singel_edge_total_info_size;
@@ -196,8 +210,8 @@ namespace BACH
 		this->edge_allocation_read_buffer.resize(this->edge_allocation_buffer_len * sizeof(edge_num_t));
 		if (!reader->fread(edge_allocation_read_buffer.data(), this->edge_allocation_buffer_len * sizeof(edge_num_t), this->edge_msg_end_pos + this->edge_allocation_now_pos * sizeof(edge_num_t)))
 		{
-			//std::cout << "read fail alloca" << std::endl;
-			exit(-1);
+			std::cout << "read fail alloca" << std::endl;
+			++*(int *)NULL;
 		}
 	}
 	void SSTableParser::ReadEdgeMsgBuffer()
@@ -209,8 +223,8 @@ namespace BACH
 		if (!reader->fread(edge_msg_read_buffer.data(), this->edge_msg_buffer_len * singel_edge_total_info_size,
 			this->edge_msg_now_pos * singel_edge_total_info_size))
 		{
-			//std::cout << "read fail msg" << std::endl;
-			exit(-1);
+			std::cout << "read fail msg" << std::endl;
+			++*(int *)NULL;
 		}
 	}
 	// 得到一个文件的第一条边的信息,如果文件是空的就返回false

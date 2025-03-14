@@ -15,7 +15,7 @@ namespace BACH
 	{
 	public:
 		FileReaderCache(idx_t _max_size, std::string _prefix);
-		std::shared_ptr<FileReader> find(FileMetaData* file_data);
+		FileReader* find(FileMetaData* file_data);
 		void deletecache(FileMetaData* file_data);
 	private:
 		std::vector<FileMetaData*> cache;
@@ -23,6 +23,6 @@ namespace BACH
 		std::atomic<idx_t> size = 0;
 		idx_t max_size;
 		std::string prefix;
-		const std::shared_ptr<FileReader> writing;
+		bool no_cache = false;
 	};
 }

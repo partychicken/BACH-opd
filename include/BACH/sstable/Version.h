@@ -36,8 +36,7 @@ namespace BACH
 		std::vector<          //label
 			std::vector<      //level
 			size_t>> FileTotalSize;
-		std::atomic<idx_t> ref = 2;
-		std::atomic<bool> deleting = false;
+		std::atomic<idx_t> ref = 1;
 		std::shared_ptr < SizeEntry > size_entry = NULL;
 		DB* db;
 		friend class VersionIterator;

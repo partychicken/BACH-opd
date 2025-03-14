@@ -80,8 +80,9 @@ namespace BACH
 						db->Labels->GetVertexLabel(label)) + "_"
 					+ std::to_string(file_no) + ".property");
 				PropertyFileParser parser(reader);
+				auto answer = parser.GetProperty(property_id - file_no);
 				delete reader;
-				return parser.GetProperty(property_id - file_no);
+				return answer;
 			}
 		}
 		else

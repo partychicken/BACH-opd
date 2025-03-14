@@ -19,8 +19,10 @@ namespace BACH
 	{
 	public:
 		SSTableParser(label_t _label,
-			std::shared_ptr<FileReader> _fileReader,
+			FileReader* _fileReader,
 			std::shared_ptr<Options> _options);
+		SSTableParser(SSTableParser&& x);
+		~SSTableParser();
 		edge_property_t GetEdge(vertex_t src, vertex_t dst);
 		void GetEdges(vertex_t src, std::shared_ptr<std::vector<
 			std::pair<vertex_t, edge_property_t>>> answer,
@@ -39,7 +41,7 @@ namespace BACH
 
 	private:
 		label_t label;
-		std::shared_ptr<FileReader> reader;
+		FileReader* reader;
 		std::shared_ptr<Options> options;
 		//std::shared_ptr <BloomFilter> filter = NULL;
 		edge_t edge_cnt = 0;

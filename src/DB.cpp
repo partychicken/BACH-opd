@@ -8,18 +8,35 @@ namespace BACH
 		epoch_id(1),
 		write_epoch_table(_options->MAX_WORKER_THREAD)
 	{
+		if(options->MAX_FILE_READER_CACHE_SIZE != 0)
+		{
+			ReaderCaches = std::make_unique<FileReaderCache>(
+				options->MAX_FILE_READER_CACHE_SIZE, options->STORAGE_DIR + "/");
+		}
+		else
+		{
+			struct rlimit rlim;
+			if (getrlimit(RLIMIT_NOFILE, &rlim) != 0) {
+				perror("getrlimit failed");
+				exit(-1);
+			}
+			rlim.rlim_cur = rlim.rlim_max;
+			if (setrlimit(RLIMIT_NOFILE, &rlim) != 0) {
+				perror("setrlimit failed");
+				exit(-1);
+			}
+			ReaderCaches = std::make_unique<FileReaderCache>(0, options->STORAGE_DIR + "/");
+		}
 		Labels = std::make_unique<LabelManager>();
 		Memtable = std::make_unique<MemoryManager>(this);
 		Files = std::make_unique<FileManager>(this);
-		ReaderCaches = std::make_unique<FileReaderCache>(
-			options->MAX_FILE_READER_CACHE_SIZE, options->STORAGE_DIR + "/");
 		for (idx_t i = 0; i < _options->NUM_OF_COMPACTION_THREAD; ++i)
 		{
 			compact_thread.push_back(std::make_shared<std::thread>(
 				[&] {CompactLoop(); }));
 			compact_thread[i]->detach();
 		}
-		read_version = current_version = new Version(this);
+		read_version = current_version = new Version(this);	
 	}
 	DB::~DB()
 	{
@@ -235,17 +252,13 @@ namespace BACH
 						if (iter == current_version->FileIndex[x.label_id][x.target_level].begin())
 							break;
 						iter--;
-						while ((*iter)->vertex_id_b == x.vertex_id_b)
+						if ((*iter)->vertex_id_b == x.vertex_id_b)
 						{
 							if ((*iter)->merging == false)
 							{
 								(*iter)->merging = true;
 								x.file_list.push_back(*iter);
-								break;
 							}
-							if (iter == current_version->FileIndex[x.label_id][x.target_level].begin())
-								break;
-							iter--;
 						}
 						break;
 					}
@@ -276,7 +289,6 @@ namespace BACH
 			Files->AddCompaction(*compact);
 			delete compact;
 		}
-		tmp->DecRef();
 		version_lock.unlock();
 	}
 	void DB::ProgressReadVersion()
@@ -289,7 +301,6 @@ namespace BACH
 				break;
 			if (read_version.compare_exchange_weak(tail, tail->next))
 			{
-				tail->next->AddRef();
 				tail->DecRef();
 			}
 		}

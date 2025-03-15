@@ -4,7 +4,7 @@
 namespace BACH
 {
 	Version::Version(DB* _db) :
-		next(NULL), epoch(0), next_epoch(-1), db(_db) {
+		next(NULL), epoch(0), next_epoch(-1), ref(2), db(_db) {
 	}
 	Version::Version(Version* _prev, VersionEdit* edit, time_t time) :
 		next(NULL), epoch(std::max(_prev->epoch, time)), next_epoch(-1),
@@ -30,12 +30,12 @@ namespace BACH
 			}
 			else
 			{
-				while (FileIndex.size() <= i.label)
-					FileIndex.emplace_back(0),
-					FileTotalSize.emplace_back();
-				while (FileIndex[i.label].size() <= i.level)
-					FileIndex[i.label].emplace_back(),
-					FileTotalSize[i.label].emplace_back(0);
+				if (FileIndex.size() <= i.label)
+					FileIndex.resize(i.label + 1),
+					FileTotalSize.resize(i.label + 1);
+				if (FileIndex[i.label].size() <= i.level)
+					FileIndex[i.label].resize(i.level + 1),
+					FileTotalSize[i.label].resize(i.level + 1);
 				auto x = std::upper_bound(FileIndex[i.label][i.level].begin(),
 					FileIndex[i.label][i.level].end(), &i, FileCompare);
 				auto f = new FileMetaData(std::move(i));
@@ -59,25 +59,18 @@ namespace BACH
 				for (auto& k : j)
 				{
 					auto r = k->ref.fetch_add(-1);
-					bool bo = false;
-					if (r == 1 && k->death.compare_exchange_strong(bo, true))
+					if (r == 1)
 					{
 						unlink((db->options->STORAGE_DIR + "/"
 							+ k->file_name).c_str());
-						if(k->filter->size() == util::ClacFileSize(db->options, k->level))
-							delete k->filter;
-						k->reader = NULL;
-						k->filter = NULL;
+						//if(k->filter->size() == util::ClacFileSize(db->options, k->level))
+						delete k->filter;
+						if (k->reader != NULL)
+							delete k->reader;
 						db->ReaderCaches->deletecache(k);
 						delete k;
 					}
-					else if(r == 1)
-					{
-						std::cout<<"twice delete a file"<<std::endl;
-					}
 				}
-		if (next != NULL)
-			next->DecRef();
 	}
 
 	Compaction* Version::GetCompaction(VersionEdit* edit, bool force_level)
@@ -193,12 +186,9 @@ namespace BACH
 	}
 	void Version::DecRef()
 	{
-		bool FALSE = false;
 		auto k = ref.fetch_add(-1);
-		if (k == 1 && deleting.compare_exchange_strong(FALSE, true))
+		if (k == 1)
 			delete this;
-		else if (k == 1)
-			std::cout<<"twice delete a version"<<std::endl;
 	}
 	void Version::AddSizeEntry(std::shared_ptr < SizeEntry > x)
 	{

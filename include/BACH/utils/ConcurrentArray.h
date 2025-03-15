@@ -24,7 +24,7 @@ namespace BACH
 		{
 			for (int i = 0; i < 30; ++i)
 			{
-				delete array[i];
+				delete[] array[i];
 			}
 		}
 		T& operator[](size_t index)

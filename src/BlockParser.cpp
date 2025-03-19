@@ -7,7 +7,8 @@
 !!!
 */
 namespace BACH {
-    BlockParser::BlockParser(FileReader* _fileReader,
+    template<typename Key_t>
+    BlockParser<Key_t>::BlockParser(FileReader* _fileReader,
             std::shared_ptr<Options> _options, size_t _offset_in_file,
             size_t _block_size) :
             reader(_fileReader), options(_options), 
@@ -40,26 +41,29 @@ namespace BACH {
         }
     }
 
-    BlockParser::BlockParser(BlockParser &&x) : 
+    template<typename Key_t>
+    BlockParser<Key_t>::BlockParser(BlockParser<Key_t> &&x) :
         reader(x.reader), options(x.options), key_num(x.key_num),
         col_num(x.col_num), key_size(x.key_size), col_size(x.col_size),
         key_data_endpos(x.key_data_endpos), col_data_endpos(x.cod_data_endpos),
         offset_in_file(x.offset_in_file), block_size(x.block_size) {
         x.valid = false;
     }
-    
-    BlockParser::~BlockParser() {
+
+    template<typename Key_t>
+    BlockParser<Key_t>::~BlockParser() {
         if(valid) {
             reader->DecRef();
         }
         free(col_data_endpos);
         free(col_size);
     }
-    
-    Tuple GetTupleWithIdx(Key_t key, idx_t idx) {
+
+    template<typename Key_t>
+    BlockParser<Key_t>::Tuple GetTupleWithIdx(Key_t key, idx_t idx) {
         Tuple result;
         result.col_num = col_num + 1;
-        row.push_back(key.to_string());
+        result.row.push_back(key.to_string());
         for(int i = 0; i < col_num; i++) {
             size_t now_size = col_size[i];
             size_t now_begin = i ? col_data_endpos[i - 1] : key_data_endpos; 
@@ -72,8 +76,9 @@ namespace BACH {
         }
         return result;
     }
-    
-    Tuple BlockParser::GetTuple(Key_t key) {
+
+    template<typename Key_t>
+    BlockParser<Key_t>::Tuple GetTuple(Key_t key) {
         idx_t single_read_num = this->options->READ_BUFFER_SIZE / key_size;
         size_t single_read_size = single_read_num * key_size;
         int read_times = (key_num - 1) / single_read_num + 1; 
@@ -111,7 +116,8 @@ namespace BACH {
         }
     }
     
-    Key_t* GetKeyCol() {
+    template<typename Key_t>
+    BlockParser<Key_t>::Key_t* GetKeyCol() {
         //needs seperately buffering ?
         char* buffer = static_cast<char*>(malloc(key_num * key_size));
         if (!reader->fread(buffer, key_num * key_size, 0)) {
@@ -120,8 +126,9 @@ namespace BACH {
         }
         return static_cast<Key_t*>buffer;
     }
-    
-    idx_t* GetValCol(int col_id) {
+
+    template<typename Key_t>
+    BlockParser<Key_t>::idx_t* GetValCol(int col_id) {
         if(col_id) {
             char* buffer = static_cast<char*>(malloc(key_num * col_size[col_id]));
             if (!reader->fread(buffer, key_num * col_size[col_id], col_data_endpos[col_id - 1])) {

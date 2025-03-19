@@ -45,12 +45,11 @@ namespace BACH
 		//std::shared_ptr <BloomFilter> filter = NULL;
         idx_t key_num = 0, col_num = 0;
         size_t key_size = 0, val_size = 0;
-		edge_t edge_cnt = 0;
 		size_t edge_msg_end_pos = 0;//end position
 		size_t edge_allocation_end_pos = 0;
 		size_t filter_allocation_end_pos = 0;
 		size_t filter_end_pos = 0;
-		vertex_t src_b = 0, src_e = 0;
+
 		vertex_t now_src = 0;
 		off_t file_size = 0;
 		size_t src_edge_info_offset = 0;

@@ -2,18 +2,21 @@
 #include "BACH/db/DB.h"
 
 namespace BACH {
-    BlockBuilder::BlockBuilder(std::shared_ptr<FileWriter>_filewriter, std::shared_ptr<Options>_options) :
+    template <typename Key_t>
+    BlockBuilder<Key_t>::BlockBuilder(std::shared_ptr<FileWriter>_filewriter, std::shared_ptr<Options>_options) :
         writer(_filewriter),
         options(_options){}
-    
-    void BlockBuilder::SetKeyRange(Key_t key_min, Key_t key_max) {
+
+    template <typename Key_t>
+    void BlockBuilder<Key_t>::SetKeyRange(Key_t key_min, Key_t key_max) {
         this->key_min = key_min;
         this->key_max = key_max;
     }
-    
-    void BlockBuilder::SetKey(Key_t* keys, idx_t key_num = 0, size_t key_size = 0) {
+
+    template <typename Key_t>
+    void BlockBuilder<Key_t>::SetKey(Key_t* keys, idx_t key_num, size_t key_size) {
         if(key_size) {
-            writer->append(static_cast<char*>keys, key_size);
+            writer->append(reinterpret_cast<char*>(keys), key_size);
         } else if (key_num) {
             std::string temp_data;
             for(int i = 0; i < key_num; i++) {
@@ -26,11 +29,13 @@ namespace BACH {
         }
     }
 
-    void BlockBuilder::SetValueIdx(idx_t* vals, idx_t val_num = 0) {
-        writer->append(static_cast<char*>vals, (int32_t)val_num * sizeof(idx_t));
+    template <typename Key_t>
+    void BlockBuilder<Key_t>::SetValueIdx(idx_t* vals, idx_t val_num) {
+        writer->append(reinterpret_cast<char*>(vals), (int32_t)val_num * sizeof(idx_t));
     }
-    
-    void ArrangeBlockInfo(BloomFilter &filter, Key_t *key, idx_t key_num, idx_t col_num) {
+
+    template <typename Key_t>
+    void BlockBuilder<Key_t>::ArrangeBlockInfo(BloomFilter &filter, Key_t *key, idx_t key_num, idx_t col_num) {
         for(int i = 0; i < key_num; i++) {
             filter.insert(key[i]);
         }

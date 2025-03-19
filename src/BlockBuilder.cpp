@@ -8,7 +8,7 @@ namespace BACH {
         options(_options){}
 
     template <typename Key_t>
-    void BlockBuilder<Key_t>::SetKeyRange(Key_t key_min, Key_t key_max) {
+    void BlockBuilder<Key_t>::SetKeyRange(const Key_t &key_min,const Key_t &key_max) {
         this->key_min = key_min;
         this->key_max = key_max;
     }
@@ -20,7 +20,7 @@ namespace BACH {
         } else if (key_num) {
             std::string temp_data;
             for(int i = 0; i < key_num; i++) {
-                util::PutFixed(temp_data, keys[i])
+                util::PutFixed(temp_data, keys[i]);
             }
             writer->append(temp_data.data(), temp_data.size());
         } else {
@@ -37,7 +37,8 @@ namespace BACH {
     }
 
     template <typename Key_t>
-    void BlockBuilder<Key_t>::ArrangeBlockInfo(BloomFilter &filter, Key_t *key, idx_t key_num, idx_t col_num) {
+    void BlockBuilder<Key_t>::ArrangeBlockInfo(BloomFilter &filter, Key_t *key, idx_t key_num, idx_t col_num,
+                                               size_t key_size, size_t* col_size) {
         for(int i = 0; i < key_num; i++) {
             filter.insert(key[i]);
         }

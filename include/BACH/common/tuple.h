@@ -5,7 +5,7 @@
 namespace BACH {
     struct Tuple {
         int col_num;
-        ConcurrentArray <std::string> row;
+        std::vector <std::string> row;
 
         std::string GetRow(int col) {
             return row[col];

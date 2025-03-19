@@ -20,15 +20,19 @@ namespace BACH
 	{
 	public:
 		BlockParser( std::shared_ptr<FileReader> _fileReader,
-			std::shared_ptr<Options> _options);
+			std::shared_ptr<Options> _options, size_t _offset_in_file,
+            size_t _block_size);
 		edge_property_t GetEdge(vertex_t src, vertex_t dst);
         Tuple GetTuple(Key_t key);
-        Key_t* GetKeyCol();
+
+        //output raw pointers, needing free outside after copy
+        Key_t* GetKeyCol(); 
         idx_t* GetValCol(int col_id);
+
         size_t GetKeySize() {
             return key_size;
         }
-        size_t GetValueSize() {
+        size_t* GetValueSize() {
             return val_size;
         }
         idx_t GetKeyNum() {
@@ -39,29 +43,17 @@ namespace BACH
         }
 
 	private:
-		label_t label;
 		std::shared_ptr<FileReader> reader;
 		std::shared_ptr<Options> options;
+        
+        size_t offset_in_file = 0;
+        size_t block_size = 0;
 		//std::shared_ptr <BloomFilter> filter = NULL;
         idx_t key_num = 0, col_num = 0;
-        size_t key_size = 0, val_size = 0;
-		edge_t edge_cnt = 0;
-		size_t edge_msg_end_pos = 0;//end position
-		size_t edge_allocation_end_pos = 0;
-		size_t filter_allocation_end_pos = 0;
-		size_t filter_end_pos = 0;
-		vertex_t src_b = 0, src_e = 0;
-		vertex_t now_src = 0;
-		off_t file_size = 0;
-		size_t src_edge_info_offset = 0;
-		edge_len_t src_edge_len = 0;
-		std::string edge_allocation_read_buffer;
-		std::string edge_msg_read_buffer;
-		size_t edge_allocation_buffer_pos = 0, edge_msg_buffer_pos = 0;
-		size_t edge_allocation_now_pos = 0, edge_msg_now_pos = 0;
-		size_t edge_allocation_buffer_len = 0, edge_msg_buffer_len = 0;
-		vertex_t now_edge_src, now_edge_dst;
-		edge_property_t now_edge_prop;
+        size_t key_size = 0;
+        size_t* val_size = nullptr;
+        size_t key_data_endpos = 0;
+        size_t* col_data_endpos = nullptr;
 		bool valid = true;
 	};
 }

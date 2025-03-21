@@ -39,9 +39,13 @@ namespace BACH {
     template <typename Key_t>
     void BlockBuilder<Key_t>::ArrangeBlockInfo(BloomFilter &filter, Key_t *key, idx_t key_num, idx_t col_num,
                                                size_t key_size, size_t* col_size) {
+        Key_t key_max = key[0], key_min = key[0];
         for(int i = 0; i < key_num; i++) {
             filter.insert(key[i]);
+            key_max = max(key_max, key[i]);
+            key_min = min(key_min, key[i]);
         }
+        SetKeyRange(key_min, key_max);
         std::string metadata;
         for(int i = 0; i < col_num; i++) {
             util::PutFixed(metadata, col_size[i]);

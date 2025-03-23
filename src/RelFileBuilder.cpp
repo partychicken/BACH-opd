@@ -100,13 +100,14 @@ namespace BACH {
             //temporarily not put it in
         }
         //put file meta here
-        size_t header_size = 2 * sizeof(key_t) + sizeof(size_t) + sizeof(idx_t);
+        size_t header_size = 2 * sizeof(key_t) + sizeof(size_t) + 2 * sizeof(idx_t);
         std::string meta_data;
         util::PutFixed(meta_data, key_min);
         util::PutFixed(meta_data, key_max);
+        util::PutFixed(meta_data, col_num);
         util::PutFixed(meta_data, block_count);
+        util::PutFixed(meta_data, block_meta_begin_pos);
         file_size = now_offset_in_file + header_size;
-        util::PutFixed(meta_data, file_size);
     }
 }
 

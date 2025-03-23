@@ -1,21 +1,22 @@
 #pragma once
 
 #include <sul/dynamic_bitset.hpp>
+#include "dictionary.h"
 
 namespace BACH {
-    const STANDARD_VECTOR_SIZE = 1024;
+    const int STANDARD_VECTOR_SIZE = 1024;
+
+    template <typename Key_t>
     class Vector {
     public:
-        int Slice(const Vector &other) {
-            bitmap &= other.bitmap;
+        int Slice(const sul::dynamic_bitset<> &sel) {
+            bitmap &= sel;
             return bitmap.count();
-        }
-
-        int Slice(const Vector &other) {
-            bitmap &= other.bitmap;
         }
 
     private:
         sul::dynamic_bitset<> bitmap(STANDARD_VECTOR_SIZE);
+        std::shared_ptr<Dict<Key_t> >dictionary;
+        idx_t* data_idx;
     }
 }

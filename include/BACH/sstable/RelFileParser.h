@@ -5,6 +5,7 @@
 #include <string>
 #include <string_view>
 #include "BloomFilter.h"
+#include "BlockParser.h"
 #include "BACH/file/FileReader.h"
 #include "BACH/utils/utils.h"
 #include "BACH/utils/Options.h"
@@ -35,8 +36,8 @@ namespace BACH
         Tuple GetTuple(Key_t key);
 
         //copy the columns from blockparser, and free them
-        void GetKeyCol(Key_t *keys, idx_t &keynum);
-        void GetValCol(idx_t *vals, idx_t &valnum, idx_t col_id);
+        void GetKeyCol(Key_t *keys, idx_t &key_num);
+        void GetValCol(idx_t *vals, idx_t &val_num, idx_t col_id);
 
         idx_t GetColumnNum() {
             return col_num;

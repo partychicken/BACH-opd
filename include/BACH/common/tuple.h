@@ -4,10 +4,10 @@
 
 namespace BACH {
     struct Tuple {
-        int col_num;
+        int col_num = 0;
         std::vector <std::string> row;
 
-        std::string GetRow(int col) {
+        std::string GetRow(const int &col) {
             return row[col];
         }
     };

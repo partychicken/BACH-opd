@@ -47,3 +47,4 @@ Then add the linking options during building:
 ```bash
 -lbach -L/path/to/BACH_demo/build 
 ```
+![image](https://github.com/user-attachments/assets/c9f0d4a6-dfc5-454d-95b3-7a5c1dc0431d)

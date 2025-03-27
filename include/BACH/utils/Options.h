@@ -34,6 +34,8 @@ namespace BACH
 		size_t LEVEL_SIZE_RITIO = 10;
 
 		size_t MAX_BLOCK_SIZE = 1024 * 1024;
+		size_t MEMORY_MERGE_IN_TUPLE = 2048;
+
 	};
 #endif // OPTION
 

@@ -15,7 +15,7 @@ include_directories(${PROJECT_SOURCE_DIR})
 
 file(GLOB_RECURSE srcs CONFIGURE_DEPENDS src/*.cpp)
 
-add_library(bach SHARED bind/BACH.cpp ${srcs})
+add_library(bach SHARED bind/BACH.cpp ${srcs} "src/TupleEntry.cpp")
 target_include_directories(bach PUBLIC include)
 target_compile_features(bach PUBLIC cxx_std_20)
 

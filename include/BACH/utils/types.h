@@ -28,4 +28,6 @@ namespace BACH
 	const time_t MAXTIME = UINT64_MAX;
 	const edge_property_t TOMBSTONE = std::numeric_limits<double>::max();
 	const edge_property_t NOTFOUND = std::numeric_limits<double>::signaling_NaN();
+
+	using tuple_t = uint32_t;
 }

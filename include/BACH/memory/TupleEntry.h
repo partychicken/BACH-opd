@@ -25,17 +25,6 @@ namespace BACH
 	// currently use string as key
 	typedef std::string tp_key;
 
-	struct tp_idx
-	{
-		public:
-			tp_idx(std::string _str, idx_t _idx) : tp_key(_str), idx(_idx){};
-		
-			~tp_idx();
-
-		private
-			std::string tp_key;
-			idx_t idx;
-	};
 
 	// string comparator,used in SkipList
 	struct ReverseCompare {
@@ -45,7 +34,7 @@ namespace BACH
 	};
 
 
-	typedef folly::ConcurrentSkipList<std::pair<tp_key, idx_t>, ReverseCompare> SkipList;
+	typedef folly::ConcurrentSkipList<std::pair<tp_key, idx_t>, ReverseCompare> RelSkipList;
 	struct TPSizeEntry
 	{
 		// metadata for tuples
@@ -53,7 +42,7 @@ namespace BACH
 		tp_key min_key;
 		
 		std::atomic<size_t> total_tuple;
-		std::shared_ptr<SkipList> tuple_index;
+		std::shared_ptr<RelSkipList> tuple_index;
 		std::shared_mutex mutex;
 		ConcurrentArray<std::shared_ptr<TupleEntry>> tuple_pool;
 		std::shared_ptr<TPSizeEntry> last = NULL, next = NULL;
@@ -65,7 +54,7 @@ namespace BACH
 		TPSizeEntry(size_t _size,
 			std::shared_ptr<TPSizeEntry> _next = NULL) :
 			total_tuple(_size), next(_next), immutable(false), sema(0) {
-			tuple_index = std::make_shared<SkipList>(,);
+			tuple_index = RelSkipList::createInstance();
 		};
 		void delete_entry() {
 			last->next = NULL;

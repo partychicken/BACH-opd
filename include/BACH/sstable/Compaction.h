@@ -15,4 +15,9 @@ namespace BACH
 		idx_t file_id;
 		std::shared_ptr < SizeEntry > Persistence;
 	};
+
+	template<typename Key_t>
+	struct RelCompaction : public Compaction {
+		Key_t key_min;
+	};
 }

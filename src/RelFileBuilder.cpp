@@ -46,7 +46,7 @@ namespace BACH {
 
     template<typename Key_t>
     void RelFileBuilder<Key_t>::ArrangeRelFileInfo(Key_t *keys, idx_t key_num, size_t key_size,
-                                                   idx_t col_num, idx_t**vals, idx_t* val_nums){
+                                                   idx_t col_num, idx_t**vals){
         if(!key_size) key_size = sizeof(Key_t);
         size_t tot_val_size = sizeof(idx_t) * col_num; //can be optimized
         idx_t single_block_num = options->MAX_BLOCK_SIZE / (key_size + tot_val_size);

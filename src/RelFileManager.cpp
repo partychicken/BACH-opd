@@ -93,7 +93,7 @@ namespace BACH {
 
         Key_t *order_key_buf = static_cast<Key_t *>(malloc(sizeof(Key_t) * (key_tot_num / file_num + 5)));
         int key_buf_idx = 0;
-        idx_t *val_buf[col_num];
+        std::pair<idx_t, idx_t> *val_buf[col_num];
         for (int i = 0; i < col_num; i++) {
             val_buf = static_cast<idx_t *>(malloc(sizeof(idx_t) * (key_tot_num / file_num + 5)));
         }
@@ -109,13 +109,14 @@ namespace BACH {
 
             order_key_buf[key_buf_idx] = now_message.key;
             for (int i = 0; i < col_num; i++) {
-                val_buf[i][key_buf_idx] = vals[now_message.file_idx][i][now_message.offset];
+                val_buf[i][key_buf_idx] = make_pair(now_message.file_idx, vals[now_message.file_idx][i][now_message.offset]);
             }
             key_buf_idx++;
 
             if (key_buf_idx * file_num >= key_tot_num) {
                 //flush buf to a new file
                 //build new dictionary
+
                 //map new index from new dictionary
                 rel_builder->ArrangeRelFileInfo(order_key_buf, key_buf_idx, sizeof(Key_t), col_num, val_buf);
                 key_buf_idx = 0;

@@ -49,6 +49,7 @@ namespace BACH
 
         size_t file_size = 0;
         idx_t col_num = 0;
+        idx_t key_num = 0;
         idx_t block_count = 0;
         Key_t key_min, key_max;
         size_t block_meta_begin_pos;

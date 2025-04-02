@@ -46,7 +46,7 @@ namespace BACH {
 
     template<typename Key_t>
     void RelFileBuilder<Key_t>::ArrangeRelFileInfo(Key_t *keys, idx_t key_num, size_t key_size,
-                                                   idx_t col_num, idx_t**vals, idx_t* val_nums){
+                                                   idx_t col_num, idx_t**vals){
         if(!key_size) key_size = sizeof(Key_t);
         size_t tot_val_size = sizeof(idx_t) * col_num; //can be optimized
         idx_t single_block_num = options->MAX_BLOCK_SIZE / (key_size + tot_val_size);
@@ -77,7 +77,7 @@ namespace BACH {
                 }
             }
             BlockMetaT<Key_t> meta{std::make_shared<BloomFilter>, 0, 0, 0, 0};
-            BlockBuilder<Key_t> builder = new BlockBuilder<Key_t>(writer, options);
+            BlockBuilder<Key_t>* builder = new BlockBuilder<Key_t>(writer, options);
             size_t block_size = this->SetBlock(builder, meta.filter, keys + key_offset,
                                          block_key_num, key_size, vals, block_val_num, val_offset);
             meta.offset_in_file = now_offset_in_file;
@@ -100,14 +100,16 @@ namespace BACH {
             //temporarily not put it in
         }
         //put file meta here
-        size_t header_size = 2 * sizeof(key_t) + sizeof(size_t) + 2 * sizeof(idx_t);
+        size_t header_size = 2 * sizeof(key_t) + sizeof(size_t) + 3 * sizeof(idx_t);
         std::string meta_data;
         util::PutFixed(meta_data, key_min);
         util::PutFixed(meta_data, key_max);
+        util::PutFixed(meta_data, key_num);
         util::PutFixed(meta_data, col_num);
         util::PutFixed(meta_data, block_count);
         util::PutFixed(meta_data, block_meta_begin_pos);
         file_size = now_offset_in_file + header_size;
+        writer->flush();
     }
 }
 

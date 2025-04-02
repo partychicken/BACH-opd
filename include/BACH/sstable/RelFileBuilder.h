@@ -31,11 +31,8 @@ namespace BACH
         //void AddFilter(idx_t keys_num, double false_positive);
 
         void ArrangeRelFileInfo(Key_t *keys, idx_t key_num, size_t key_size,
-                                idx_t col_num, idx_t**vals, idx_t* val_nums);
-        size_t SetBlock(BlockBuilder<Key_t>*block_builder, BloomFilter &filter,
-                      Key_t* keys, idx_t key_num, size_t key_size, idx_t col_num,
-                         idx_t** vals, idx_t* val_nums, idx_t *val_offset);
-        size_t SetBlockMeta(size_t offset);
+                                idx_t col_num, idx_t**vals);
+
         void SetDict();//optional
         void SetBloomFilter();
     private:
@@ -48,5 +45,9 @@ namespace BACH
         idx_t block_count;
         std::shared_ptr<BloomFilter>global_filter = nullptr;
 
+        size_t SetBlock(BlockBuilder<Key_t>*block_builder, BloomFilter &filter,
+                              Key_t* keys, idx_t key_num, size_t key_size, idx_t col_num,
+                                 idx_t** vals, idx_t* val_nums, idx_t *val_offset);
+        size_t SetBlockMeta(size_t offset);
     };
 }

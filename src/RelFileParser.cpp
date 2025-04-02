@@ -6,7 +6,7 @@ namespace BACH {
     RelFileParser<Key_t>::RelFileParser(std::shared_ptr<FileReader> _fileReader,
                std::shared_ptr<Options> _options, size_t _file_size) :
                reader(_fileReader), options(_options), file_size(_file_size) {
-        size_t header_size = 2 * sizeof(key_t) + sizeof(size_t) + 2 * sizeof(idx_t);
+        size_t header_size = 2 * sizeof(key_t) + sizeof(size_t) + 3 * sizeof(idx_t);
         char infobuf[header_size];
         if(!reader->rread(infobuf, header_size, header_size)) {
             std::cout << "read fail begin" << std::endl;
@@ -14,9 +14,10 @@ namespace BACH {
         }
         util::DecodeFixed(infobuf, key_min);
         util::DecodeFixed(infobuf + sizeof(Key_t), key_max);
-        util::DecodeFixed(infobuf + sizeof(Key_t) * 2, col_num);
-        util::DecodeFixed(infobuf + sizeof(Key_t) * 2 + sizeof(idx_t), block_count);
-        util::DecodeFixed(infobuf + sizeof(Key_t) * 2 + sizeof(idx_t) * 2, block_meta_begin_pos);
+        util::DecodeFixed(infobuf + sizeof(Key_t) * 2, key_num);
+        util::DecodeFixed(infobuf + sizeof(Key_t) * 2 + sizeof(idx_t), col_num);
+        util::DecodeFixed(infobuf + sizeof(Key_t) * 2 + sizeof(idx_t) * 2, block_count);
+        util::DecodeFixed(infobuf + sizeof(Key_t) * 2 + sizeof(idx_t) * 3, block_meta_begin_pos);
 
         size_t meta_size = 2 * sizeof(key_t) + 3 * sizeof(size_t);
         size_t now_meta_offset = block_meta_begin_pos;
@@ -74,8 +75,8 @@ namespace BACH {
                              meta.offset_in_file, meta.block_size);
             Key_t* block_key = block_parser.GetKeyCol();
             idx_t block_key_num = block_parser.key_num;
-            for(idx_t i = 0; i < block_key_num; i++) {
-                keys[idx++] = block_key[i];
+            for(idx_t j = 0; j < block_key_num; j++) {
+                keys[idx++] = block_key[j];
             }
             key_num += block_key_num;
             free(block_key);
@@ -91,8 +92,8 @@ namespace BACH {
                              meta.offset_in_file, meta.block_size);
             idx_t* block_vals = block_parser.GetValCol(col_id);
             idx_t block_key_num = block_parser.key_num;
-            for(idx_t i = 0; i < block_key_num; i++) {
-                vals[idx++] = block_vals[i];
+            for(idx_t j = 0; j < block_key_num; j++) {
+                vals[idx++] = block_vals[j];
             }
             val_num += block_key_num;
             free(block_vals);

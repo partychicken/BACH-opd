@@ -13,6 +13,7 @@
 #include "BACH/sstable/RelFileParser.h"
 #include "BACH/sstable/RelFileBuilder.h"
 #include "BACH/sstable/Version.h"
+#include "BACH/common/tuple.h"
 
 namespace BACH
 {
@@ -30,8 +31,6 @@ namespace BACH
 
         void AddCompaction(Compaction& compaction);
         VersionEdit* MergeRelFile(Compaction& compaction);
-        idx_t GetFileID(
-            label_t label, idx_t level, vertex_t src_b);
 
     private:
         DB* db;

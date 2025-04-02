@@ -8,18 +8,18 @@ namespace BACH
 		CurrentTupleIndexEntry = TupleIndex[0];
 	}
 
-	void FormatRow::AddTuple(Tuple tuple, tp_key key, time_t timestamp) {
+	void FormatRow::AddTuple(Tuple tuple, tp_key key, time_t timestamp, tuple_property_t property) {
 		std::unique_lock<std::shared_mutex> lock(CurrentTupleIndexEntry->mutex);
-		CurrentTupleIndexEntry->AddTuple(tuple, key, timestamp);
+		CurrentTupleIndexEntry->AddTuple(tuple, key, timestamp, property);
 		current_data_count++;
 		CheckAndPersist();
 	}
 
 
 	
-	void FormatRow::DeleteTuple(tp_key key, time_t timestamp) {
+	void FormatRow::DeleteTuple(tp_key key, time_t timestamp, tuple_property_t property) {
 		std::unique_lock<std::shared_mutex> lock(CurrentTupleIndexEntry->mutex);
-		CurrentTupleIndexEntry->DeleteTuple(key, timestamp);
+		CurrentTupleIndexEntry->DeleteTuple(key, timestamp, property);
 		current_data_count--;
 		CheckAndPersist();
 	}
@@ -29,9 +29,9 @@ namespace BACH
 		return CurrentTupleIndexEntry->GetTuple(key, timestamp);
 	}
 
-	void FormatRow::UpdateTuple(Tuple tuple, tp_key key, time_t timestamp) {
+	void FormatRow::UpdateTuple(Tuple tuple, tp_key key, time_t timestamp, tuple_property_t property) {
 		std::unique_lock<std::shared_mutex> lock(CurrentTupleIndexEntry->mutex);
-		CurrentTupleIndexEntry->UpdateTuple(tuple, key, timestamp);
+		CurrentTupleIndexEntry->UpdateTuple(tuple, key, timestamp, property);
 	}
 
 	std::vector<Tuple> FormatRow::ScanTuples(tp_key start_key, tp_key end_key, time_t timestamp) {

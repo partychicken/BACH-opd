@@ -4,6 +4,8 @@
 
 namespace BACH {
     struct Tuple {
+
+
         int col_num = 0;
         std::vector <std::string> row;
 

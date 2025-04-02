@@ -17,8 +17,13 @@ namespace BACH
 	struct TupleEntry {
 		std::shared_ptr<Tuple> tuple;
 		time_t time;
+		// function as a signal whether this record has been deleted
+		// don't know the reason to use double but not bool
+		tuple_property_t property;
 		tuple_t next;
-		TupleEntry(std::shared_ptr<Tuple> _tuple, time_t _time, tuple_t _next = NONEINDEX) : tuple(_tuple), time(_time), next(_next){};
+		TupleEntry(std::shared_ptr<Tuple> _tuple, time_t _time, 
+					tuple_property_t _property, tuple_t _next = NONEINDEX) : 
+			tuple(_tuple), time(_time), next(_next), property(_property){};
 	};
 
 
@@ -60,10 +65,10 @@ namespace BACH
 			last->next = NULL;
 		};
 
-		void AddTuple(Tuple tuple, tp_key key, time_t timestamp);
-		void DeleteTuple(tp_key key, time_t timestamp);
+		void AddTuple(Tuple tuple, tp_key key, time_t timestamp, tuple_property_t property);
+		void DeleteTuple(tp_key key, time_t timestamp, tuple_property_t property);
 		Tuple GetTuple(tp_key key, time_t timestamp);
-		void UpdateTuple(Tuple tuple, tp_key key, time_t timestamp);
+		void UpdateTuple(Tuple tuple, tp_key key, time_t timestamp, tuple_property_t property);
 		std::vector<Tuple> ScanTuples(tp_key start_key, tp_key end_key, time_t timestamp);
 
 
@@ -90,10 +95,10 @@ namespace BACH
 			TPSizeIndex = std::make_shared<TPSizeEntry>(0);
 		};
 
-		void AddTuple(Tuple tuple, tp_key key, time_t timestamp);
-		void DeleteTuple(tp_key key, time_t timestamp);
+		void AddTuple(Tuple tuple, tp_key key, time_t timestamp, tuple_property_t property);
+		void DeleteTuple(tp_key key, time_t timestamp, tuple_property_t property);
 		Tuple GetTuple(tp_key key, time_t timestamp);
-		void UpdateTuple(Tuple tuple, tp_key key, time_t timestamp);
+		void UpdateTuple(Tuple tuple, tp_key key, time_t timestamp, tuple_property_t property);
 		std::vector<Tuple> ScanTuples(tp_key start_key, tp_key end_key, time_t timestamp);
 
 

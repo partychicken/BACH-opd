@@ -30,4 +30,5 @@ namespace BACH
 	const edge_property_t NOTFOUND = std::numeric_limits<double>::signaling_NaN();
 
 	using tuple_t = uint32_t;
+	using tuple_property_t = double_t;
 }

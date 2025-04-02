@@ -22,6 +22,9 @@ namespace BACH
 	typedef std::string tp_key;
 
 	class DB;
+
+    // 当前是个非拜占庭的模型，输入的tuple并没有硬性规定列数
+    // 暂时没有限制这个事,默认输入数据合法
 	class FormatRow
 	{
     public:
@@ -31,19 +34,19 @@ namespace BACH
         FormatRow(DB* _db);
         ~FormatRow() = default;
 
-        void AddTuple(Tuple tuple, tp_key key, time_t timestamp);
-        void DeleteTuple(tp_key key, time_t timestamp);
+        void AddTuple(Tuple tuple, tp_key key, time_t timestamp, tuple_property_t property);
+        void DeleteTuple(tp_key key, time_t timestamp, tuple_property_t property);
         Tuple GetTuple(tp_key key, time_t timestamp);
-        void UpdateTuple(Tuple tuple, tp_key key, time_t timestamp);
+        void UpdateTuple(Tuple tuple, tp_key key, time_t timestamp, tuple_property_t property);
         std::vector<Tuple> ScanTuples(tp_key start_key, tp_key end_key, time_t timestamp);
 
     private:
         ConcurrentArray<std::shared_ptr<TupleIndexEntry>> TupleIndex;
         std::shared_ptr<TupleIndexEntry> CurrentTupleIndexEntry;
         DB* db;
-        size_t data_count_threshold = 1000; // 数据量阈值
+        size_t data_count_threshold = 1024; // 数据量阈值
         size_t current_data_count = 0; // 当前数据量计数
-
+		size_t column_num = 0; // 列数
         void CheckAndPersist();
 	};
 }

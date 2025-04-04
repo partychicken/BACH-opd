@@ -8,13 +8,17 @@ namespace BACH {
 
     class OrderedDictionary {
     public:
-        // µ¼ÈëÊý¾Ý²¢Éú³É×Öµä
+        // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Öµï¿½
+        OrderedDictionary(){}
+
+        explicit OrderedDictionary(const std::vector<std::string>& data);
+
         void importData(const std::vector<std::string>& data);
 
-        // »ñÈ¡×Ö·û´®¶ÔÓ¦µÄ·Ç¸ºÕûÊý
+        // ï¿½ï¿½È¡ï¿½Ö·ï¿½ï¿½ï¿½ï¿½ï¿½Ó¦ï¿½Ä·Ç¸ï¿½ï¿½ï¿½ï¿½ï¿½
         int getMapping(const std::string& str) const;
 
-        // »ñÈ¡·Ç¸ºÕûÊý¶ÔÓ¦µÄ×Ö·û´®
+        // ï¿½ï¿½È¡ï¿½Ç¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó¦ï¿½ï¿½ï¿½Ö·ï¿½ï¿½ï¿½
         std::string getString(int index) const;
 
         static OrderedDictionary merge(const OrderedDictionary& dict1, const OrderedDictionary& dict2);

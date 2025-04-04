@@ -14,6 +14,7 @@
 #include "BACH/sstable/RelFileBuilder.h"
 #include "BACH/sstable/Version.h"
 #include "BACH/common/tuple.h"
+#include "BACH/compress/ordered_dictionary.h"
 
 namespace BACH
 {
@@ -40,6 +41,7 @@ namespace BACH
         std::vector<  //level
         std::vector<  //key-min
         idx_t>> FileNumList;
+        std::vector<OrderedDictionary*>DictList;
         friend class DB;
     };
 }

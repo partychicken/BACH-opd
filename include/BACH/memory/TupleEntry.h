@@ -23,7 +23,7 @@ namespace BACH
 		tuple_t next;
 		TupleEntry(std::shared_ptr<Tuple> _tuple, time_t _time, 
 					tuple_property_t _property, tuple_t _next = NONEINDEX) : 
-			tuple(_tuple), time(_time), next(_next), property(_property){};
+			tuple(_tuple), time(_time), property(_property), next(_next) {};
 	};
 
 

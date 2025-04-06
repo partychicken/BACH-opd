@@ -22,6 +22,10 @@ namespace BACH {
         std::string getString(int index) const;
 
         static OrderedDictionary merge(const OrderedDictionary& dict1, const OrderedDictionary& dict2);
+        
+        int getCount() {
+            return indexToString.size();
+        }
 
     private:
         std::set<std::string> uniqueStrings;

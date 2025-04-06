@@ -112,6 +112,8 @@ namespace BACH {
         // in the second stage, remap denotes the new index that the old one should be mapped to
         memset(remap, 0, sizeof(remap));
 
+        Key_t last_key = 0;
+
         while (!q.empty()) {
             TupleMessage<Key_t> now_message = q.top();
             q.pop();
@@ -119,6 +121,10 @@ namespace BACH {
             if (now_message.offset < key_num[now_message.file_idx]) {
                 q.push(TupleMessage<Key_t>(keys[now_message.file_idx][now_message.offset + 1],
                                            now_message.offset + 1, now_message.file_idx));
+            }
+
+            if (now_message.key == last_key) {
+                continue;
             }
 
             order_key_buf[key_buf_idx] = now_message.key;

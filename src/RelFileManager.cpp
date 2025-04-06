@@ -126,6 +126,7 @@ namespace BACH {
             if (now_message.key == last_key) {
                 continue;
             }
+            last_key = now_message.key;
 
             order_key_buf[key_buf_idx] = now_message.key;
             for (int i = 0; i < col_num; i++) {

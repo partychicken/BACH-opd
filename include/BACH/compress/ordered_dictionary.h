@@ -20,7 +20,7 @@ namespace BACH {
         static OrderedDictionary merge(const OrderedDictionary& dict1, const OrderedDictionary& dict2);
 
     private:
-        std::set<std::string> uniqueStrings;
+        
         std::unordered_map<std::string, int> stringToIndex;
 		// 前边俩落盘就没了，只是中间状态有用，一个用set去重，一个跑一轮数据的时候防止每个数据都采用二分去查
         std::vector<std::string> indexToString;

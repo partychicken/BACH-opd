@@ -1,5 +1,5 @@
 #pragma once
-#include "BACH/memory/FormatRow.h"
+#include "BACH/memory/RowMemoryManager.h"
 #include "BACH/memory/TupleEntry.h"
 #include "BACH/utils/ConcurrentArray.h"
 
@@ -10,7 +10,7 @@ namespace BACH {
 	class TempColumn
 	{
 	public:
-		TempColumn(TupleIndexEntry row, size_t _size, size_t _column_num);
+		TempColumn(relMemTable* row, size_t _size, size_t _column_num);
 		~TempColumn();
 
 	private:
@@ -23,10 +23,10 @@ namespace BACH {
 	// a class that use to store the data in column format
 	// execute ap operator
 	// get data from SSTable, using ordered dictionary
-	class FormatColumn {
+	class rowGroup {
 	public:
-		FormatColumn();
-		~FormatColumn();
+		rowGroup();
+		~rowGroup();
 
 	private:
 

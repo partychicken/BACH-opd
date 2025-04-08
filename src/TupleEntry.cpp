@@ -33,36 +33,36 @@ namespace BACH
     // currently not consider primary key conflict
     // 智能指针少点用
     // 跟update同
-    void relMemTable::AddTuple(Tuple tuple, tp_key key, time_t timestamp, tuple_property_t property) {
-        std::unique_lock<std::shared_mutex> lock(mutex);
-        auto tuple_entry = std::make_shared<TupleEntry>(std::make_shared<Tuple>(tuple), timestamp, property);
-        tuple_pool.push_back(tuple_entry);
-        RelSkipList::Accessor accessor(tuple_index);
-        accessor.insert(std::make_pair(key, (idx_t)(tuple_pool.size() - 1)));
-        total_tuple.fetch_add(1);
-    }
-    // 插入墓碑
-    void relMemTable::DeleteTuple(tp_key key, time_t timestamp, tuple_property_t property) {
-        std::unique_lock<std::shared_mutex> lock(mutex);
-        RelSkipList::Accessor accessor(tuple_index);
-        auto it = accessor.find({ key, 0 });
-        if (it != accessor.end()) {
-            auto tuple_entry = tuple_pool[it->second];
-            if (tuple_entry->time <= timestamp && del_table.find(key) == del_table.end()) {
-                auto new_tuple_entry = std::make_shared<TupleEntry>(nullptr, timestamp, property, it->second);
-                size_t pos = tuple_pool.push_back(new_tuple_entry);
-                /*accessor.insert(std::make_pair(key, tuple_pool.size() - 1));*/
-                it->second = pos;
-                del_table[key] = timestamp;
-                total_tuple.fetch_add(1);
-            }
-        }
+    //void relMemTable::AddTuple(Tuple tuple, tp_key key, time_t timestamp, tuple_property_t property) {
 
-    }
+    //    auto tuple_entry = std::make_shared<TupleEntry>(std::make_shared<Tuple>(tuple), timestamp, property);
+    //    tuple_pool.push_back(tuple_entry);
+    //    RelSkipList::Accessor accessor(tuple_index);
+    //    accessor.insert(std::make_pair(key, (idx_t)(tuple_pool.size() - 1)));
+    //    total_tuple.fetch_add(1);
+    //}
+    // 插入墓碑
+    //void relMemTable::DeleteTuple(tp_key key, time_t timestamp, tuple_property_t property) {
+
+    //    RelSkipList::Accessor accessor(tuple_index);
+    //    auto it = accessor.find({ key, 0 });
+    //    if (it != accessor.end()) {
+    //        auto tuple_entry = tuple_pool[it->second];
+    //        if (tuple_entry->time <= timestamp && del_table.find(key) == del_table.end()) {
+    //            auto new_tuple_entry = std::make_shared<TupleEntry>(nullptr, timestamp, property, it->second);
+    //            size_t pos = tuple_pool.push_back(new_tuple_entry);
+    //            /*accessor.insert(std::make_pair(key, tuple_pool.size() - 1));*/
+    //            it->second = pos;
+    //            del_table[key] = timestamp;
+    //            total_tuple.fetch_add(1);
+    //        }
+    //    }
+
+    //}
 
 
     Tuple relMemTable::GetTuple(tp_key key, time_t timestamp) {
-        std::shared_lock<std::shared_mutex> lock(mutex);
+
         RelSkipList::Accessor accessor(tuple_index);
         auto it = accessor.find({ key, 0 });
         if (it != accessor.end()) {
@@ -76,24 +76,44 @@ namespace BACH
 
 
     // put 加上add的语义
-    void relMemTable::UpdateTuple(Tuple tuple, tp_key key, time_t timestamp, tuple_property_t property) {
-        std::unique_lock<std::shared_mutex> lock(mutex);
+    //void relMemTable::UpdateTuple(Tuple tuple, tp_key key, time_t timestamp, tuple_property_t property) {
+
+    //    RelSkipList::Accessor accessor(tuple_index);
+    //    auto it = accessor.find({ key, 0 });
+    //    if (it != accessor.end()) {
+    //        auto tuple_entry = tuple_pool[it->second];
+    //        if (tuple_entry->time <= timestamp && del_table.find(key) == del_table.end()) {
+    //            auto new_tuple_entry = std::make_shared<TupleEntry>(std::make_shared<Tuple>(tuple), timestamp, property, it->second);
+    //            size_t pos = tuple_pool.push_back(new_tuple_entry);
+    //            /*accessor.insert(std::make_pair(key, tuple_pool.size() - 1));*/
+				//it->second = pos;
+    //            total_tuple.fetch_add(1);
+    //        }
+    //    }
+    //}
+
+    void relMemTable::PutTuple(Tuple tuple, tp_key key, time_t timestamp, tuple_property_t property) {
+
         RelSkipList::Accessor accessor(tuple_index);
         auto it = accessor.find({ key, 0 });
         if (it != accessor.end()) {
-            auto tuple_entry = tuple_pool[it->second];
-            if (tuple_entry->time <= timestamp && del_table.find(key) == del_table.end()) {
-                auto new_tuple_entry = std::make_shared<TupleEntry>(std::make_shared<Tuple>(tuple), timestamp, property, it->second);
-                size_t pos = tuple_pool.push_back(new_tuple_entry);
-                /*accessor.insert(std::make_pair(key, tuple_pool.size() - 1));*/
-				it->second = pos;
-                total_tuple.fetch_add(1);
-            }
+            auto new_tuple_entry = std::make_shared<TupleEntry>(std::make_shared<Tuple>(tuple), timestamp, property, it->second);
+            size_t pos = tuple_pool.push_back(new_tuple_entry);
+            /*accessor.insert(std::make_pair(key, tuple_pool.size() - 1));*/
+            it->second = pos;
+            total_tuple.fetch_add(1);
+		}
+        else {
+            auto tuple_entry = std::make_shared<TupleEntry>(std::make_shared<Tuple>(tuple), timestamp, property);
+            tuple_pool.push_back(tuple_entry);
+            accessor.insert(std::make_pair(key, (idx_t)(tuple_pool.size() - 1)));
+            total_tuple.fetch_add(1);
         }
     }
 
+
     std::vector<Tuple> relMemTable::ScanTuples(tp_key start_key, tp_key end_key, time_t timestamp) {
-        std::shared_lock<std::shared_mutex> lock(mutex);
+
         std::vector<Tuple> result;
         RelSkipList::Accessor accessor(tuple_index);
         for (auto it = accessor.lower_bound({ start_key, 0 }); it != accessor.end() && it->first <= end_key; ++it) {

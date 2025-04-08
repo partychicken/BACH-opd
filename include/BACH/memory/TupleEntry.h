@@ -66,10 +66,12 @@ namespace BACH
 			last->next = NULL;
 		};
 
-		void AddTuple(Tuple tuple, tp_key key, time_t timestamp, tuple_property_t property);
-		void DeleteTuple(tp_key key, time_t timestamp, tuple_property_t property);
+		void PutTuple(Tuple tuple, tp_key key, time_t timestamp, tuple_property_t property);
+
+		//void AddTuple(Tuple tuple, tp_key key, time_t timestamp, tuple_property_t property);
+		//void DeleteTuple(tp_key key, time_t timestamp, tuple_property_t property);
 		Tuple GetTuple(tp_key key, time_t timestamp);
-		void UpdateTuple(Tuple tuple, tp_key key, time_t timestamp, tuple_property_t property);
+		//void UpdateTuple(Tuple tuple, tp_key key, time_t timestamp, tuple_property_t property);
 		std::vector<Tuple> ScanTuples(tp_key start_key, tp_key end_key, time_t timestamp);
 
 

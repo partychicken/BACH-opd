@@ -1,6 +1,6 @@
 #include <bitset>
-#include "ordered_dictionary.h"
-#include "types.h"
+#include "BACH/compress/ordered_dictionary.h"
+#include "BACH/utils/types.h"
 
 namespace BACH {
 
@@ -41,7 +41,8 @@ namespace BACH {
         int RightBound = l-1;
 
         if(LeftBound > RightBound) {
-            swap(LeftBound, RightBound);
+            // !!! maybe not swap? need to return empty set
+            std :: swap(LeftBound, RightBound);
         }
 
         for(int i=0; i<count; i++){

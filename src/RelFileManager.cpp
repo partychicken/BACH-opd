@@ -96,7 +96,8 @@ namespace BACH {
         int key_buf_idx = 0;
         std::pair<idx_t, idx_t> *val_buf[col_num];
         for (int i = 0; i < col_num; i++) {
-            val_buf[i] = static_cast<std::pair<idx_t, idx_t> *>(malloc(sizeof(std::pair<idx_t, idx_t>) * (key_tot_num / file_num + 5)));
+            val_buf[i] = static_cast<std::pair<idx_t, idx_t> *>(malloc(
+                sizeof(std::pair<idx_t, idx_t>) * (key_tot_num / file_num + 5)));
         }
 
         idx_t *real_val_buf[col_num];
@@ -113,6 +114,7 @@ namespace BACH {
         memset(remap, 0, sizeof(remap));
 
         Key_t last_key = 0;
+        idx_t now_file_id = compaction.file_id;
 
         while (!q.empty()) {
             TupleMessage<Key_t> now_message = q.top();
@@ -168,12 +170,24 @@ namespace BACH {
                         real_val_buf[i][j] = remap[i][p.first][p.second];
                     }
                 }
+
+                //write current buffer to file
                 rel_builder->ArrangeRelFileInfo(order_key_buf, key_buf_idx, sizeof(Key_t), col_num, real_val_buf);
                 edit->EditFileList.push_back(std::move(*temp_file_metadata));
 
+                //reset buffer information
                 key_buf_idx = 0;
                 memset(remap, 0, sizeof(remap));
                 s.clear();
+
+                //open new file
+                temp_file_metadata = new RelFileMetaData<Key_t>(0, compaction.target_level, compaction.vertex_id_b,
+                                                                     ++now_file_id, "rel", q.top().key);
+                std::string file_name = temp_file_metadata->file_name;
+                fw = std::make_shared<FileWriter>(db->options->STORAGE_DIR + "/"
+                                                       + file_name);
+                delete rel_builder;
+                rel_builder = new RelFileBuilder(fw, db->options);
             }
         }
 

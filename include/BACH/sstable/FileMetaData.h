@@ -11,6 +11,7 @@
 #include "BACH/utils/types.h"
 #include "BACH/utils/utils.h"
 #include "BACH/common/dictionary.h"
+#include "BACH/compress/ordered_dictionary.h"
 
 namespace BACH {
     struct FileMetaData {
@@ -46,7 +47,7 @@ namespace BACH {
 
     template<typename Key_t>
     struct RelFileMetaData : public FileMetaData {
-        std::shared_ptr<Dict<Key_t> > dictionary = nullptr;
+        std::vector<OrderedDictionary> dictionary;
         Key_t key_min, key_max;
 
         RelFileMetaData() = default;

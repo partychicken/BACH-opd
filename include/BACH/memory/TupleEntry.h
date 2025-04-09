@@ -26,8 +26,10 @@ namespace BACH
 		// function as a signal whether this record has been deleted
 		// don't know the reason to use double but not bool
 		tuple_property_t property;
-		TupleEntry* next;
-
+		tuple_t next;
+		TupleEntry(std::shared_ptr<Tuple> _tuple, time_t _time, 
+					tuple_property_t _property, tuple_t _next = NONEINDEX) : 
+			tuple(_tuple), time(_time), property(_property), next(_next) {};
 	};
 
 

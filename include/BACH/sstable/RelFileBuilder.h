@@ -10,16 +10,10 @@
 #include "BlockBuilder.h"
 #include "BACH/utils/types.h"
 #include "BACH/utils/utils.h"
+#include "RelFileManager.h"
 
 namespace BACH
 {
-    template<typename Key_t>
-    struct BlockMetaT {
-        std::shared_ptr <BloomFilter> filter;
-        Key_t key_min, key_max;
-        size_t offset_in_file;
-        size_t block_size;
-    };
 
     template<typename Key_t>
     class RelFileBuilder

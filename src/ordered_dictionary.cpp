@@ -2,18 +2,22 @@
 
 namespace BACH
 {
+    OrderedDictionary::OrderedDictionary(const std::vector<std::string>& data) {
+		importData(data);
+    }
+
     void OrderedDictionary::importData(const std::vector<std::string>& data) {
-        // Ê¹ÓÃ set ½øĞĞÈ¥ÖØ
+        // ä½¿ç”¨ set è¿›è¡Œå»é‡
 
         std::set<std::string> uniqueStrings;
 
         uniqueStrings.insert(data.begin(), data.end());
 
-        // Çå¿ÕÏÖÓĞµÄÓ³Éä
+		// æ¸…ç©ºç°æœ‰çš„æ˜ å°„
         stringToIndex.clear();
         indexToString.clear();
 
-        // ¶Ô set ÄÚµÄÊı¾İ½øĞĞÅÅĞò²¢Éú³ÉÓ³Éä
+        // å¯¹ set å†…çš„æ•°æ®è¿›è¡Œæ’åºå¹¶ç”Ÿæˆæ˜ å°„
         int index = 0;
         for (const auto& str : uniqueStrings) {
             stringToIndex[str] = index;
@@ -27,14 +31,14 @@ namespace BACH
         if (it != stringToIndex.end()) {
             return it->second;
         }
-        return -1; // Èç¹û×Ö·û´®²»ÔÚ×ÖµäÖĞ£¬·µ»Ø -1
+        return -1; // å¦‚æœå­—ç¬¦ä¸²ä¸åœ¨å­—å…¸ä¸­ï¼Œè¿”å› -1
     }
 
     std::string OrderedDictionary::getString(int index) const {
         if (index >= 0 && index < static_cast<int>(indexToString.size())) {
             return indexToString[index];
         }
-        return ""; // Èç¹ûË÷ÒıÎŞĞ§£¬·µ»Ø¿Õ×Ö·û´®
+        return ""; // å¦‚æœç´¢å¼•æ— æ•ˆï¼Œè¿”å›ç©ºå­—ç¬¦ä¸²
     }
 
 
@@ -62,7 +66,7 @@ namespace BACH
             }
         }
 
-        // ²åÈëÊ£ÓàµÄÔªËØ
+        // æ’å…¥å‰©ä½™çš„å…ƒç´ 
         while (it1 != dict1.indexToString.end()) {
             mergedDict.indexToString.push_back(*it1);
             ++it1;

@@ -6,6 +6,7 @@
 #include <sul/dynamic_bitset.hpp>
 #include "VertexLabelIdEntry.h"
 #include "VertexEntry.h"
+#include "RowGroup.h"
 #include "BACH/label/LabelManager.h"
 #include "BACH/property/PropertyFileBuilder.h"
 #include "BACH/property/PropertyFileParser.h"

@@ -15,15 +15,19 @@ namespace BACH
 {
 
 	struct TupleEntry {
+
+		TupleEntry(std::shared_ptr<Tuple> _tuple, time_t _time,
+			tuple_property_t _property, TupleEntry* _next = nullptr) :
+			tuple(_tuple), time(_time), property(_property), next(_next) {
+		};
+
 		std::shared_ptr<Tuple> tuple;
 		time_t time;
 		// function as a signal whether this record has been deleted
 		// don't know the reason to use double but not bool
 		tuple_property_t property;
-		tuple_t next;
-		TupleEntry(std::shared_ptr<Tuple> _tuple, time_t _time, 
-					tuple_property_t _property, tuple_t _next = NONEINDEX) : 
-			tuple(_tuple), time(_time), next(_next), property(_property){};
+		TupleEntry* next;
+
 	};
 
 
@@ -32,14 +36,23 @@ namespace BACH
 
 
 	// string comparator,used in SkipList
+	//struct ReverseCompare {
+	//	bool operator()(const std::pair<tp_key, idx_t>& a, const std::pair<tp_key, idx_t>& b) const {
+	//		return a.first <  b.first;
+	//	}
+	//};
+
+
+	// compare key first, then time
 	struct ReverseCompare {
-		bool operator()(const std::pair<tp_key, idx_t>& a, const std::pair<tp_key, idx_t>& b) const {
-			return a.first <  b.first;
+		bool operator()(const std::tuple<tp_key, time_t, TupleEntry*>& a, const std::tuple<tp_key, time_t, TupleEntry*>& b) const {
+			return (std::get<0>(a) < std::get<0>(b)) ||
+				(std::get<0>(a) == std::get<0>(b)  && std::get<1>(a) > std::get<1>(b));
 		}
 	};
 
 
-	typedef folly::ConcurrentSkipList<std::pair<tp_key, idx_t>, ReverseCompare> RelSkipList;
+	typedef folly::ConcurrentSkipList<std::tuple<tp_key, time_t, TupleEntry*>, ReverseCompare> RelSkipList;
 
 	struct relMemTable
 	{

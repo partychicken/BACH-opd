@@ -10,17 +10,23 @@ namespace BACH
 			data[i] = new std::string[_size];
 		}
 		RelSkipList::Accessor accessor(row->tuple_index);
+		tp_key last_key = "";
+		idx_t count = 0;
 		for (auto it = accessor.begin(); it != accessor.end(); ++it)
 		{
-			auto key = it->first;
-			auto index = it->second;
-			auto tuple = row->tuple_pool[index];
-			if (tuple->property == NONEINDEX)
+			if (std::get<0>(*it) == last_key)
+				continue;
+
+			auto* tuple = std::get<2>(*it);
+			if (tuple->property == TOMBSTONE || tuple->property == NONEINDEX)
 				continue;
 			for (size_t i = 0; i < column_num; i++)
 			{
-				data[i][index] = tuple->tuple->GetRow(i);
+				data[i][count] = tuple->tuple->GetRow(i);
 			}
+
+			count++;
+			last_key = std::get<0>(*it);
 		}
 
 	}

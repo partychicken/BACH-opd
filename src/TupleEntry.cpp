@@ -64,13 +64,35 @@ namespace BACH
     Tuple relMemTable::GetTuple(tp_key key, time_t timestamp) {
 
         RelSkipList::Accessor accessor(tuple_index);
-        auto it = accessor.find({ key, 0 });
-        if (it != accessor.end()) {
-            auto tuple_entry = tuple_pool[it->second];
-            if (tuple_entry->time <= timestamp && del_table.find(key) == del_table.end()) {
-                return *tuple_entry->tuple;
+        //auto it = accessor.find({ key, 0 });
+        //if (it != accessor.end()) {
+        //    auto tuple_entry = tuple_pool[it->second];
+        //    if (tuple_entry->time <= timestamp && del_table.find(key) == del_table.end()) {
+        //        return *tuple_entry->tuple;
+        //    }
+        //}
+
+        auto it = accessor.lower_bound(std::make_tuple(key, timestamp, nullptr));
+        if (it != accessor.begin()) {
+			while (std::get<0>(*it) < key || (std::get<0>(*it) == key && std::get<1>(*it) > timestamp)) {
+				++it;
+			}
+            if (std::get<0>(*it) == key && std::get<1>(*it) < timestamp) {
+                const auto& key = *it;
+
+                BACH::TupleEntry* entry = std::get<2>(key);
+
+				return *(entry->tuple);
             }
-        }
+            else {
+                std::cout << "Key not found" << std::endl;
+            }
+		}
+		else {
+			std::cout << "Key not found" << std::endl;
+		}
+
+
         return Tuple(); // 返回空的 Tuple 表示未找到
     }
 
@@ -95,18 +117,18 @@ namespace BACH
     void relMemTable::PutTuple(Tuple tuple, tp_key key, time_t timestamp, tuple_property_t property) {
 
         RelSkipList::Accessor accessor(tuple_index);
-        auto it = accessor.find({ key, 0 });
-        if (it != accessor.end()) {
-            auto new_tuple_entry = std::make_shared<TupleEntry>(std::make_shared<Tuple>(tuple), timestamp, property, it->second);
-            size_t pos = tuple_pool.push_back(new_tuple_entry);
-            /*accessor.insert(std::make_pair(key, tuple_pool.size() - 1));*/
-            it->second = pos;
+        auto it = accessor.lower_bound(std::make_tuple(key, timestamp, nullptr));
+		while (std::get<0>(*it) < key || (std::get<0>(*it) == key && std::get<1>(*it) > timestamp)) {
+			++it;
+		}
+        if (it != accessor.end() && std::get<0>(*it) == key ) {
+            auto new_tuple_entry =  new TupleEntry(std::make_shared<Tuple>(tuple), timestamp, property, std::get<2>(*it));
+            accessor.insert(std::make_tuple(key, timestamp, new_tuple_entry));
             total_tuple.fetch_add(1);
 		}
         else {
-            auto tuple_entry = std::make_shared<TupleEntry>(std::make_shared<Tuple>(tuple), timestamp, property);
-            tuple_pool.push_back(tuple_entry);
-            accessor.insert(std::make_pair(key, (idx_t)(tuple_pool.size() - 1)));
+            auto new_tuple_entry = new TupleEntry(std::make_shared<Tuple>(tuple), timestamp, property);
+            accessor.insert(std::make_tuple(key, timestamp, new_tuple_entry));
             total_tuple.fetch_add(1);
         }
     }
@@ -116,10 +138,17 @@ namespace BACH
 
         std::vector<Tuple> result;
         RelSkipList::Accessor accessor(tuple_index);
-        for (auto it = accessor.lower_bound({ start_key, 0 }); it != accessor.end() && it->first <= end_key; ++it) {
-            auto tuple_entry = tuple_pool[it->second];
-            if (tuple_entry->time <= timestamp && del_table.find(it->first) == del_table.end()) {
+        tp_key last_key = "";
+        for (auto it = ++accessor.lower_bound(std::make_tuple(start_key, timestamp, nullptr)); it != accessor.end() && std::get<0>(*it) <= end_key; ++it) {
+            
+            if (std::get<0>(*it) == last_key || std::get<1>(*it) > timestamp)
+                continue;
+			
+            
+            auto tuple_entry = std::get<2>(*it);
+            if (std::get<1>(*it) <= timestamp && (tuple_entry->property != TOMBSTONE || tuple_entry->property != NONEINDEX)) {
                 result.push_back(*tuple_entry->tuple);
+				last_key = std::get<0>(*it);
             }
         }
         return result;

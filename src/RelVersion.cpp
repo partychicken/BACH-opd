@@ -1,0 +1,262 @@
+#include "BACH/sstable/RelVersion.h"
+#include "BACH/db/DB.h"
+
+namespace BACH
+{
+	RelVersion::RelVersion(DB* _db) :
+		next(NULL), epoch(0), next_epoch(-1), ref(2), db(_db) {
+	}
+	RelVersion::RelVersion(RelVersion* _prev, VersionEdit* edit, time_t time) :
+		next(NULL), epoch(std::max(_prev->epoch, time)), next_epoch(-1),
+		db(_prev->db)
+	{
+		FileIndex = _prev->FileIndex;
+		FileTotalSize = _prev->FileTotalSize;
+		for (auto& i : edit->EditFileList)
+		{
+			if (i.deletion)
+			{
+				auto x = std::lower_bound(FileIndex[i.level].begin(),
+					FileIndex[i.level].end(), &i, RelFileCompare<std::string>);
+				if ((*x)->file_id != i.file_id ||
+					(*x)->vertex_id_b != i.vertex_id_b)
+				{
+					//error
+					std::cout<<"delete a file that not exist"<<std::endl;
+					exit(-1);
+				}
+				FileIndex[i.level].erase(x);
+				FileTotalSize[i.level] -= i.file_size;
+			}
+			else
+			{
+				if (FileIndex.size() <= i.level)
+					FileIndex.resize(i.level + 1),
+					FileTotalSize.resize(i.level + 1);
+				auto x = std::upper_bound(FileIndex[i.level].begin(),
+					FileIndex[i.level].end(), &i, FileCompare);
+				auto f = new FileMetaData(std::move(i));
+				FileIndex[i.level].insert(x, f);
+				FileTotalSize[i.level] += i.file_size;
+			}
+		}
+		for (auto& i : FileIndex)
+			for (auto& j : i)
+					j->ref.fetch_add(1, std::memory_order_relaxed);
+		_prev->next = this;
+		_prev->next_epoch = epoch;
+	}
+
+	RelVersion::~RelVersion()
+	{
+		if (size_entry != NULL)
+			size_entry->delete_entry();
+		for (auto& i : FileIndex)
+			for (auto& j : i)
+			{
+				auto r = j->ref.fetch_add(-1);
+				if (r == 1)
+				{
+					unlink((db->options->STORAGE_DIR + "/"
+						+ j->file_name).c_str());
+					//if(k->filter->size() == util::ClacFileSize(db->options, k->level))
+					delete j->filter;
+					if (j->reader != NULL)
+						delete j->reader;
+					db->ReaderCaches->deletecache(j);
+					delete j;
+				}
+			}
+	}
+
+    template<typename Key_t>
+	RelCompaction<Key_t>* RelVersion::GetCompaction(VersionEdit* edit, bool force_level)
+	{
+		idx_t level = edit->EditFileList.begin()->level;
+		Key_t key_min = static_cast<RelFileMetaData<Key_t>>(edit->EditFileList.begin())->key_min;
+        Key_t key_max = static_cast<RelFileMetaData<Key_t>>(edit->EditFileList.begin())->key_max;
+		RelCompaction<Key_t>* c = NULL;
+		// if (force_level)
+		// {
+		// 	c = new Compaction();
+		// 	c->vertex_id_b = src_b;
+		// 	c->label_id = label;
+		// 	c->target_level = level;
+		// 	auto iter = std::lower_bound(FileIndex[label][level].begin(),
+		// 		FileIndex[label][level].end(),
+		// 		std::make_pair(src_b + 1, (idx_t)0),
+		// 		FileCompareWithPair);
+		// 	if (iter == FileIndex[label][level].end() || (*iter)->vertex_id_b != src_b)
+		// 		return NULL;
+		// 	for (; iter != FileIndex[label][level].end() && (*iter)->vertex_id_b == src_b; --iter)
+		// 		if (!(*iter)->merging)
+		// 		{
+		// 			c->file_list.push_back(*iter);
+		// 			(*iter)->merging = true;
+		// 			if (iter == FileIndex[label][level].begin())
+		// 				break;
+		// 		}
+		// 		else
+		// 		{
+		// 			break;
+		// 		}
+		// 	if (c->file_list.size() <= 1)
+		// 	{
+		// 		for (auto i : c->file_list)
+		// 			i->merging = false;
+		// 		delete c;
+		// 		c = NULL;
+		// 	}
+		// }
+		if (level == db->options->MAX_LEVEL - 1)
+		{
+			return c;
+		}
+		vertex_t num = util::ClacFileSize(
+			db->options, level) * db->options->FILE_MERGE_NUM;
+		auto iter1 = std::lower_bound(FileIndex[level].begin(),
+			FileIndex[level].end(),
+			std::make_pair(key_min, (idx_t)0),
+			FileCompareWithPair);
+		auto iter2 = std::lower_bound(FileIndex[level].begin(),
+			FileIndex[level].end(),
+			std::make_pair(key_max, (idx_t)0),
+			FileCompareWithPair);
+		size_t cnt = 0;
+                //todo not complement yet
+//		for (auto i = iter1; i != iter2; ++i)
+//			if (!(*i)->merging)
+//				cnt += (*i)->file_size;
+//		if (cnt < db->options->MEM_TABLE_MAX_SIZE
+//			* util::fast_pow(db->options->FILE_MERGE_NUM, level + 1))
+//		{
+//			if (FileTotalSize[level] < db->options->LEVEL_0_MAX_SIZE
+//				* util::fast_pow(db->options->LEVEL_SIZE_RITIO, level))
+//				return c;
+//			bool flag;
+//			do
+//			{
+//				flag = true;
+//				vertex_t index = rand() % FileIndex[label][level].size();
+//				src_b = FileIndex[label][level][index]->vertex_id_b;
+//				tmp = src_b / num;
+//				iter1 = std::lower_bound(FileIndex[label][level].begin(),
+//					FileIndex[label][level].end(),
+//					std::make_pair(tmp * num, (idx_t)0),
+//					FileCompareWithPair);
+//				iter2 = std::lower_bound(FileIndex[label][level].begin(),
+//					FileIndex[label][level].end(),
+//					std::make_pair((tmp + 1) * num, (idx_t)0),
+//					FileCompareWithPair);
+//				for (auto i = iter1; i != iter2; ++i)
+//					if (!(*i)->merging)
+//					{
+//						flag = false;
+//						break;
+//					}
+//			} while (flag);
+//		}
+//		if (c == NULL)
+//			c = new Compaction();
+//		c->vertex_id_b = tmp * num;
+//		c->target_level = level + 1;
+//		for (auto i = iter1; i != iter2; ++i)
+//			if (!(*i)->merging)
+//			{
+//				c->file_list.push_back(*i);
+//				(*i)->merging = true;
+//			}
+//		return c;
+	}
+
+	bool RelVersion::AddRef()
+	{
+		idx_t k;
+		do
+		{
+			k = ref.load();
+			if(k == 0)
+				return false;
+		} while (!ref.compare_exchange_weak(k, k + 1));
+		return true;
+	}
+	void RelVersion::DecRef()
+	{
+		auto k = ref.fetch_add(-1);
+		if (k == 1)
+			delete this;
+	}
+	void RelVersion::AddSizeEntry(std::shared_ptr < SizeEntry > x)
+	{
+		size_entry = x;
+	}
+
+    template<typename Key_t>
+	RelVersionIterator<Key_t>::RelVersionIterator(RelVersion* _version, Key_t _key_now)
+		: version(_version), key_now(_key_now), file_size(1),
+		size(version->db->options->MEMORY_MERGE_NUM)
+	{
+		nextlevel();
+	}
+
+    template<typename Key_t>
+	FileMetaData* RelVersionIterator<Key_t>::GetFile() const
+	{
+		if (end)
+			return NULL;
+		return version->FileIndex[level][idx];
+	}
+
+    template<typename Key_t>
+	void RelVersionIterator<Key_t>::next()
+	{
+		if (end)
+			return;
+        //!!! todo confusing
+//		if (idx == 0 || version->FileIndex[level][--idx]->vertex_id_b != src * file_size)
+//			nextlevel();
+	}
+
+    template<typename Key_t>
+	void RelVersionIterator<Key_t>::nextlevel()
+	{
+		++level;
+		while (level < version->FileIndex.size() && !findsrc())
+		{
+			++level;
+		}
+		if (level == version->FileIndex.size())
+			end = true;
+	}
+
+    template<typename Key_t>
+	bool RelVersionIterator<Key_t>::findsrc()
+	{
+		if (version->FileIndex[level].empty())
+			return false;
+		auto x = std::lower_bound(version->FileIndex[level].begin(),
+			version->FileIndex[level].end(),
+			std::make_pair(key_now, 0),
+			FileCompareWithPair);
+		if (x == version->FileIndex[level].begin())
+			return false;
+		idx = x - version->FileIndex[level].begin() - 1;
+		if (static_cast<RelFileMetaData<Key_t>>(version->FileIndex[level][idx])->key_min > key_now
+			|| static_cast<RelFileMetaData<Key_t>>(version->FileIndex[level][idx])->key_max < key_now )
+			return false;
+		return true;
+	}
+
+    template<typename Key_t>
+	bool RelFileCompareWithPair(RelFileMetaData<Key_t>* lhs, std::pair<Key_t, idx_t> rhs)
+	{
+		return lhs->key_min == rhs.first ?
+			lhs->file_id < rhs.second : lhs->key_min < rhs.first;
+	}
+
+    template<typename Key_t>
+	bool RelFileCompare(RelFileMetaData<Key_t>* lhs, RelFileMetaData<Key_t>* rhs)
+	{
+         return lhs->key_min < rhs->key_min
+    }
+}

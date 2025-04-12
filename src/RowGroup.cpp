@@ -16,4 +16,13 @@ namespace BACH {
         parser = new RelFileParser<Key_t>(reader, db->options, file->file_size);
     }
 
+    template<typename Key_t>
+    template<typename Func>
+    void RowGroup<Key_t>::ApplyRangeFilter(idx_t col_id, Func* left_bound, Func* right_bound){
+        Vector res;
+        while(Scan(col_id, res)) {
+
+        }
+    }
+
 }

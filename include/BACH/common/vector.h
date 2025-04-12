@@ -28,6 +28,18 @@ namespace BACH {
             dictionary = dict;
         }
 
+        idx_t GetCount() const {
+            return count;
+        }
+
+        const OrderedDictionary* GetDict() const {
+            return dictionary.get();
+        }
+
+        idx_t* GetData() const{
+            return data_idx;
+        }
+
     private:
         sul::dynamic_bitset<> bitmap;
         std::shared_ptr<OrderedDictionary>dictionary;

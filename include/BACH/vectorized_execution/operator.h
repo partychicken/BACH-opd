@@ -50,4 +50,12 @@ namespace BACH {
         }
     }
 
+    template<typename Func>
+    void RangeFilter(Vector &res, Func* left_bound, Func* right_bound) {
+        idx_t cnt = res.GetCount();
+        sul::dynamic_bitset<>res_bitmap(cnt);
+        rangefilter(res.GetDict(), res.GetData(), res.GetCount(), left_bound, right_bound, res_bitmap);
+        res.Slice(res_bitmap);
+    }
+
 }

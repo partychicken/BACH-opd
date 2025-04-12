@@ -21,8 +21,7 @@ namespace BACH {
     void RowGroup<Key_t>::ApplyRangeFilter(idx_t col_id, Func* left_bound, Func* right_bound){
         Vector res;
         while(Scan(col_id, res)) {
-
+            RangeFilter(res, left_bound, right_bound);
         }
     }
-
 }

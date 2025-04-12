@@ -4,6 +4,7 @@
 #include "BACH/utils/types.h"
 #include "BACH/sstable/FileMetaData.h"
 #include "BACH/common/vector.h"
+#include "BACH/vectorized_execution/operator.h"
 
 namespace BACH {
     class DB;

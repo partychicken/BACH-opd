@@ -173,7 +173,7 @@ namespace BACH {
 
                 //write current buffer to file
                 rel_builder->ArrangeRelFileInfo(order_key_buf, key_buf_idx, sizeof(Key_t), col_num, real_val_buf);
-                edit->EditFileList.push_back(std::move(*temp_file_metadata));
+                edit->EditFileList.push_back(temp_file_metadata);
 
                 //reset buffer information
                 key_buf_idx = 0;
@@ -192,8 +192,8 @@ namespace BACH {
         }
 
         for (auto &file: compaction.file_list) {
-            edit->EditFileList.push_back(std::move(*file));
-            edit->EditFileList.back().deletion = true;
+            edit->EditFileList.push_back(file);
+            edit->EditFileList.back()->deletion = true;
         }
         return edit;
     }

@@ -10,7 +10,7 @@ namespace BACH
 	class DB;
 	struct VersionEdit
 	{
-		std::vector<FileMetaData> EditFileList;
+		std::vector<FileMetaData*> EditFileList;
 	};
 	class Version
 	{

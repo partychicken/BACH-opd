@@ -302,7 +302,7 @@ namespace BACH
 		temp_file_metadata->filter = sst.ArrangeSSTableInfo();
 		auto vedit = new VersionEdit();
 		temp_file_metadata->file_size = fw->file_size();
-		vedit->EditFileList.push_back(std::move(*temp_file_metadata));
+		vedit->EditFileList.push_back(temp_file_metadata);
 		return vedit;
 	}
 	void MemoryManager::PersistenceAll()

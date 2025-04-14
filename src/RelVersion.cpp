@@ -34,7 +34,7 @@ namespace BACH
 					FileIndex.resize(i.level + 1),
 					FileTotalSize.resize(i.level + 1);
 				auto x = std::upper_bound(FileIndex[i.level].begin(),
-					FileIndex[i.level].end(), &i, FileCompare);
+					FileIndex[i.level].end(), &i, RelFileCompare<std::string>);
 				auto f = new FileMetaData(std::move(i));
 				FileIndex[i.level].insert(x, f);
 				FileTotalSize[i.level] += i.file_size;
@@ -72,9 +72,10 @@ namespace BACH
     template<typename Key_t>
 	RelCompaction<Key_t>* RelVersion::GetCompaction(VersionEdit* edit, bool force_level)
 	{
-		idx_t level = edit->EditFileList.begin()->level;
-		Key_t key_min = static_cast<RelFileMetaData<Key_t>>(edit->EditFileList.begin())->key_min;
-        Key_t key_max = static_cast<RelFileMetaData<Key_t>>(edit->EditFileList.begin())->key_max;
+      	RelFileMetaData<Key_t> *begin_file_meta = *static_cast<RelFileMetaData<Key_t> *>(edit->EditFileList.begin());
+      	idx_t level = begin_file_meta->level;
+		Key_t key_min = begin_file_meta->key_min;
+        Key_t key_max = begin_file_meta->key_max;
 		RelCompaction<Key_t>* c = NULL;
 		// if (force_level)
 		// {
@@ -192,8 +193,8 @@ namespace BACH
 	}
 
     template<typename Key_t>
-	RelVersionIterator<Key_t>::RelVersionIterator(RelVersion* _version, Key_t _key_now)
-		: version(_version), key_now(_key_now), file_size(1),
+	RelVersionIterator<Key_t>::RelVersionIterator(RelVersion* _version, Key_t _key_min, Key_t _key_max)
+		: version(_version), key_min(_key_min), key_max(_key_max), file_size(1),
 		size(version->db->options->MEMORY_MERGE_NUM)
 	{
 		nextlevel();
@@ -236,13 +237,13 @@ namespace BACH
 			return false;
 		auto x = std::lower_bound(version->FileIndex[level].begin(),
 			version->FileIndex[level].end(),
-			std::make_pair(key_now, 0),
+			std::make_pair(key_min, 0),
 			FileCompareWithPair);
 		if (x == version->FileIndex[level].begin())
 			return false;
 		idx = x - version->FileIndex[level].begin() - 1;
-		if (static_cast<RelFileMetaData<Key_t>>(version->FileIndex[level][idx])->key_min > key_now
-			|| static_cast<RelFileMetaData<Key_t>>(version->FileIndex[level][idx])->key_max < key_now )
+		if (static_cast<RelFileMetaData<Key_t>>(version->FileIndex[level][idx])->key_min > key_max
+			|| static_cast<RelFileMetaData<Key_t>>(version->FileIndex[level][idx])->key_max < key_min )
 			return false;
 		return true;
 	}

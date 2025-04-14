@@ -12,35 +12,35 @@ namespace BACH
 	{
 		FileIndex = _prev->FileIndex;
 		FileTotalSize = _prev->FileTotalSize;
-		for (auto& i : edit->EditFileList)
+		for (auto i : edit->EditFileList)
 		{
-			if (i.deletion)
+			if (i->deletion)
 			{
-				auto x = std::lower_bound(FileIndex[i.label][i.level].begin(),
-					FileIndex[i.label][i.level].end(), &i, FileCompare);
-				if ((*x)->file_id != i.file_id ||
-					(*x)->vertex_id_b != i.vertex_id_b)
+				auto x = std::lower_bound(FileIndex[i->label][i->level].begin(),
+					FileIndex[i->label][i->level].end(), *i, FileCompare);
+				if ((*x)->file_id != i->file_id ||
+					(*x)->vertex_id_b != i->vertex_id_b)
 				{
 					//error
 					std::cout<<"delete a file that not exist"<<std::endl;
 					exit(-1);
 				}
-				FileIndex[i.label][i.level].erase(x);
-				FileTotalSize[i.label][i.level] -= i.file_size;
+				FileIndex[i->label][i->level].erase(x);
+				FileTotalSize[i->label][i->level] -= i->file_size;
 			}
 			else
 			{
-				if (FileIndex.size() <= i.label)
-					FileIndex.resize(i.label + 1),
-					FileTotalSize.resize(i.label + 1);
-				if (FileIndex[i.label].size() <= i.level)
-					FileIndex[i.label].resize(i.level + 1),
-					FileTotalSize[i.label].resize(i.level + 1);
-				auto x = std::upper_bound(FileIndex[i.label][i.level].begin(),
-					FileIndex[i.label][i.level].end(), &i, FileCompare);
-				auto f = new FileMetaData(std::move(i));
-				FileIndex[i.label][i.level].insert(x, f);
-				FileTotalSize[i.label][i.level] += i.file_size;
+				if (FileIndex.size() <= i->label)
+					FileIndex.resize(i->label + 1),
+					FileTotalSize.resize(i->label + 1);
+				if (FileIndex[i->label].size() <= i->level)
+					FileIndex[i->label].resize(i->level + 1),
+					FileTotalSize[i->label].resize(i->level + 1);
+				auto x = std::upper_bound(FileIndex[i->label][i->level].begin(),
+					FileIndex[i->label][i->level].end(), *i, FileCompare);
+				auto f = new FileMetaData(*i);
+				FileIndex[i->label][i->level].insert(x, f);
+				FileTotalSize[i->label][i->level] += i->file_size;
 			}
 		}
 		for (auto& i : FileIndex)
@@ -75,9 +75,10 @@ namespace BACH
 
 	Compaction* Version::GetCompaction(VersionEdit* edit, bool force_level)
 	{
-		label_t label = edit->EditFileList.begin()->label;
-		idx_t level = edit->EditFileList.begin()->level;
-		vertex_t src_b = edit->EditFileList.begin()->vertex_id_b;
+		FileMetaData *begin_meta_data = *(edit->EditFileList.begin());
+		label_t label = begin_meta_data->label;
+		idx_t level = begin_meta_data->level;
+		vertex_t src_b = begin_meta_data->vertex_id_b;
 		Compaction* c = NULL;
 		// if (force_level)
 		// {

@@ -43,14 +43,14 @@ namespace BACH
     class RelVersionIterator
     {
     public:
-        RelVersionIterator(RelVersion* _version, Key_t _key_min);
+        RelVersionIterator(RelVersion* _version, Key_t _key_min, Key_t _key_max);
         ~RelVersionIterator() = default;
         FileMetaData* GetFile() const;
         bool End() const { return end; }
         void next();
     private:
         RelVersion* version;
-        Key_t key_now;
+        Key_t key_min, key_max;
         idx_t level = -1;
         idx_t idx = 0;
         size_t file_size, size;

@@ -101,11 +101,11 @@ namespace BACH {
 		temp_file_metadata->file_size = fw->file_size();
 
 		VersionEdit* edit = new VersionEdit();
-		edit->EditFileList.push_back(std::move(*temp_file_metadata));
+		edit->EditFileList.push_back(temp_file_metadata);
 		for (auto& file : compaction.file_list)
 		{
-			edit->EditFileList.push_back(std::move(*file));
-			edit->EditFileList.back().deletion = true;
+			edit->EditFileList.push_back(file);
+			edit->EditFileList.back()->deletion = true;
 		}
 		return edit;
 	}

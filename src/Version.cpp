@@ -17,7 +17,7 @@ namespace BACH
 			if (i->deletion)
 			{
 				auto x = std::lower_bound(FileIndex[i->label][i->level].begin(),
-					FileIndex[i->label][i->level].end(), *i, FileCompare);
+					FileIndex[i->label][i->level].end(), i, FileCompare);
 				if ((*x)->file_id != i->file_id ||
 					(*x)->vertex_id_b != i->vertex_id_b)
 				{
@@ -37,7 +37,7 @@ namespace BACH
 					FileIndex[i->label].resize(i->level + 1),
 					FileTotalSize[i->label].resize(i->level + 1);
 				auto x = std::upper_bound(FileIndex[i->label][i->level].begin(),
-					FileIndex[i->label][i->level].end(), *i, FileCompare);
+					FileIndex[i->label][i->level].end(), i, FileCompare);
 				auto f = new FileMetaData(*i);
 				FileIndex[i->label][i->level].insert(x, f);
 				FileTotalSize[i->label][i->level] += i->file_size;

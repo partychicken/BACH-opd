@@ -12,32 +12,33 @@ namespace BACH
 	{
 		FileIndex = _prev->FileIndex;
 		FileTotalSize = _prev->FileTotalSize;
-		for (auto& i : edit->EditFileList)
+		for (auto i : edit->EditFileList)
 		{
-			if (i.deletion)
+			if (i->deletion)
 			{
-				auto x = std::lower_bound(FileIndex[i.level].begin(),
-					FileIndex[i.level].end(), &i, RelFileCompare<std::string>);
-				if ((*x)->file_id != i.file_id ||
-					(*x)->vertex_id_b != i.vertex_id_b)
+				auto x = std::lower_bound(FileIndex[i->level].begin(),
+					FileIndex[i->level].end(), i, RelFileCompare<std::string>);
+				if ((*x)->file_id != i->file_id ||
+					(*x)->vertex_id_b != i->vertex_id_b)
 				{
 					//error
 					std::cout<<"delete a file that not exist"<<std::endl;
 					exit(-1);
 				}
-				FileIndex[i.level].erase(x);
-				FileTotalSize[i.level] -= i.file_size;
+				FileIndex[i->level].erase(x);
+				FileTotalSize[i->level] -= i->file_size;
 			}
 			else
 			{
-				if (FileIndex.size() <= i.level)
-					FileIndex.resize(i.level + 1),
-					FileTotalSize.resize(i.level + 1);
-				auto x = std::upper_bound(FileIndex[i.level].begin(),
-					FileIndex[i.level].end(), &i, RelFileCompare<std::string>);
-				auto f = new FileMetaData(std::move(i));
-				FileIndex[i.level].insert(x, f);
-				FileTotalSize[i.level] += i.file_size;
+				if (FileIndex.size() <= i->level)
+					FileIndex.resize(i->level + 1),
+					FileTotalSize.resize(i->level + 1);
+				auto x = std::upper_bound(FileIndex[i->level].begin(),
+					FileIndex[i->level].end(), i, RelFileCompare<std::string>);
+                // here limits the template, needing to be solved
+				auto f = new RelFileMetaData<std::string>(*static_cast<RelFileMetaData<std::string> *>(i));
+				FileIndex[i->level].insert(x, f);
+				FileTotalSize[i->level] += i->file_size;
 			}
 		}
 		for (auto& i : FileIndex)
@@ -73,7 +74,7 @@ namespace BACH
 	RelCompaction<Key_t>* RelVersion::GetCompaction(VersionEdit* edit, bool force_level)
 	{
       	RelFileMetaData<Key_t> *begin_file_meta = *static_cast<RelFileMetaData<Key_t> *>(edit->EditFileList.begin());
-      	idx_t level = begin_file_meta->level;
+      	idx_t level = begin_file_meta->level + 1;
 		Key_t key_min = begin_file_meta->key_min;
         Key_t key_max = begin_file_meta->key_max;
 		RelCompaction<Key_t>* c = NULL;
@@ -113,18 +114,23 @@ namespace BACH
 		{
 			return c;
 		}
-		vertex_t num = util::ClacFileSize(
-			db->options, level) * db->options->FILE_MERGE_NUM;
+//		vertex_t num = util::ClacFileSize(
+//			db->options, level) * db->options->FILE_MERGE_NUM;
+        //find the last file, whose key_min < current key_min
 		auto iter1 = std::lower_bound(FileIndex[level].begin(),
 			FileIndex[level].end(),
 			std::make_pair(key_min, (idx_t)0),
 			FileCompareWithPair);
-		auto iter2 = std::lower_bound(FileIndex[level].begin(),
+        if(iter1 != FileIndex[level].begin()) iter1--;
+
+        //find the first file, whose key_min > current key_max
+        //thus, the file previous is the last one to compact
+		auto iter2 = std::upper_bound(FileIndex[level].begin(),
 			FileIndex[level].end(),
 			std::make_pair(key_max, (idx_t)0),
 			FileCompareWithPair);
-		size_t cnt = 0;
-                //todo not complement yet
+		//todo not complement yet
+		//size_t cnt = 0;
 //		for (auto i = iter1; i != iter2; ++i)
 //			if (!(*i)->merging)
 //				cnt += (*i)->file_size;
@@ -157,17 +163,17 @@ namespace BACH
 //					}
 //			} while (flag);
 //		}
-//		if (c == NULL)
-//			c = new Compaction();
-//		c->vertex_id_b = tmp * num;
-//		c->target_level = level + 1;
-//		for (auto i = iter1; i != iter2; ++i)
-//			if (!(*i)->merging)
-//			{
-//				c->file_list.push_back(*i);
-//				(*i)->merging = true;
-//			}
-//		return c;
+		if (c == NULL)
+			c = new Compaction();
+		c->key_min = min(key_min, (*iter1)->key_min);
+		c->target_level = level;
+		for (auto i = iter1; i != iter2; ++i)
+			if (!(*i)->merging)
+			{
+				c->file_list.push_back(*i);
+				(*i)->merging = true;
+			}
+		return c;
 	}
 
 	bool RelVersion::AddRef()
@@ -213,9 +219,9 @@ namespace BACH
 	{
 		if (end)
 			return;
-        //!!! todo confusing
-//		if (idx == 0 || version->FileIndex[level][--idx]->vertex_id_b != src * file_size)
-//			nextlevel();
+		if (idx == version->FileIndex[level].size() ||
+			static_cast<RelFileMetaData<Key_t> >(version->FileIndex[level][++idx])->key_min > key_max)
+			nextlevel();
 	}
 
     template<typename Key_t>
@@ -258,6 +264,6 @@ namespace BACH
     template<typename Key_t>
 	bool RelFileCompare(RelFileMetaData<Key_t>* lhs, RelFileMetaData<Key_t>* rhs)
 	{
-         return lhs->key_min < rhs->key_min
+         return lhs->key_min < rhs->key_min;
     }
 }

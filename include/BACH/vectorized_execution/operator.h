@@ -1,11 +1,11 @@
-#include <bitset>
+#pragma once
 #include "BACH/compress/ordered_dictionary.h"
 #include "BACH/utils/types.h"
 
 namespace BACH {
 
-    template <typename Func, size_t BIT_SIZE>
-    void onesiderange(OrderedDictionary* dict, idx_t* data, int count, Func* check, std::bitset<BIT_SIZE>& result) {
+    template <typename Func>
+    void onesiderange(OrderedDictionary* dict, const idx_t* data, int count, Func* check, sul::dynamic_bitset<>& result) {
         
         bool f = check(dict->getString(0));
         int l=0, r=dict->getCount()-1;
@@ -20,14 +20,14 @@ namespace BACH {
         }
     }
 
-    template <typename Func, size_t BIT_SIZE>
-    void rangefilter(OrderedDictionary* dict, idx_t* data, int count, Func* leftbound, Func* rightbound, std::bitset<BIT_SIZE>& result) {
+    template <typename Func>
+    void rangefilter(OrderedDictionary* dict, const idx_t* data, int count, Func* left_bound, Func* right_bound, sul::dynamic_bitset<>& result) {
         
-        bool f = leftbound(dict->getString(0));
+        bool f = left_bound(dict->getString(0));
         int l=0, r=dict->getCount()-1;
         while(l<=r) {
             int mid=(l+r)>>1;
-            if (leftbound(dict->getString(mid)) == f) l = mid+1;
+            if (left_bound(dict->getString(mid)) == f) l = mid+1;
             else r = mid-1;
         }
         int LeftBound = l-1;
@@ -35,7 +35,7 @@ namespace BACH {
         l=0;r=dict->getCount()-1;//
         while(l<=r) {
             int mid=(l+r)>>1;
-            if (rightbound(dict->getString(mid)) == f) l = mid+1;
+            if (right_bound(dict->getString(mid)) == f) l = mid+1;
             else r = mid-1;
         }
         int RightBound = l-1;
@@ -54,7 +54,7 @@ namespace BACH {
     void RangeFilter(Vector &res, Func* left_bound, Func* right_bound) {
         idx_t cnt = res.GetCount();
         sul::dynamic_bitset<>res_bitmap(cnt);
-        rangefilter(res.GetDict(), res.GetData(), res.GetCount(), left_bound, right_bound, res_bitmap);
+        rangefilter(res.GetDict(), res.GetData(), cnt, left_bound, right_bound, res_bitmap);
         res.Slice(res_bitmap);
     }
 

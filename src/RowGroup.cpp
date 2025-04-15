@@ -17,6 +17,21 @@ namespace BACH {
     }
 
     template<typename Key_t>
+    bool RowGroup<Key_t>::Scan(idx_t col_id, Vector &result) {
+        idx_t scan_num = key_num - scan_pos[col_id];
+        if(!scan_num) return false;
+        result = Vector(make_share(file->dictionary[col_id]));
+        if(scan_num >= STANDARD_VECTOR_SIZE) {
+            result.SetData(cols[col_id] + scan_pos[col_id], STANDARD_VECTOR_SIZE);
+            scan_pos[col_id] += STANDARD_VECTOR_SIZE;
+        } else {
+            result.SetData(cols[col_id] + scan_pos[col_id], scan_num);
+            scan_pos[col_id] += scan_num;
+        }
+        return true;
+    }
+
+    template<typename Key_t>
     template<typename Func>
     void RowGroup<Key_t>::ApplyRangeFilter(idx_t col_id, Func* left_bound, Func* right_bound){
         Vector res;

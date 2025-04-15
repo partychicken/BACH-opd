@@ -29,6 +29,10 @@ namespace BACH
 
         void SetDict();//optional
         void SetBloomFilter();
+        void SetKeyRange(Key_t _key_min, Key_t _key_max) {
+            key_min = _key_min;
+            key_max = _key_max;
+        }
     private:
         std::shared_ptr <FileWriter> writer;
         std::shared_ptr<Options> options;

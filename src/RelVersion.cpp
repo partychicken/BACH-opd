@@ -18,8 +18,7 @@ namespace BACH
 			{
 				auto x = std::lower_bound(FileIndex[i->level].begin(),
 					FileIndex[i->level].end(), i, RelFileCompare<std::string>);
-				if ((*x)->file_id != i->file_id ||
-					(*x)->vertex_id_b != i->vertex_id_b)
+				if ((*x)->file_id != i->file_id)
 				{
 					//error
 					std::cout<<"delete a file that not exist"<<std::endl;
@@ -193,7 +192,7 @@ namespace BACH
 		if (k == 1)
 			delete this;
 	}
-	void RelVersion::AddSizeEntry(std::shared_ptr < SizeEntry > x)
+	void RelVersion::AddSizeEntry(std::shared_ptr <relMemTable> x)
 	{
 		size_entry = x;
 	}

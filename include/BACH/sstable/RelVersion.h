@@ -4,6 +4,7 @@
 #include <list>
 #include <vector>
 #include "BACH/sstable/Compaction.h"
+#include "BACH/memory/TupleEntry.h"
 #include "Version.h"
 
 namespace BACH
@@ -20,7 +21,7 @@ namespace BACH
         RelCompaction<Key_t>* GetCompaction(VersionEdit* edit, bool force_level = false);
         bool AddRef();
         void DecRef();
-        void AddSizeEntry(std::shared_ptr < SizeEntry > x);
+        void AddSizeEntry(std::shared_ptr < relMemTable > x);
 
         std::vector<      //level
             std::vector<
@@ -32,7 +33,7 @@ namespace BACH
     private:
         std::vector<size_t> FileTotalSize;
         std::atomic<idx_t> ref = 1;
-        std::shared_ptr < SizeEntry > size_entry = NULL;
+        std::shared_ptr < relMemTable > size_entry = NULL;
         DB* db;
 
         template<typename Key_t>

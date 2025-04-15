@@ -3,6 +3,7 @@
 #include "DB.h"
 #include "BACH/sstable/SSTableParser.h"
 #include "BACH/common/tuple.h"
+#include "BACH/sstable/RelVersion.h"
 
 namespace BACH
 {
@@ -14,6 +15,10 @@ namespace BACH
 		Transaction(const Transaction& txn) = delete;
 		Transaction(time_t _write_epoch, time_t _read_epoch,
 			DB* db, Version* _version, time_t pos = -1);
+
+		Transaction(time_t _write_epoch, time_t _read_epoch,
+			DB* db, RelVersion* _version, time_t pos = -1);
+
 		Transaction(Transaction&& txn);
 		~Transaction();
 
@@ -38,9 +43,9 @@ namespace BACH
 		void EdgeLabelScan(label_t label,
 			const std::function<void(vertex_t&, vertex_t&,edge_property_t&)>& func);
 		// OLTP operation
-        void PutTuple();
-        void DelTuple();
-        Tuple GetTuple();
+        void PutTuple(Tuple tuple, tp_key key, tuple_property_t property);
+        void DelTuple(Tuple tuple, tp_key key);
+        Tuple GetTuple(tp_key key);
         // OLAP operation
         void GetTuplesFromRange();
         void ScanTuples();
@@ -50,7 +55,13 @@ namespace BACH
 		time_t read_epoch;
 		DB* db;
 		Version* version;
+
+		
+
 		size_t time_pos;
+
+		RelVersion* rel_version;
+
 		bool valid = true;
 	};
 }

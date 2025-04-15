@@ -5,9 +5,14 @@ namespace BACH
 	Transaction::Transaction(time_t _write_epoch, time_t _read_epoch,
 		DB* db, Version* _version, time_t pos) :
 		write_epoch(_write_epoch), read_epoch(_read_epoch), db(db), version(_version), time_pos(pos) {}
+
+	Transaction::Transaction(time_t _write_epoch, time_t _read_epoch,
+		DB* db, RelVersion* _version, time_t pos) :
+		write_epoch(_write_epoch), read_epoch(_read_epoch), db(db), time_pos(pos), rel_version(_version) {}
+
 	Transaction::Transaction(Transaction&& txn) :
 		write_epoch(txn.write_epoch), read_epoch(txn.read_epoch),
-		db(txn.db), version(txn.version), time_pos(txn.time_pos)
+		db(txn.db), version(txn.version), time_pos(txn.time_pos), rel_version(txn.rel_version)
 	{
 		txn.valid = false;
 	}
@@ -16,6 +21,7 @@ namespace BACH
 		if (valid)
 		{
 			version->DecRef();
+			rel_version->DecRef();
 			if (write_epoch != MAXTIME)
 			{
 				db->write_epoch_table.erase(time_pos);
@@ -150,4 +156,49 @@ namespace BACH
 				} while (parser.GetNextEdge());
 			}
 	}
+
+
+	void Transaction::PutTuple(Tuple tuple, tp_key key, tuple_property_t property) {
+		if (write_epoch == MAXTIME)
+		{
+			return;
+		}
+
+		db->RowMemtable->PutTuple(tuple, key, write_epoch, property);
+		
+
+	}
+	void Transaction::DelTuple(Tuple tuple, tp_key key) {
+		if (write_epoch == MAXTIME)
+		{
+			return;
+		}
+		db->RowMemtable->PutTuple(tuple, key, write_epoch, TOMBSTONE);
+	}
+	Tuple Transaction::GetTuple(tp_key key) {
+		if (write_epoch == MAXTIME)
+		{
+			return Tuple();
+		}
+		Tuple x = db->RowMemtable->GetTuple(key, write_epoch);
+		/*if (!std::isnan(x.property)) {
+			return x;
+		}
+
+		VersionIterator iter(version, label, src);
+		while (!iter.End())
+		{
+			if (src - iter.GetFile()->vertex_id_b < iter.GetFile()->filter->size())
+				if ((*iter.GetFile()->filter)[src - iter.GetFile()->vertex_id_b])
+				{
+					SSTableParser parser(label, db->ReaderCaches->find(iter.GetFile()), db->options);
+					auto found = parser.GetEdge(src, dst);
+					if (!std::isnan(found))
+						return found;
+				}
+			iter.next();
+		}
+		return Tuple();*/
+	}
+
 }

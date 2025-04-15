@@ -21,6 +21,8 @@ namespace BACH
 			tuple(_tuple), time(_time), property(_property), next(_next) {
 		};
 
+		TupleEntry(): tuple(std::make_shared<Tuple>()), time(MAXTIME), property(NONEINDEX), next(nullptr) {};
+
 		std::shared_ptr<Tuple> tuple;
 		time_t time;
 		// function as a signal whether this record has been deleted
@@ -44,14 +46,14 @@ namespace BACH
 
 	// compare key first, then time
 	struct ReverseCompare {
-		bool operator()(const std::tuple<tp_key, time_t, TupleEntry*>& a, const std::tuple<tp_key, time_t, TupleEntry*>& b) const {
+		bool operator()(const std::tuple<tp_key, time_t, TupleEntry>& a, const std::tuple<tp_key, time_t, TupleEntry>& b) const {
 			return (std::get<0>(a) < std::get<0>(b)) ||
 				(std::get<0>(a) == std::get<0>(b)  && std::get<1>(a) > std::get<1>(b));
 		}
 	};
 
 
-	typedef folly::ConcurrentSkipList<std::tuple<tp_key, time_t, TupleEntry*>, ReverseCompare> RelSkipList;
+	typedef folly::ConcurrentSkipList<std::tuple<tp_key, time_t, TupleEntry>, ReverseCompare> RelSkipList;
 
 	struct relMemTable
 	{

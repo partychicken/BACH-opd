@@ -37,6 +37,9 @@ namespace BACH
 			compact_thread[i]->detach();
 		}
 		read_version = current_version = new Version(this);	
+
+		read_rel_version = current_rel_version = new RelVersion(this);
+		RowMemtable = std::make_unique<rowMemoryManager>(this);
 	}
 	DB::~DB()
 	{
@@ -47,6 +50,10 @@ namespace BACH
 				i->join();
 		read_version.load()->DecRef();
 		current_version->DecRef();
+
+		read_rel_version.load()->DecRef();
+		current_rel_version->DecRef();
+
 		//std::cout << "closed" << std::endl;
 	}
 	Transaction DB::BeginTransaction()
@@ -61,11 +68,33 @@ namespace BACH
 		return Transaction(local_write_epoch_id, local_read_epoch_id, this,
 			get_read_version(), pos);
 	}
+
+	Transaction DB::BeginRelTransaction()
+	{
+		//std::unique_lock<std::shared_mutex> wlock(write_epoch_table_mutex);
+		time_t local_write_epoch_id = epoch_id.fetch_add(1, std::memory_order_relaxed);
+		size_t pos = write_epoch_table.insert(local_write_epoch_id);
+		time_t local_read_epoch_id;
+		local_read_epoch_id = write_epoch_table.find_min() - 1;
+		//local_read_epoch_id = (*write_epoch_table.begin()) - 1;
+		//wlock.unlock();
+		return Transaction(local_write_epoch_id, local_read_epoch_id, this,
+			get_read_rel_version(), pos);
+	}
+
+
 	Transaction DB::BeginReadOnlyTransaction()
 	{
 		time_t local_epoch_id = get_read_time();
 		//std::shared_lock<std::shared_mutex>versionlock(version_mutex);
 		return Transaction(MAXTIME, local_epoch_id, this, get_read_version());
+	}
+
+	Transaction DB::BeginReadOnlyRelTransaction()
+	{
+		time_t local_epoch_id = get_read_time();
+		//std::shared_lock<std::shared_mutex>versionlock(version_mutex);
+		return Transaction(MAXTIME, local_epoch_id, this, get_read_rel_version());
 	}
 
 	label_t DB::AddVertexLabel(std::string label_name)
@@ -305,6 +334,22 @@ namespace BACH
 			}
 		}
 	}
+
+	void DB::ProgressReadRelVersion()
+	{
+		while (true)
+		{
+			time_t nrt = get_read_time();
+			RelVersion* tail = read_rel_version.load();
+			if (tail->next_epoch == (time_t)-1 || tail->next_epoch >= nrt)
+				break;
+			if (read_rel_version.compare_exchange_weak(tail, tail->next))
+			{
+				tail->DecRef();
+			}
+		}
+	}
+
 	time_t DB::get_read_time()
 	{
 		//std::shared_lock<std::shared_mutex> wlock(write_epoch_table_mutex);
@@ -324,4 +369,17 @@ namespace BACH
 				return version;
 		}
 	}
+
+	RelVersion* DB::get_read_rel_version()
+	{
+		RelVersion* version;
+		while (true)
+		{
+			version = read_rel_version.load();
+			if (version->AddRef())
+				return version;
+		}
+	}
+
+
 }

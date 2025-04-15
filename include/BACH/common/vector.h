@@ -10,7 +10,7 @@ namespace BACH {
     class Vector {
     public:
         explicit Vector(std::shared_ptr<OrderedDictionary>&&_dict = nullptr)
-          : bitmap(STANDARD_VECTOR_SIZE), dictionary(_dict), data_idx(nullptr), count(0){
+          : bitmap(STANDARD_VECTOR_SIZE), dictionary(_dict), data_idx(nullptr), count(0), offset(0){
             bitmap.set();
         }
 
@@ -19,9 +19,10 @@ namespace BACH {
             return bitmap.count();
         }
 
-        void SetData(idx_t *data_begin, idx_t _count) {
+        void SetData(idx_t *data_begin, idx_t _count, idx_t _offset) {
             data_idx = data_begin;
             this->count = _count;
+            this->offset = _offset;
         }
 
         void SetDict(std::shared_ptr<OrderedDictionary>&&dict) {
@@ -32,7 +33,7 @@ namespace BACH {
             return count;
         }
 
-        const OrderedDictionary* GetDict() const {
+        OrderedDictionary* GetDict() const {
             return dictionary.get();
         }
 
@@ -40,10 +41,20 @@ namespace BACH {
             return data_idx;
         }
 
+        idx_t GetOffset() const {
+            return offset;
+        }
+
+        //can only get once
+        void GetBitmap(sul::dynamic_bitset<> &res) {
+            res = std::move(bitmap);
+        }
+
     private:
         sul::dynamic_bitset<> bitmap;
         std::shared_ptr<OrderedDictionary>dictionary;
         idx_t* data_idx;
         idx_t count;
+        idx_t offset;
     };
 }

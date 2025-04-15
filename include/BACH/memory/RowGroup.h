@@ -4,6 +4,7 @@
 #include "BACH/utils/types.h"
 #include "BACH/sstable/FileMetaData.h"
 #include "BACH/common/vector.h"
+#include "BACH/memory/AnswerMerger.h"
 #include "BACH/vectorized_execution/operator.h"
 
 namespace BACH {
@@ -32,11 +33,11 @@ namespace BACH {
         }
 
         bool Scan(idx_t col_id, Vector &result);
+        void Materialize(Vector &result, AnswerMerger &am);
 
         template<typename Func>
-        void ApplyRangeFilter(idx_t col_id, Func* left_bound, Func* right_bound);
+        void ApplyRangeFilter(idx_t col_id, Func* left_bound, Func* right_bound, AnswerMerger &am);
 
-        void Materialize();
     private:
         DB* db;
         idx_t key_num, col_num;
@@ -45,6 +46,10 @@ namespace BACH {
         Key_t* keys;
         std::vector<idx_t*> cols;
         RelFileParser<Key_t>* parser;
+
+        OrderedDictionary* dict(idx_t col_id) {
+            return file->dictionary[col_id];
+        }
 
         friend class DB;
     };

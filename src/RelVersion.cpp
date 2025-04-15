@@ -4,10 +4,10 @@
 namespace BACH
 {
 	RelVersion::RelVersion(DB* _db) :
-		next(NULL), epoch(0), next_epoch(-1), ref(2), db(_db) {
+		next(nullptr), epoch(0), next_epoch(-1), ref(2), db(_db) {
 	}
 	RelVersion::RelVersion(RelVersion* _prev, VersionEdit* edit, time_t time) :
-		next(NULL), epoch(std::max(_prev->epoch, time)), next_epoch(-1),
+		next(nullptr), epoch(std::max(_prev->epoch, time)), next_epoch(-1),
 		db(_prev->db)
 	{
 		FileIndex = _prev->FileIndex;
@@ -34,8 +34,7 @@ namespace BACH
 					FileTotalSize.resize(i->level + 1);
 				auto x = std::upper_bound(FileIndex[i->level].begin(),
 					FileIndex[i->level].end(), i, RelFileCompare<std::string>);
-                // here limits the template, needing to be solved
-				auto f = new RelFileMetaData<std::string>(*static_cast<RelFileMetaData<std::string> *>(i));
+				auto f = new RelFileMetaData(*static_cast<RelFileMetaData<std::string> *>(i));
 				FileIndex[i->level].insert(x, f);
 				FileTotalSize[i->level] += i->file_size;
 			}
@@ -49,7 +48,7 @@ namespace BACH
 
 	RelVersion::~RelVersion()
 	{
-		if (size_entry != NULL)
+		if (size_entry != nullptr)
 			size_entry->delete_entry();
 		for (auto& i : FileIndex)
 			for (auto& j : i)
@@ -61,8 +60,7 @@ namespace BACH
 						+ j->file_name).c_str());
 					//if(k->filter->size() == util::ClacFileSize(db->options, k->level))
 					delete j->filter;
-					if (j->reader != NULL)
-						delete j->reader;
+					delete j->reader;
 					db->ReaderCaches->deletecache(j);
 					delete j;
 				}
@@ -162,7 +160,7 @@ namespace BACH
 //					}
 //			} while (flag);
 //		}
-		if (c == NULL)
+		if (c == nullptr)
 			c = new Compaction();
 		c->key_min = min(key_min, (*iter1)->key_min);
 		c->target_level = level;
@@ -209,7 +207,7 @@ namespace BACH
 	FileMetaData* RelVersionIterator<Key_t>::GetFile() const
 	{
 		if (end)
-			return NULL;
+			return nullptr;
 		return version->FileIndex[level][idx];
 	}
 

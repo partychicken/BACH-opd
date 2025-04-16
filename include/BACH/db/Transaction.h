@@ -50,7 +50,9 @@ namespace BACH
         void DelTuple(Tuple tuple, tp_key key);
         Tuple GetTuple(tp_key key);
         // OLAP operation
-        void GetTuplesFromRange();
+		template<typename Func>
+        void GetTuplesFromRange(idx_t col_id, Func* left_bound, Func* right_bound);
+
         void ScanTuples();
 
 	private:

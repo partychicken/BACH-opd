@@ -32,11 +32,19 @@ namespace BACH {
             parser->GetValCol(cols[col_id], key_num, col_id);
         }
 
+        void GetAllColData() {
+            for (int i = 0; i < col_num; i++) {
+                GetColData(i);
+            }
+        }
+
         bool Scan(idx_t col_id, Vector &result);
         void Materialize(Vector &result, AnswerMerger &am);
 
         template<typename Func>
         void ApplyRangeFilter(idx_t col_id, Func* left_bound, Func* right_bound, AnswerMerger &am);
+
+        void MaterializeAll(AnswerMerger &am);
 
     private:
         DB* db;

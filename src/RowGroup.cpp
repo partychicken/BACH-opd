@@ -61,4 +61,13 @@ namespace BACH {
             Materialize(res, am);
         }
     }
+
+    template<typename Key_t>
+    void RowGroup<Key_t>::MaterializeAll(AnswerMerger &am) {
+        Vector res;
+        while (Scan(0, res)) {
+            Materialize(res, am);
+        }
+    }
+
 }

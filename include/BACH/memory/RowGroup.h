@@ -15,7 +15,7 @@ namespace BACH {
     template<typename Key_t>
     class RowGroup {
     public:
-        RowGroup(DB* _db, idx_t key_num, idx_t col_num, RelFileMetaData<Key_t>* _file);
+        RowGroup(DB* _db,  RelFileMetaData<Key_t>* _file);
 
         ~RowGroup() {
             if(keys != nullptr) free(keys);

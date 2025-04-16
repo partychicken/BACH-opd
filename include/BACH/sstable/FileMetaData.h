@@ -63,9 +63,9 @@ namespace BACH {
         }
 
         RelFileMetaData(label_t _label, idx_t _level, vertex_t _vertex_id_b,
-                     idx_t _file_id, std::string_view label_name, Key_t _key_min) :
-                     FileMetaData(_label, _level, _vertex_id_b, _file_id, label_name), key_min(_key_min){
-            file_name += std::to_string(key_min);
+                     idx_t _file_id, std::string_view label_name, Key_t _key_min, Key_t _key_max) :
+                     FileMetaData(_label, _level, _vertex_id_b, _file_id, label_name), key_min(_key_min), key_max(_key_max){
+            file_name += std::to_string(key_min) + std::to_string(key_max);
         }
     };
 }

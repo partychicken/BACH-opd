@@ -27,7 +27,7 @@ namespace BACH
     class RelFileParser
     {
     public:
-        RelFileParser( std::shared_ptr<FileReader> _fileReader,
+        RelFileParser( FileReader* _fileReader,
             std::shared_ptr<Options> _options, size_t _file_size);
         RelFileParser(RelFileParser &&x);
 
@@ -44,7 +44,7 @@ namespace BACH
         }
 
     private:
-        std::shared_ptr<FileReader> reader;
+        FileReader* reader;
         std::shared_ptr<Options> options;
 
         size_t file_size = 0;

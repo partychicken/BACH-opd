@@ -60,8 +60,10 @@ namespace BACH
 		// metadata for tuples
 		tp_key max_key;
 		tp_key min_key;
-		
 		std::atomic<size_t> total_tuple;
+		idx_t column_num;
+		
+		
 		std::shared_ptr<RelSkipList> tuple_index;
 		std::shared_mutex mutex;
 		ConcurrentArray<std::shared_ptr<TupleEntry>> tuple_pool;
@@ -71,9 +73,9 @@ namespace BACH
 		std::map <tp_key, time_t> del_table;
 		/*size_t size = 0;*/
 		time_t max_time = 0;
-		relMemTable(size_t _size,
+		relMemTable(size_t _size, idx_t _column_num,
 			std::shared_ptr<relMemTable> _next = NULL) :
-			total_tuple(_size), next(_next), immutable(false), sema(0) {
+			total_tuple(_size), column_num(_column_num), next(_next), immutable(false), sema(0) {
 			tuple_index = RelSkipList::createInstance();
 		};
 		void delete_entry() {
@@ -89,7 +91,7 @@ namespace BACH
 		//void UpdateTuple(Tuple tuple, tp_key key, time_t timestamp, tuple_property_t property);
 		std::vector<Tuple> ScanTuples(tp_key start_key, tp_key end_key, time_t timestamp);
 
-
+		std::vector<Tuple> FilterByValueRange(time_t timestamp, const std::function<bool(Tuple&)>& func);
 
 	}; 
 

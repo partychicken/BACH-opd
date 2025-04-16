@@ -2,6 +2,7 @@
 #include "BACH/memory/RowMemoryManager.h"
 #include "BACH/memory/TupleEntry.h"
 #include "BACH/utils/ConcurrentArray.h"
+#include <string>
 
 namespace BACH {
 
@@ -12,6 +13,9 @@ namespace BACH {
 	public:
 		TempColumn(relMemTable* row, size_t _size, size_t _column_num);
 		~TempColumn();
+		std::string* GetColumn(size_t column_id) {
+			return data[column_id];
+		}
 
 	private:
 		std::string** data;

@@ -157,10 +157,30 @@ namespace BACH
     }
 
     void relMemTable::UpdateMinMax(tp_key key) {
-		if (key > max_key) {
-			max_key = key;
+        if (key > max_key) {
+            max_key = key;
+        }
+        if (key < min_key) {
+            min_key = key;
+        }
+    }
+
+    std::vector<Tuple> relMemTable::FilterByValueRange(time_t timestamp, const std::function<bool(Tuple&)>& func) {
+		std::vector<Tuple> result;
+		RelSkipList::Accessor accessor(tuple_index);
+		tp_key last_key = "";
+		for (auto it = ++accessor.begin(); it != accessor.end(); ++it) {
+			if (std::get<1>(*it) > timestamp || last_key == std::get<0>(*it))
+				continue;
+			auto tuple_entry = std::get<2>(*it);
+			if (tuple_entry.property != TOMBSTONE && tuple_entry.property != NONEINDEX) {
+				if (func(*tuple_entry.tuple)) {
+					result.push_back(*tuple_entry.tuple);
+                    last_key = std::get<0>(*it);
+				}
+			}
 		}
-		if (key < min_key) {
-			min_key = key;
-		}
+		return result;
+    }
+
 }

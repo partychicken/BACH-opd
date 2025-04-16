@@ -22,6 +22,7 @@ namespace BACH
 		DB& operator=(const DB&) = delete;
 		~DB();
 		DB(std::shared_ptr<Options> _options);
+		DB(std::shared_ptr<Options> _options, idx_t column_num);
 		Transaction BeginTransaction();
 		Transaction BeginReadOnlyTransaction();
 

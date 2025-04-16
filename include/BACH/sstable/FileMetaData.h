@@ -68,7 +68,12 @@ namespace BACH {
                      idx_t _key_num, idx_t _col_num) :
                      FileMetaData(_label, _level, _vertex_id_b, _file_id, label_name),
                      key_min(_key_min), key_max(_key_max), key_num(_key_num), col_num(_col_num) {
-            file_name += std::to_string(key_min) + std::to_string(key_max);
+            if constexpr (std::is_same_v<Key_t, std::string>) {
+				file_name += key_min + key_max;
+            }
+            else {
+                file_name += std::to_string(key_min) + std::to_string(key_max);
+            }
         }
     };
 }

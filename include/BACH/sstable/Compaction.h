@@ -3,7 +3,7 @@
 #include <vector>
 #include "FileMetaData.h"
 #include "BACH/memory/VertexEntry.h"
-#include "BACH/memory/RowMemoryManager.h"
+#include "BACH/memory/TupleEntry.h"
 
 namespace BACH
 {

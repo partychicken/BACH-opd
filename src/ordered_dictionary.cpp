@@ -26,6 +26,28 @@ namespace BACH
         }
     }
 
+    void OrderedDictionary::importData(const std::string* data, const size_t size) {
+        // 使用 set 进行去重
+
+        std::set<std::string> uniqueStrings;
+        for (size_t i = 0; i < size; ++i) {
+            uniqueStrings.insert(data[i]);
+        }
+
+        // 清空现有的映射
+        stringToIndex.clear();
+        indexToString.clear();
+
+        // 对 set 内的数据进行排序并生成映射
+        int index = 0;
+        for (const auto& str : uniqueStrings) {
+            stringToIndex[str] = index;
+            indexToString.push_back(str);
+            ++index;
+        }
+    }
+
+
     int OrderedDictionary::getMapping(const std::string& str) const {
         auto it = stringToIndex.find(str);
         if (it != stringToIndex.end()) {
@@ -79,4 +101,12 @@ namespace BACH
 
         return mergedDict;
     }
+
+    void OrderedDictionary::CompressData(idx_t* data, const std::string* original, size_t size) {
+		for (size_t i = 0; i < size; ++i) {
+			data[i] = getMapping(original[i]);
+		}
+    }
+
+
 }// namespace BACH

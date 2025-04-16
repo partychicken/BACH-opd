@@ -79,6 +79,7 @@ namespace BACH
 		void delete_entry() {
 			last->next = NULL;
 		};
+		void UpdateMinMax(tp_key key);
 
 		void PutTuple(Tuple tuple, tp_key key, time_t timestamp, tuple_property_t property);
 

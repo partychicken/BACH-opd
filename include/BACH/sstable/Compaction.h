@@ -3,6 +3,7 @@
 #include <vector>
 #include "FileMetaData.h"
 #include "BACH/memory/VertexEntry.h"
+#include "BACH/memory/RowMemoryManager.h"
 
 namespace BACH
 {
@@ -19,5 +20,6 @@ namespace BACH
 	template<typename Key_t>
 	struct RelCompaction : public Compaction {
 		Key_t key_min;
+		std::shared_ptr< relMemTable > relPersistence;
 	};
 }

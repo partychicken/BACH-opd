@@ -12,7 +12,7 @@ namespace BACH
 		std::unique_lock<std::shared_mutex> lock(currentMemTable->mutex);
 		currentMemTable-> PutTuple(tuple, key, timestamp, property);
 		current_data_count++;
-		CheckAndPersist();
+		CheckAndImmute();
 	}
 
 
@@ -49,7 +49,34 @@ namespace BACH
 
 
 	// TODO: compact and go column
-	void rowMemoryManager::CheckAndPersist() {
+	void rowMemoryManager::CheckAndImmute(tp_key key_min) {
+		if (current_data_count >= db->options->MEM_TABLE_MAX_SIZE) {
+			immute_memtable(currentMemTable, key_min);
+			current_data_count = 0;
+
+		}return;
+	}
+
+	// 由于当前数据特征，L0为tileing，置换的肯定是CurrentTupleEntry,并且就是顶上那个
+	// 所以也需要插入一个新的memtable
+	void rowMemoryManager::immute_memtable(std::shared_ptr<relMemTable> memtable) {
+		auto new_memtable = std::make_shared<relMemTable>(0, memtable);
+		memtable->last = new_memtable;
+		memTable[memTable.size()] = new_memtable;
+		memtable->sema.release(1024);
+		RelCompaction<std::string> x;
+		x.label_id = 0;
+		x.target_level = 0;
+		x.vertex_id_b = 0;
+		x.relPersistence = memtable;
+		x.key_min = memtable->min_key;
+		db->Files->AddCompaction(x);
+
+	}
+
+
+	void rowMemoryManager::RowMemtablePersistence(idx_t file_id, std::shared_ptr < relMemTable > size_info) {
+
 
 	}
 

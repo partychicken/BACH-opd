@@ -15,6 +15,7 @@
 #include "BACH/utils/Options.h"
 #include "BACH/memory/TupleEntry.h"
 #include "BACH/common/tuple.h"
+#include "BACH/sstable/Compaction.h"
 
 namespace BACH
 {
@@ -42,6 +43,10 @@ namespace BACH
         //void UpdateTuple(Tuple tuple, tp_key key, time_t timestamp, tuple_property_t property);
         std::vector<Tuple> ScanTuples(tp_key start_key, tp_key end_key, time_t timestamp);
 
+        void immute_memtable(std::shared_ptr<relMemTable> size_info);
+		void RowMemtablePersistence(idx_t file_id, std::shared_ptr < relMemTable > size_info);
+		
+
     private:
         ConcurrentArray<std::shared_ptr<relMemTable>> memTable;
         std::shared_ptr<relMemTable> currentMemTable;
@@ -49,6 +54,6 @@ namespace BACH
         size_t data_count_threshold = 1024; // 数据量阈值
         size_t current_data_count = 0; // 当前数据量计数
 		size_t column_num = 0; // 列数
-        void CheckAndPersist();
+        void CheckAndImmute(tp_key key_min);
 	};
 }

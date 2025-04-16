@@ -132,6 +132,7 @@ namespace BACH
             accessor.insert(std::make_tuple(key, timestamp, *new_tuple_entry));
             total_tuple.fetch_add(1);
         }
+        UpdateMinMax(key);
     }
 
 
@@ -155,4 +156,11 @@ namespace BACH
         return result;
     }
 
+    void relMemTable::UpdateMinMax(tp_key key) {
+		if (key > max_key) {
+			max_key = key;
+		}
+		if (key < min_key) {
+			min_key = key;
+		}
 }

@@ -55,6 +55,7 @@ namespace BACH {
     struct RelFileMetaData : public FileMetaData {
         std::vector<OrderedDictionary> dictionary;
         Key_t key_min, key_max;
+        idx_t key_num, col_num;
 
         RelFileMetaData() = default;
 
@@ -63,8 +64,10 @@ namespace BACH {
         }
 
         RelFileMetaData(label_t _label, idx_t _level, vertex_t _vertex_id_b,
-                     idx_t _file_id, std::string_view label_name, Key_t _key_min, Key_t _key_max) :
-                     FileMetaData(_label, _level, _vertex_id_b, _file_id, label_name), key_min(_key_min), key_max(_key_max){
+                     idx_t _file_id, std::string_view label_name, Key_t _key_min, Key_t _key_max,
+                     idx_t _key_num, idx_t _col_num) :
+                     FileMetaData(_label, _level, _vertex_id_b, _file_id, label_name),
+                     key_min(_key_min), key_max(_key_max), key_num(_key_num), col_num(_col_num) {
             file_name += std::to_string(key_min) + std::to_string(key_max);
         }
     };

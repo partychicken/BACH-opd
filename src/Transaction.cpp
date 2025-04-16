@@ -26,6 +26,8 @@ namespace BACH
 			{
 				db->write_epoch_table.erase(time_pos);
 				db->ProgressReadVersion();
+
+				db->ProgressReadRelVersion();
 			}
 		}
 	}
@@ -181,24 +183,26 @@ namespace BACH
 			return Tuple();
 		}
 		Tuple x = db->RowMemtable->GetTuple(key, write_epoch);
-		/*if (!std::isnan(x.property)) {
+		if (!std::isnan(x.property)) {
 			return x;
 		}
 
-		VersionIterator iter(version, label, src);
+		RelVersionIterator iter(rel_version, key, key);
 		while (!iter.End())
 		{
-			if (src - iter.GetFile()->vertex_id_b < iter.GetFile()->filter->size())
-				if ((*iter.GetFile()->filter)[src - iter.GetFile()->vertex_id_b])
+			if (key > reinterpret_cast<RelFileMetaData<std::string>*>(iter.GetFile())->key_min && key < reinterpret_cast<RelFileMetaData<std::string>*>(iter.GetFile())->key_max)
+				// 原本判断条件为(*iter.GetFile()->filter)[src - iter.GetFile()->vertex_id_b]
+				if (transferKeyToHash<std::string>(key))
 				{
-					SSTableParser parser(label, db->ReaderCaches->find(iter.GetFile()), db->options);
-					auto found = parser.GetEdge(src, dst);
-					if (!std::isnan(found))
+					std::shared_ptr<FileReader> tmp(iter.GetFile()->reader.load(), [](FileReader*) {});
+					RelFileParser<std::string> parser(tmp, db->options, iter.GetFile()->file_size);
+					Tuple found = parser.GetTuple(key);
+					if (!std::isnan(found.property))
 						return found;
 				}
 			iter.next();
 		}
-		return Tuple();*/
+		return Tuple();
 	}
 
 }

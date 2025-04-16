@@ -1,10 +1,13 @@
 #pragma once
 
+#include <string>
 #include "DB.h"
 #include "BACH/sstable/SSTableParser.h"
 #include "BACH/common/tuple.h"
 #include "BACH/sstable/RelVersion.h"
-
+#include "BACH/sstable/FileMetaData.h"
+#include "BACH/sstable/BloomFilter.h"
+ 
 namespace BACH
 {
 	class Transaction

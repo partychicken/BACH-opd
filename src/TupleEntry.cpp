@@ -165,8 +165,8 @@ namespace BACH
         }
     }
 
-    std::vector<Tuple> relMemTable::FilterByValueRange(time_t timestamp, const std::function<bool(Tuple&)>& func) {
-		std::vector<Tuple> result;
+    void relMemTable::FilterByValueRange(time_t timestamp, const std::function<bool(Tuple&)>& func, AnswerMerger& am) {
+		/*std::vector<Tuple> result;*/
 		RelSkipList::Accessor accessor(tuple_index);
 		tp_key last_key = "";
 		for (auto it = ++accessor.begin(); it != accessor.end(); ++it) {
@@ -175,12 +175,13 @@ namespace BACH
 			auto tuple_entry = std::get<2>(*it);
 			if (tuple_entry.property != TOMBSTONE && tuple_entry.property != NONEINDEX) {
 				if (func(*tuple_entry.tuple)) {
-					result.push_back(*tuple_entry.tuple);
+					/*result.push_back(*tuple_entry.tuple);*/
+					am.insert_answer(std::get<0>(*it), std::move(*tuple_entry.tuple), false);
                     last_key = std::get<0>(*it);
 				}
 			}
 		}
-		return result;
+		
     }
 
 }

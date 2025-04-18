@@ -19,6 +19,7 @@
 #include "BACH/sstable/RelFileBuilder.h"
 #include "BACH/memory/RowToColumn.h"
 #include "BACH/compress/ordered_dictionary.h"
+#include "BACH/memory/AnswerMerger.h"
 
 namespace BACH
 {
@@ -49,7 +50,7 @@ namespace BACH
         void immute_memtable(std::shared_ptr<relMemTable> size_info);
         VersionEdit* RowMemtablePersistence(idx_t file_id, std::shared_ptr < relMemTable > size_info);
 		
-        std::vector<Tuple> FilterByValueRange(time_t timestamp, const std::function<bool(Tuple&)>& func);
+        void FilterByValueRange(time_t timestamp, const std::function<bool(Tuple&)>& func, AnswerMerger& am);
 
     private:
         ConcurrentArray<std::shared_ptr<relMemTable>> memTable;

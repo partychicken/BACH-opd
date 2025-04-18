@@ -10,6 +10,7 @@
 #include "BACH/utils/types.h"
 #include "BACH/utils/ConcurrentArray.h"
 #include "BACH/common/tuple.h"
+#include "BACH/memory/AnswerMerger.h"
 
 namespace BACH 
 {
@@ -91,7 +92,7 @@ namespace BACH
 		//void UpdateTuple(Tuple tuple, tp_key key, time_t timestamp, tuple_property_t property);
 		std::vector<Tuple> ScanTuples(tp_key start_key, tp_key end_key, time_t timestamp);
 
-		std::vector<Tuple> FilterByValueRange(time_t timestamp, const std::function<bool(Tuple&)>& func);
+		void FilterByValueRange(time_t timestamp, const std::function<bool(Tuple&)>& func, AnswerMerger& am);
 
 	}; 
 

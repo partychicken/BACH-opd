@@ -192,6 +192,9 @@ namespace BACH {
     void Transaction::GetTuplesFromRange(idx_t col_id, Func *left_bound, Func *right_bound) {
         AnswerMerger am;
         // add in-memory data into am here;
+        auto vf = CreateValueFilterFunction<Func>(col_id, *left_bound, *right_bound);
+        db->RowMemtable->FilterByValueRange(write_epoch, vf, am);
+
         auto files = rel_version->FileIndex;
         for (auto cur_level: files) {
             for (auto cur_file: cur_level) {

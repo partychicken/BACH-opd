@@ -93,9 +93,18 @@ namespace BACH
 			dicts[i] = new OrderedDictionary();
 			dicts[i]->importData(tmp.GetColumn(i + 1), memtable->column_num);
 			dicts[i]->CompressData(data[i], tmp.GetColumn(i + 1), memtable->column_num);
+			temp_file_metadata->dictionary.push_back(*dicts[i]);
+			delete dicts[i];
 		}
 		rfb.ArrangeRelFileInfo(tmp.GetColumn(0), memtable->total_tuple, 64, memtable->column_num, data);
 
+		/*delete data;*/
+		for (size_t i = 0; i < memtable->column_num; i++)
+		{
+			delete data[i];
+
+		}
+		delete[] data;
 
 		auto vedit = new VersionEdit();
 		temp_file_metadata->file_size = fw->file_size();
@@ -104,14 +113,15 @@ namespace BACH
 
 	}
 
-	std::vector<Tuple> rowMemoryManager::FilterByValueRange(time_t timestamp, const std::function<bool(Tuple&)>& func) {
+
+	void rowMemoryManager::FilterByValueRange(time_t timestamp, const std::function<bool(Tuple&)>& func, AnswerMerger& am) {
 		std::shared_lock<std::shared_mutex> lock(currentMemTable->mutex);
-		std::vector<Tuple> result = currentMemTable->FilterByValueRange(timestamp, func);
-		return result;
+		currentMemTable->FilterByValueRange(timestamp, func, am);
 	}
 
-	std::function<bool(Tuple&)> CreateValueFilterFunction(const idx_t column_idx, const std::string& value_min,
-		const std::string& value_max) {
+	template<typename func>
+	std::function<bool(Tuple&)> CreateValueFilterFunction(const idx_t column_idx, const func& value_min,
+		const func& value_max) {
 		return [value_min, value_max, column_idx](Tuple& tuple) {
 			if (tuple.GetRow(column_idx) >= value_min && tuple.GetRow(column_idx)<= value_max) {
 				return true;

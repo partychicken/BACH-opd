@@ -49,7 +49,7 @@ namespace BACH {
 
     template<typename Key_t>
     Tuple RelFileParser<Key_t>::GetTuple(Key_t key) {
-        for(int i = 0; i < block_count; i++) {
+        for(idx_t i = 0; i < block_count; i++) {
             BlockMetaT<Key_t> &meta = block_meta[i];
             if(key < meta.key_min || key > meta.key_max) {
                 continue;
@@ -69,7 +69,7 @@ namespace BACH {
     template<typename Key_t>
     void RelFileParser<Key_t>::GetKeyCol(Key_t *keys, idx_t &key_num) {
         int idx = 0;
-        for(int i = 0; i < block_count; i++) {
+        for(idx_t i = 0; i < block_count; i++) {
             BlockMetaT<Key_t> &meta = block_meta[i];
             BlockParser<Key_t> block_parser(reader, options,
                              meta.offset_in_file, meta.block_size);
@@ -86,7 +86,7 @@ namespace BACH {
     template<typename Key_t>
     void RelFileParser<Key_t>::GetValCol(idx_t *vals, idx_t &val_num, idx_t col_id) {
         int idx = 0;
-        for(int i = 0; i < block_count; i++) {
+        for(idx_t i = 0; i < block_count; i++) {
             BlockMetaT<Key_t> &meta = block_meta[i];
             BlockParser<Key_t> block_parser(reader, options,
                              meta.offset_in_file, meta.block_size);

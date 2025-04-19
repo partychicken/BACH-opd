@@ -8,7 +8,7 @@
 */
 namespace BACH {
     template<typename Key_t>
-    BlockParser<Key_t>::BlockParser(std::shared_ptr<FileReader> _fileReader,
+    BlockParser<Key_t>::BlockParser(FileReader* _fileReader,
             std::shared_ptr<Options> _options, size_t _offset_in_file,
             size_t _block_size) :
             reader(_fileReader), options(_options), 

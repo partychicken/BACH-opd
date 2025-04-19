@@ -12,10 +12,9 @@ namespace BACH {
 
     //RowGroup holds the real memory when doing AP ops
     //needs to malloc & free the memory manually
-    template<typename Key_t>
     class RowGroup {
     public:
-        RowGroup(DB* _db,  RelFileMetaData<Key_t>* _file);
+        RowGroup(DB* _db,  RelFileMetaData<std::string>* _file);
 
         ~RowGroup() {
             if(keys != nullptr) free(keys);
@@ -33,7 +32,7 @@ namespace BACH {
         }
 
         void GetAllColData() {
-            for (int i = 0; i < col_num; i++) {
+            for (idx_t i = 0; i < col_num; i++) {
                 GetColData(i);
             }
         }
@@ -49,14 +48,14 @@ namespace BACH {
     private:
         DB* db;
         idx_t key_num, col_num;
-        RelFileMetaData<Key_t>* file;
+        RelFileMetaData<std::string>* file;
         idx_t* scan_pos;
-        Key_t* keys;
+        std::string* keys;
         std::vector<idx_t*> cols;
-        RelFileParser<Key_t>* parser;
+        RelFileParser<std::string>* parser;
 
         OrderedDictionary* dict(idx_t col_id) {
-            return file->dictionary[col_id];
+            return &file->dictionary[col_id];
         }
 
         friend class DB;

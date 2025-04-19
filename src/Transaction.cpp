@@ -201,7 +201,7 @@ namespace BACH {
                 auto reader = db->ReaderCaches->find(cur_file);
                 auto parser = RelFileParser<std::string>(reader, db->options, cur_file->file_size);
                 auto DictList = static_cast<RelFileMetaData<std::string> *>(cur_file)->dictionary;
-                RowGroup<std::string> cur_row_group(db, static_cast<RelFileMetaData<std::string> *>(cur_file));
+                RowGroup cur_row_group(db, static_cast<RelFileMetaData<std::string> *>(cur_file));
                 cur_row_group.GetKeyData();
                 cur_row_group.GetAllColData();
                 cur_row_group.ApplyRangeFilter(col_id, left_bound, right_bound, am);
@@ -218,7 +218,7 @@ namespace BACH {
                 auto reader = db->ReaderCaches->find(cur_file);
                 auto parser = RelFileParser<std::string>(reader, db->options, cur_file->file_size);
                 auto DictList = reinterpret_cast<RelFileMetaData<std::string>*>(cur_file)->dictionary;
-                RowGroup<std::string> cur_row_group(db, reinterpret_cast<RelFileMetaData<std::string>*>(cur_file));
+                RowGroup cur_row_group(db, reinterpret_cast<RelFileMetaData<std::string>*>(cur_file));
                 cur_row_group.GetKeyData();
                 cur_row_group.GetAllColData();
                 cur_row_group.MaterializeAll(am);

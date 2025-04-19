@@ -15,11 +15,12 @@
 
 namespace BACH
 {
+	template<typename Key_t>class RelFileParser;
     template<typename Key_t>
 	class BlockParser
 	{
 	public:
-		BlockParser( std::shared_ptr<FileReader> _fileReader,
+		BlockParser( FileReader* _fileReader,
 			std::shared_ptr<Options> _options, size_t _offset_in_file,
             size_t _block_size);
         BlockParser(BlockParser &&x);
@@ -47,7 +48,7 @@ namespace BACH
         }
 
 	private:
-		std::shared_ptr<FileReader> reader;
+		FileReader* reader;
 		std::shared_ptr<Options> options;
 
     	Tuple GetTupleWithIdx(Key_t key, idx_t idx);
@@ -61,5 +62,7 @@ namespace BACH
         size_t key_data_endpos = 0;
         size_t* col_data_endpos = nullptr;
 		bool valid = true;
+
+    	friend class RelFileParser<Key_t>;
 	};
 }

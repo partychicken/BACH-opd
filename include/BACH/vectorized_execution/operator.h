@@ -16,7 +16,7 @@ namespace BACH {
         }
         
         for(int i=0; i<count; i++){
-            result[i] = (data[i]<l)^f;
+            result[i] = (!((data[i]<l)^f));
         }
     }
 
@@ -39,11 +39,6 @@ namespace BACH {
             else r = mid-1;
         }
         int RightBound = l-1;
-
-        if(LeftBound > RightBound) {
-            // !!! maybe not swap? need to return empty set
-            std :: swap(LeftBound, RightBound);
-        }
 
         for(int i=0; i<count; i++){
             result[i] = (LeftBound<=data[i] && data[i]<=RightBound);

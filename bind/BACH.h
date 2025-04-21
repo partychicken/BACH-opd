@@ -38,6 +38,7 @@ namespace BACH
 		double FALSE_POSITIVE = 0.01;
 		size_t MAX_LEVEL = 5;
 		size_t LEVEL_SIZE_RITIO = 10;
+		size_t MAX_BLOCK_SIZE = 4 * 1024;
 	};
 #else
 	struct Options;

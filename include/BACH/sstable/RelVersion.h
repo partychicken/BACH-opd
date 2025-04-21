@@ -58,7 +58,7 @@ namespace BACH
         bool findsrc();
     };
 
-    bool RelFileCompareWithPair(FileMetaData* lhs, std::pair<std::string, idx_t> rhs);
+    bool RelFileCompareWithPair(FileMetaData* lhs, const std::pair<std::string, idx_t> &rhs);
 
-    bool RelFileCompare(FileMetaData* lhs, FileMetaData* rhs);
+	bool RelFileCompare(FileMetaData* lhs, FileMetaData* rhs);
 }

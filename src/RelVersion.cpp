@@ -253,8 +253,10 @@ namespace BACH
 			rlhs->file_id < rhs.second : rlhs->key_min < rhs.first;
 	}
 
-	bool RelFileCompare(const RelFileMetaData<std::string>* lhs, const RelFileMetaData<std::string>* rhs)
+	bool RelFileCompare(FileMetaData* lhs, FileMetaData* rhs)
 	{
-         return lhs->key_min < rhs->key_min;
+		auto rlhs = static_cast<RelFileMetaData<std::string> *>(lhs);
+		auto rrhs = static_cast<RelFileMetaData<std::string> *>(rhs);
+		return rlhs->key_min < rrhs->key_min;
     }
 }

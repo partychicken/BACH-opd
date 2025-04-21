@@ -16,8 +16,10 @@ namespace BACH
 		BloomFilter(idx_t keys_num, double false_positive);
 		std::string& data();
 		void insert(const vertex_t& dst);
+		void insert(const std::string& dst);
 		void create_from_data(int32_t func_num, std::string& bits);
 		bool exists(const vertex_t& dst);
+		bool exists(const std::string& dst);
 		int32_t get_func_num()const { return hash_func_num; }
 	private:
 		int32_t bits_per_key = 0;
@@ -26,7 +28,7 @@ namespace BACH
 	};
 
 
-	// 未完成，期望是将key转化为hash值，从而使用原本的bloomfilter，现在就只是返回1（true）先，之后调用处也要改成在bloomfilter中
+	// 未锟斤拷桑锟斤拷锟斤拷锟斤拷墙锟絢ey转锟斤拷为hash值锟斤拷锟接讹拷使锟斤拷原锟斤拷锟斤拷bloomfilter锟斤拷锟斤拷锟节撅拷只锟角凤拷锟斤拷1锟斤拷true锟斤拷锟饺ｏ拷之锟斤拷锟斤拷么锟揭惨拷某锟斤拷锟絙loomfilter锟斤拷
 	template<typename key_type>
 	idx_t transferKeyToHash(key_type key) {
 		return 1;

@@ -59,8 +59,8 @@ namespace BACH
 		return;
 	}
 
-	// 由于当前数据特征，L0为tileing，置换的肯定是CurrentTupleEntry,并且就是顶上那个
-	// 所以也需要插入一个新的memtable
+	// 锟斤拷锟节碉拷前锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷L0为tileing锟斤拷锟矫伙拷锟侥肯讹拷锟斤拷CurrentTupleEntry,锟斤拷锟揭撅拷锟角讹拷锟斤拷锟角革拷
+	// 锟斤拷锟斤拷也锟斤拷要锟斤拷锟斤拷一锟斤拷锟铰碉拷memtable
 	void rowMemoryManager::immute_memtable(std::shared_ptr<relMemTable> memtable) {
 		auto new_memtable = std::make_shared<relMemTable>(0, memtable->column_num, memtable);
 		memtable->last = new_memtable;
@@ -80,11 +80,11 @@ namespace BACH
 	VersionEdit* rowMemoryManager::RowMemtablePersistence(idx_t file_id, std::shared_ptr < relMemTable > memtable) {
 
 		auto temp_file_metadata = new RelFileMetaData(0, 0, 0, file_id,
-			0, memtable->min_key, memtable->max_key, memtable->total_tuple, memtable->column_num);
+			"", memtable->min_key, memtable->max_key, memtable->total_tuple, memtable->column_num);
 		std::string file_name = temp_file_metadata->file_name;
 		auto fw = std::make_shared<FileWriter>(db->options->STORAGE_DIR + "/" + file_name, false);
 		RelFileBuilder<std::string> rfb(fw, db->options);
-		// 先进行行转列，再进行字典压缩，之后调用rfb的ArrangeRelFileInfo
+		// 锟饺斤拷锟斤拷锟斤拷转锟叫ｏ拷锟劫斤拷锟斤拷锟街碉拷压锟斤拷锟斤拷之锟斤拷锟斤拷锟絩fb锟斤拷ArrangeRelFileInfo
 		TempColumn tmp(memtable.get(), memtable->total_tuple, memtable->column_num);
 		idx_t** data = new idx_t*[memtable->column_num];
 		std::vector<OrderedDictionary*> dicts(memtable->column_num - 1);

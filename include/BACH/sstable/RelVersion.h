@@ -36,22 +36,20 @@ namespace BACH
         std::shared_ptr < relMemTable > size_entry = NULL;
         DB* db;
 
-        template<typename Key_t>
         friend class RelVersionIterator;
     };
 
-    template<typename Key_t>
     class RelVersionIterator
     {
     public:
-        RelVersionIterator(RelVersion* _version, Key_t _key_min, Key_t _key_max);
+        RelVersionIterator(RelVersion* _version, std::string _key_min, std::string _key_max);
         ~RelVersionIterator() = default;
         FileMetaData* GetFile() const;
         bool End() const { return end; }
         void next();
     private:
         RelVersion* version;
-        Key_t key_min, key_max;
+        std::string key_min, key_max;
         idx_t level = -1;
         idx_t idx = 0;
         size_t file_size, size;
@@ -60,9 +58,7 @@ namespace BACH
         bool findsrc();
     };
 
-    template<typename Key_t>
-    bool RelFileCompareWithPair(FileMetaData* lhs, std::pair<vertex_t, idx_t> rhs);
+    bool RelFileCompareWithPair(FileMetaData* lhs, const std::pair<std::string, idx_t> &rhs);
 
-    template<typename Key_t>
-    bool RelFileCompare(FileMetaData* lhs, FileMetaData* rhs);
+	bool RelFileCompare(FileMetaData* lhs, FileMetaData* rhs);
 }

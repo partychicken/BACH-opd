@@ -217,7 +217,7 @@ namespace BACH
 		if (end)
 			return;
 		if (idx == version->FileIndex[level].size() ||
-			static_cast<RelFileMetaData<Key_t> >(version->FileIndex[level][++idx])->key_min > key_max)
+			static_cast<RelFileMetaData<Key_t>* >(version->FileIndex[level][++idx])->key_min > key_max)
 			nextlevel();
 	}
 
@@ -245,8 +245,8 @@ namespace BACH
 		if (x == version->FileIndex[level].begin())
 			return false;
 		idx = x - version->FileIndex[level].begin() - 1;
-		if (static_cast<RelFileMetaData<Key_t>>(version->FileIndex[level][idx])->key_min > key_max
-			|| static_cast<RelFileMetaData<Key_t>>(version->FileIndex[level][idx])->key_max < key_min )
+		if (static_cast<RelFileMetaData<Key_t>*>(version->FileIndex[level][idx])->key_min > key_max
+			|| static_cast<RelFileMetaData<Key_t>*>(version->FileIndex[level][idx])->key_max < key_min )
 			return false;
 		return true;
 	}

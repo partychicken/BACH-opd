@@ -17,7 +17,7 @@ namespace BACH
 			if (i->deletion)
 			{
 				auto x = std::lower_bound(FileIndex[i->level].begin(),
-					FileIndex[i->level].end(), i, RelFileCompare<std::string>);
+					FileIndex[i->level].end(), i, RelFileCompare);
 				if ((*x)->file_id != i->file_id)
 				{
 					//error
@@ -33,7 +33,7 @@ namespace BACH
 					FileIndex.resize(i->level + 1),
 					FileTotalSize.resize(i->level + 1);
 				auto x = std::upper_bound(FileIndex[i->level].begin(),
-					FileIndex[i->level].end(), i, RelFileCompare<std::string>);
+					FileIndex[i->level].end(), i, RelFileCompare);
 				auto f = new RelFileMetaData(*static_cast<RelFileMetaData<std::string> *>(i));
 				FileIndex[i->level].insert(x, f);
 				FileTotalSize[i->level] += i->file_size;
@@ -117,7 +117,7 @@ namespace BACH
 		auto iter1 = std::lower_bound(FileIndex[level].begin(),
 			FileIndex[level].end(),
 			std::make_pair(key_min, (idx_t)0),
-			FileCompareWithPair);
+			RelFileCompareWithPair);
         if(iter1 != FileIndex[level].begin()) iter1--;
 
         //find the first file, whose key_min > current key_max
@@ -125,7 +125,7 @@ namespace BACH
 		auto iter2 = std::upper_bound(FileIndex[level].begin(),
 			FileIndex[level].end(),
 			std::make_pair(key_max, (idx_t)0),
-			FileCompareWithPair);
+			RelFileCompareWithPair);
 		//todo not complement yet
 		//size_t cnt = 0;
 //		for (auto i = iter1; i != iter2; ++i)
@@ -195,34 +195,30 @@ namespace BACH
 		size_entry = x;
 	}
 
-    template<typename Key_t>
-	RelVersionIterator<Key_t>::RelVersionIterator(RelVersion* _version, Key_t _key_min, Key_t _key_max)
+	RelVersionIterator::RelVersionIterator(RelVersion* _version, std::string _key_min, std::string _key_max)
 		: version(_version), key_min(_key_min), key_max(_key_max), file_size(1),
 		size(version->db->options->MEMORY_MERGE_NUM)
 	{
 		nextlevel();
 	}
 
-    template<typename Key_t>
-	FileMetaData* RelVersionIterator<Key_t>::GetFile() const
+	FileMetaData* RelVersionIterator::GetFile() const
 	{
 		if (end)
 			return nullptr;
 		return version->FileIndex[level][idx];
 	}
 
-    template<typename Key_t>
-	void RelVersionIterator<Key_t>::next()
+	void RelVersionIterator::next()
 	{
 		if (end)
 			return;
 		if (idx == version->FileIndex[level].size() ||
-			static_cast<RelFileMetaData<Key_t>* >(version->FileIndex[level][++idx])->key_min > key_max)
+			static_cast<RelFileMetaData<std::string>* >(version->FileIndex[level][++idx])->key_min > key_max)
 			nextlevel();
 	}
 
-    template<typename Key_t>
-	void RelVersionIterator<Key_t>::nextlevel()
+	void RelVersionIterator::nextlevel()
 	{
 		++level;
 		while (level < version->FileIndex.size() && !findsrc())
@@ -233,33 +229,31 @@ namespace BACH
 			end = true;
 	}
 
-    template<typename Key_t>
-	bool RelVersionIterator<Key_t>::findsrc()
+	bool RelVersionIterator::findsrc()
 	{
 		if (version->FileIndex[level].empty())
 			return false;
 		auto x = std::lower_bound(version->FileIndex[level].begin(),
 			version->FileIndex[level].end(),
 			std::make_pair(key_min, 0),
-			FileCompareWithPair);
+			RelFileCompareWithPair);
 		if (x == version->FileIndex[level].begin())
 			return false;
 		idx = x - version->FileIndex[level].begin() - 1;
-		if (static_cast<RelFileMetaData<Key_t>*>(version->FileIndex[level][idx])->key_min > key_max
-			|| static_cast<RelFileMetaData<Key_t>*>(version->FileIndex[level][idx])->key_max < key_min )
+		if (static_cast<RelFileMetaData<std::string>*>(version->FileIndex[level][idx])->key_min > key_max
+			|| static_cast<RelFileMetaData<std::string>*>(version->FileIndex[level][idx])->key_max < key_min )
 			return false;
 		return true;
 	}
 
-    template<typename Key_t>
-	bool RelFileCompareWithPair(RelFileMetaData<Key_t>* lhs, std::pair<Key_t, idx_t> rhs)
+	bool RelFileCompareWithPair(FileMetaData* lhs, const std::pair<std::string, idx_t> &rhs)
 	{
-		return lhs->key_min == rhs.first ?
-			lhs->file_id < rhs.second : lhs->key_min < rhs.first;
+		auto rlhs = static_cast<RelFileMetaData<std::string> *>(lhs);
+		return rlhs->key_min == rhs.first ?
+			rlhs->file_id < rhs.second : rlhs->key_min < rhs.first;
 	}
 
-    template<typename Key_t>
-	bool RelFileCompare(RelFileMetaData<Key_t>* lhs, RelFileMetaData<Key_t>* rhs)
+	bool RelFileCompare(const RelFileMetaData<std::string>* lhs, const RelFileMetaData<std::string>* rhs)
 	{
          return lhs->key_min < rhs->key_min;
     }

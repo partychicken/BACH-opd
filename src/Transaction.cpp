@@ -147,7 +147,7 @@ namespace BACH {
     }
 
 
-    void Transaction::PutTuple(Tuple tuple, tp_key key, tuple_property_t property) {
+    void Transaction::PutTuple(Tuple tuple, tp_key key, tuple_property_t property = 1) {
         if (write_epoch == MAXTIME) {
             return;
         }

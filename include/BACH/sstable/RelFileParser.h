@@ -73,7 +73,7 @@ namespace BACH
         }
         RelFileParser(RelFileParser &&x);
 
-        ~RelFileParser();
+        ~RelFileParser() = default;
 
         Tuple GetTuple(Key_t key){
             for(idx_t i = 0; i < block_count; i++) {

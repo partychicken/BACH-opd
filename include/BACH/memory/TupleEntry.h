@@ -17,14 +17,14 @@ namespace BACH
 
 	struct TupleEntry {
 
-		TupleEntry(std::shared_ptr<Tuple> _tuple, time_t _time,
+		TupleEntry(Tuple _tuple, time_t _time,
 			tuple_property_t _property, TupleEntry* _next = nullptr) :
 			tuple(_tuple), time(_time), property(_property), next(_next) {
 		};
 
-		TupleEntry(): tuple(std::make_shared<Tuple>()), time(MAXTIME), property(NONEINDEX), next(nullptr) {};
+		TupleEntry(): tuple(), time(MAXTIME), property(NONEINDEX), next(nullptr) {};
 
-		std::shared_ptr<Tuple> tuple;
+		Tuple tuple;
 		time_t time;
 		// function as a signal whether this record has been deleted
 		// don't know the reason to use double but not bool

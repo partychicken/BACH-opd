@@ -22,7 +22,7 @@ namespace BACH
 				continue;
 			for (size_t i = 0; i < column_num; i++)
 			{
-				data[i][count] = tuple.tuple->GetRow(i);
+				data[i][count] = tuple.tuple.GetRow(i);
 			}
 
 			count++;

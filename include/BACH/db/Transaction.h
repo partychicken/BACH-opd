@@ -59,12 +59,9 @@ namespace BACH
 		time_t write_epoch;
 		time_t read_epoch;
 		DB* db;
-		Version* version;
-
-		
-
 		size_t time_pos;
 
+		Version* version;
 		RelVersion* rel_version;
 
 		bool valid = true;

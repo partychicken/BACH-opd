@@ -31,8 +31,8 @@ namespace BACH
     //}
 
     // currently not consider primary key conflict
-    // ÖÇÄÜÖ¸ÕëÉÙµãÓÃ
-    // ¸úupdateÍ¬
+    // ï¿½ï¿½ï¿½ï¿½Ö¸ï¿½ï¿½ï¿½Ùµï¿½ï¿½ï¿½
+    // ï¿½ï¿½updateÍ¬
     //void relMemTable::AddTuple(Tuple tuple, tp_key key, time_t timestamp, tuple_property_t property) {
 
     //    auto tuple_entry = std::make_shared<TupleEntry>(std::make_shared<Tuple>(tuple), timestamp, property);
@@ -41,7 +41,7 @@ namespace BACH
     //    accessor.insert(std::make_pair(key, (idx_t)(tuple_pool.size() - 1)));
     //    total_tuple.fetch_add(1);
     //}
-    // ²åÈëÄ¹±®
+    // ï¿½ï¿½ï¿½ï¿½Ä¹ï¿½ï¿½
     //void relMemTable::DeleteTuple(tp_key key, time_t timestamp, tuple_property_t property) {
 
     //    RelSkipList::Accessor accessor(tuple_index);
@@ -72,7 +72,7 @@ namespace BACH
         //    }
         //}
 
-        // lower_bound·µ»ØÖµ¼´ÎªÐèÇóÖµ»òÕßÊÇºóÒ»Ìõ¼ÇÂ¼
+        // lower_boundï¿½ï¿½ï¿½ï¿½Öµï¿½ï¿½Îªï¿½ï¿½ï¿½ï¿½Öµï¿½ï¿½ï¿½ï¿½ï¿½Çºï¿½Ò»ï¿½ï¿½ï¿½ï¿½Â¼
         auto it = accessor.lower_bound(std::make_tuple(key, timestamp, TupleEntry()));
         if (it != accessor.begin() || it != accessor.end()) {
 			//while (std::get<0>(*it) < key || (std::get<0>(*it) == key && std::get<1>(*it) > timestamp)) {
@@ -83,7 +83,7 @@ namespace BACH
 
                 BACH::TupleEntry entry = std::get<2>(key);
 
-				return *(entry.tuple);
+				return entry.tuple;
             }
             else {
                 std::cout << "Key not found" << std::endl;
@@ -94,11 +94,11 @@ namespace BACH
 		}
 
 
-        return Tuple(); // ·µ»Ø¿ÕµÄ Tuple ±íÊ¾Î´ÕÒµ½
+        return Tuple(); // ï¿½ï¿½ï¿½Ø¿Õµï¿½ Tuple ï¿½ï¿½Ê¾Î´ï¿½Òµï¿½
     }
 
 
-    // put ¼ÓÉÏaddµÄÓïÒå
+    // put ï¿½ï¿½ï¿½ï¿½addï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     //void relMemTable::UpdateTuple(Tuple tuple, tp_key key, time_t timestamp, tuple_property_t property) {
 
     //    RelSkipList::Accessor accessor(tuple_index);
@@ -122,13 +122,13 @@ namespace BACH
 		//while (std::get<0>(*it) < key || (std::get<0>(*it) == key && std::get<1>(*it) > timestamp)) {
 		//	++it;
 		//}
-        if ((it != accessor.end() || it != accessor.begin()) && std::get<0>(*it) == key ) {
-            auto new_tuple_entry =  new TupleEntry(std::make_shared<Tuple>(tuple), timestamp, property, &std::get<2>(*it));
+        if (it != accessor.end() && std::get<0>(*it) == key ) {
+            auto new_tuple_entry =  new TupleEntry(tuple, timestamp, property, &std::get<2>(*it));
             accessor.insert(std::make_tuple(key, timestamp, *new_tuple_entry));
             total_tuple.fetch_add(1);
 		}
         else {
-            auto new_tuple_entry = new TupleEntry(std::make_shared<Tuple>(tuple), timestamp, property);
+            auto new_tuple_entry = new TupleEntry(tuple, timestamp, property);
             accessor.insert(std::make_tuple(key, timestamp, *new_tuple_entry));
             total_tuple.fetch_add(1);
         }
@@ -149,7 +149,7 @@ namespace BACH
             
             auto tuple_entry = std::get<2>(*it);
             if (std::get<1>(*it) <= timestamp && (tuple_entry.property != TOMBSTONE || tuple_entry.property != NONEINDEX)) {
-                result.push_back(*tuple_entry.tuple);
+                result.push_back(tuple_entry.tuple);
 				last_key = std::get<0>(*it);
             }
         }
@@ -174,9 +174,9 @@ namespace BACH
 				continue;
 			auto tuple_entry = std::get<2>(*it);
 			if (tuple_entry.property != TOMBSTONE && tuple_entry.property != NONEINDEX) {
-				if (func(*tuple_entry.tuple)) {
+				if (func(tuple_entry.tuple)) {
 					/*result.push_back(*tuple_entry.tuple);*/
-					am.insert_answer(std::get<0>(*it), std::move(*tuple_entry.tuple), false);
+					am.insert_answer(std::get<0>(*it), std::move(tuple_entry.tuple), false);
                     last_key = std::get<0>(*it);
 				}
 			}

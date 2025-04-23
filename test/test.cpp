@@ -5,8 +5,8 @@ using namespace BACH;
 std::string value_set[] = {"atarashi", "furui", "akai", "shiroi"};
 
 int main() {
-    DB x(std::make_shared<Options>());
-    auto y = x.BeginTransaction();
+    DB x(std::make_shared<Options>(), 2);
+    auto y = x.BeginRelTransaction();
     for (int i = 0; i < 1000; i++) {
         Tuple t;
         t.row.push_back(std::to_string(i));

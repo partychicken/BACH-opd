@@ -1,19 +1,19 @@
 #include <iostream>
 #include <BACH/BACH.h>
 using namespace BACH;
-int main()
-{
-	DB x(std::make_shared<Options>());
-	x.AddVertexLabel("a");
-	x.AddEdgeLabel("e", "a", "a");
-	auto y = x.BeginTransaction();
-	std::string aaaa;
-	for (int i = 1; i <= 100; ++i)aaaa.push_back('a');
-	for (int i = 0; i <= 10000000; ++i)
-		y.AddVertex(0, aaaa);
-	for (int i = 0; i < 10000000; i ++)
-		y.PutEdge(i, i + 1, 0, 0);
-	int a;
-	std::cin >> a;
-	return 0;
+
+std::string value_set[] = {"atarashi", "furui", "akai", "shiroi"};
+
+int main() {
+    DB x(std::make_shared<Options>());
+    auto y = x.BeginTransaction();
+    for (int i = 0; i < 1000; i++) {
+        Tuple t;
+        t.row.push_back(std::to_string(i));
+        t.row.push_back(value_set[rand() & 3]);
+        y.PutTuple(t, std::to_string(i), 1.0);
+    }
+    int a;
+    std::cin >> a;
+    return 0;
 }

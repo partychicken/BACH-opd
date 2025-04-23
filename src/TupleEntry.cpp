@@ -74,7 +74,7 @@ namespace BACH
 
         // lower_bound����ֵ��Ϊ����ֵ�����Ǻ�һ����¼
         auto it = accessor.lower_bound(std::make_tuple(key, timestamp, TupleEntry()));
-        if (it != accessor.begin() || it != accessor.end()) {
+        if (it != accessor.end()) {
 			//while (std::get<0>(*it) < key || (std::get<0>(*it) == key && std::get<1>(*it) > timestamp)) {
 			//	++it;
 			//}

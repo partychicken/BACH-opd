@@ -64,7 +64,7 @@ namespace BACH
 	void rowMemoryManager::immute_memtable(std::shared_ptr<relMemTable> memtable) {
 		auto new_memtable = std::make_shared<relMemTable>(0, memtable->column_num, memtable);
 		memtable->last = new_memtable;
-		memTable[memTable.size()] = new_memtable;
+		memTable.push_back(new_memtable);
 		memtable->sema.release(1024);
 		RelCompaction<std::string> x;
 		x.label_id = 0;

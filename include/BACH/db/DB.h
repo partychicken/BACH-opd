@@ -5,11 +5,11 @@
 #include "BACH/file/FileReaderCache.h"
 #include "BACH/label/LabelManager.h"
 #include "BACH/memory/MemoryManager.h"
+#include "BACH/memory/RowMemoryManager.h"
 #include "BACH/sstable/FileManager.h"
 #include "BACH/sstable/Version.h"
 #include "BACH/sstable/RelVersion.h"
 #include "BACH/utils/ConcurrentList.h"
-#include "BACH/memory/RowMemoryManager.h"
 
 namespace BACH
 {
@@ -39,6 +39,8 @@ namespace BACH
 		void CompactAll(double_t ratio = 0.0);
 		void ProgressVersion(VersionEdit* edit, time_t time,
 			std::shared_ptr<SizeEntry> size = NULL, bool force_level = false);
+		void ProgressRelVersion(VersionEdit* edit, time_t time,
+		                     std::shared_ptr<relMemTable> size = nullptr, bool force_level = false);
 
 		//void Persistence(std::string_view label, vertex_t merge_id);
 		//void TestMerge(Compaction& x, idx_t type);
@@ -49,6 +51,7 @@ namespace BACH
 		std::unique_ptr<FileManager> Files;
 		std::unique_ptr<FileReaderCache> ReaderCaches;
 
+		std::unique_ptr<RelFileManager<std::string>> relFiles;
 		std::unique_ptr<rowMemoryManager> RowMemtable;
 
 
@@ -68,6 +71,7 @@ namespace BACH
 		bool close = false;
 		//compaction loop for background thread
 		void CompactLoop();
+		void RelCompactLoop();
 		void ProgressReadVersion();
 		void ProgressReadRelVersion();
 		time_t get_read_time();

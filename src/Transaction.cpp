@@ -14,7 +14,7 @@ namespace BACH {
     }
 
     Transaction::Transaction(Transaction &&txn) : write_epoch(txn.write_epoch), read_epoch(txn.read_epoch),
-                                                  db(txn.db), version(txn.version), time_pos(txn.time_pos),
+                                                  db(txn.db), time_pos(txn.time_pos), version(txn.version),
                                                   rel_version(txn.rel_version) {
         txn.valid = false;
     }

@@ -71,7 +71,7 @@ namespace BACH
                 now_meta_offset += meta_size + filter_size;
             }
         }
-        RelFileParser(RelFileParser &&x);
+        RelFileParser(RelFileParser &&x) = default;
 
         ~RelFileParser() = default;
 

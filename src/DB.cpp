@@ -303,22 +303,21 @@ namespace BACH {
             std::unique_lock<std::mutex> lock(Files->CompactionCVMutex);
             if (!relFiles->CompactionList.empty()) {
                 working_compact_thread.fetch_add(1, std::memory_order_relaxed);
-                Compaction x(relFiles->CompactionList.front());
+                RelCompaction<std::string> x(relFiles->CompactionList.front());
                 relFiles->CompactionList.pop();
                 lock.unlock();
                 VersionEdit *edit;
                 time_t time = 0;
                 x.file_id = relFiles->GetFileID();
                 idx_t type = 1;
-                if (x.Persistence != nullptr) {
+                if (x.relPersistence != nullptr) {
                     //persistence
-                    edit = Memtable->MemTablePersistence(x.label_id, x.file_id,
-                                                         x.Persistence);
-                    time = x.Persistence->max_time;
+                    edit = RowMemtable->RowMemtablePersistence(x.file_id, x.relPersistence);
+                    time = x.relPersistence->max_time;
                 } else {
                     edit = relFiles->MergeRelFile(x);
                 }
-                ProgressVersion(edit, time, x.Persistence, type == 1);
+                ProgressRelVersion(edit, time, x.relPersistence, type == 1);
                 delete edit;
                 working_compact_thread.fetch_add(-1, std::memory_order_relaxed);
                 ProgressReadRelVersion();
@@ -349,7 +348,7 @@ namespace BACH {
         RelVersion *tmp = current_rel_version;
         tmp->AddSizeEntry(size);
         current_rel_version = new RelVersion(tmp, edit, time);
-        auto compact = current_rel_version->GetCompaction<std::string>(edit, force_leveling);
+        auto compact = current_rel_version->GetCompaction(edit, force_leveling);
         if (compact != NULL) {
             relFiles->AddCompaction(*compact);
             delete compact;

@@ -44,7 +44,7 @@ namespace BACH {
         DB *db;
         std::mutex CompactionCVMutex;
         std::condition_variable CompactionCV;
-        std::queue<Compaction> CompactionList;
+        std::queue<RelCompaction<Key_t>> CompactionList;
         std::vector< //level
             std::vector< //key-min
                 idx_t> > FileNumList;

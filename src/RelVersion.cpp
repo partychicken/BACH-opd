@@ -123,10 +123,11 @@ namespace BACH {
 
         //find the first file, whose key_min > current key_max
         //thus, the file previous is the last one to compact
-        auto iter2 = std::upper_bound(FileIndex[level + 1].begin(),
+        auto iter2 = std::lower_bound(FileIndex[level + 1].begin(),
                                       FileIndex[level + 1].end(),
                                       std::make_pair(key_max, (idx_t) 0),
                                       RelFileCompareWithPair);
+        if (iter2 != FileIndex[level + 1].end()) iter2++;
         if (c == nullptr)
             c = new RelCompaction<std::string>();
         c->file_list.push_back(down_file_meta);
@@ -205,7 +206,7 @@ namespace BACH {
         return true;
     }
 
-    bool RelFileCompareWithPair(FileMetaData *lhs, const std::pair<std::string, idx_t> &rhs) {
+    bool RelFileCompareWithPair(const std::pair<std::string, idx_t> &rhs, FileMetaData *lhs) {
         auto rlhs = static_cast<RelFileMetaData<std::string> *>(lhs);
         return rlhs->key_min == rhs.first ? rlhs->file_id < rhs.second : rlhs->key_min < rhs.first;
     }

@@ -51,7 +51,7 @@ namespace BACH
 		std::unique_ptr<FileManager> Files;
 		std::unique_ptr<FileReaderCache> ReaderCaches;
 
-		std::unique_ptr<RelFileManager<std::string>> relFiles;
+		std::unique_ptr<RelFileManager> relFiles;
 		std::unique_ptr<rowMemoryManager> RowMemtable;
 
 

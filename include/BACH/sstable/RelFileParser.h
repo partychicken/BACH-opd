@@ -128,6 +128,9 @@ namespace BACH
         idx_t GetColumnNum() {
             return col_num;
         }
+        idx_t GetKeyNum() {
+            return key_num;
+        }
 
     private:
         FileReader* reader;

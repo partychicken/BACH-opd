@@ -53,7 +53,7 @@ namespace BACH {
         }
         Labels = nullptr;
         RowMemtable = std::make_unique<rowMemoryManager>(this, column_num);
-        relFiles = std::make_unique<RelFileManager<std::string> >(this);
+        relFiles = std::make_unique<RelFileManager>(this);
         for (idx_t i = 0; i < _options->NUM_OF_COMPACTION_THREAD; ++i) {
             compact_thread.push_back(std::make_shared<std::thread>(
                 [&] { RelCompactLoop(); }));

@@ -19,20 +19,19 @@
 namespace BACH {
     class DB;
 
-    template<typename Key_t>
     class RelFileManager {
     public:
-        RelFileManager() = delete;
+        RelFileManager() = default;
 
-        RelFileManager(const RelFileManager &) = delete;
+        RelFileManager(const RelFileManager &) = default;
 
-        RelFileManager &operator=(const RelFileManager &) = delete;
+        RelFileManager &operator=(const RelFileManager &) = default;
 
         RelFileManager(DB *_db);
 
         ~RelFileManager() = default;
 
-        void AddCompaction(Compaction &compaction);
+        void AddCompaction(RelCompaction<std::string> &compaction);
 
         VersionEdit *MergeRelFile(Compaction &compaction);
 
@@ -44,11 +43,11 @@ namespace BACH {
         DB *db;
         std::mutex CompactionCVMutex;
         std::condition_variable CompactionCV;
-        std::queue<RelCompaction<Key_t>> CompactionList;
+        std::queue<RelCompaction<std::string>> CompactionList;
         std::vector< //level
             std::vector< //key-min
                 idx_t> > FileNumList;
-        std::vector<OrderedDictionary *> DictList;
+        std::vector<OrderedDictionary > *DictList;
         int id = 0;
         friend class DB;
     };

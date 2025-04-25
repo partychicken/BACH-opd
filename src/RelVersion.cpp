@@ -57,11 +57,10 @@ namespace BACH {
             }
     }
 
-    template<typename Key_t>
-    RelCompaction<Key_t> *RelVersion::GetCompaction(VersionEdit *edit, bool force_level) {
-        RelFileMetaData<Key_t> *begin_file_meta = *static_cast<RelFileMetaData<Key_t> *>(edit->EditFileList.begin());
+    RelCompaction<std::string> *RelVersion::GetCompaction(VersionEdit *edit, bool force_level) {
+        RelFileMetaData<std::string> *begin_file_meta = static_cast<RelFileMetaData<std::string> *>(*(edit->EditFileList.begin()));
         idx_t level = begin_file_meta->level + 1;
-        RelCompaction<Key_t> *c = NULL;
+        RelCompaction<std::string> *c = NULL;
         // if (force_level)
         // {
         // 	c = new Compaction();
@@ -106,12 +105,13 @@ namespace BACH {
             std::cerr << "FUCK edit size" << std::endl;
             return c;
         }
+        //the former half is to deleted, and the latter half is new Files. Here rand a new file to push down.
         size_t half_edit_size = edit_size >> 1;
         int down_fileid = rand() % half_edit_size + half_edit_size;
 
-        RelFileMetaData<Key_t> *down_file_meta = *static_cast<RelFileMetaData<Key_t> *>(edit->EditFileList[down_fileid]);
-        Key_t key_min = down_file_meta->key_min;
-        Key_t key_max = down_file_meta->key_max;
+        RelFileMetaData<std::string> *down_file_meta = static_cast<RelFileMetaData<std::string> *>(edit->EditFileList[down_fileid]);
+        std::string key_min = down_file_meta->key_min;
+        std::string key_max = down_file_meta->key_max;
         //		vertex_t num = util::ClacFileSize(
         //			db->options, level) * db->options->FILE_MERGE_NUM;
         //find the last file, whose key_min < current key_min
@@ -128,9 +128,9 @@ namespace BACH {
                                       std::make_pair(key_max, (idx_t) 0),
                                       RelFileCompareWithPair);
         if (c == nullptr)
-            c = new Compaction();
+            c = new RelCompaction<std::string>();
         c->file_list.push_back(down_file_meta);
-        c->key_min = min(key_min, (*iter1)->key_min);
+        c->key_min = min(key_min, static_cast<RelFileMetaData<std::string>*>(*iter1)->key_min);
         c->target_level = level + 1;
         for (auto i = iter1; i != iter2; ++i)
             if (!(*i)->merging) {

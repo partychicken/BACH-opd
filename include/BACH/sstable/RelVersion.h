@@ -17,8 +17,7 @@ namespace BACH
         RelVersion(RelVersion* _prev, VersionEdit* edit, time_t time);
         ~RelVersion();
 
-        template<typename Key_t>
-        RelCompaction<Key_t>* GetCompaction(VersionEdit* edit, bool force_level = false);
+        RelCompaction<std::string>* GetCompaction(VersionEdit* edit, bool force_level = false);
         bool AddRef();
         void DecRef();
         void AddSizeEntry(std::shared_ptr < relMemTable > x);

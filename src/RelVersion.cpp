@@ -206,7 +206,7 @@ namespace BACH {
         return true;
     }
 
-    bool RelFileCompareWithPair(const std::pair<std::string, idx_t> &rhs, FileMetaData *lhs) {
+    bool RelFileCompareWithPair(FileMetaData *lhs, const std::pair<std::string, idx_t> &rhs) {
         auto rlhs = static_cast<RelFileMetaData<std::string> *>(lhs);
         return rlhs->key_min == rhs.first ? rlhs->file_id < rhs.second : rlhs->key_min < rhs.first;
     }

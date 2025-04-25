@@ -64,15 +64,22 @@ namespace BACH {
 
     DB::~DB() {
         close = true;
-        Files->CompactionCV.notify_all();
-        for (auto &i: compact_thread)
-            if (i->joinable())
-                i->join();
-        read_version.load()->DecRef();
-        current_version->DecRef();
-
-        read_rel_version.load()->DecRef();
-        current_rel_version->DecRef();
+        if (Files != nullptr) {
+            Files->CompactionCV.notify_all();
+            for (auto &i: compact_thread)
+                if (i->joinable())
+                    i->join();
+            read_version.load()->DecRef();
+            current_version->DecRef();
+        }
+        if (relFiles != nullptr) {
+            relFiles->CompactionCV.notify_all();
+            for (auto &i: compact_thread)
+                if (i->joinable())
+                    i->join();
+            read_rel_version.load()->DecRef();
+            current_rel_version->DecRef();
+        }
 
         //std::cout << "closed" << std::endl;
     }
@@ -300,7 +307,7 @@ namespace BACH {
         while (true) {
             if (close)
                 return;
-            std::unique_lock<std::mutex> lock(Files->CompactionCVMutex);
+            std::unique_lock<std::mutex> lock(relFiles->CompactionCVMutex);
             if (!relFiles->CompactionList.empty()) {
                 working_compact_thread.fetch_add(1, std::memory_order_relaxed);
                 RelCompaction<std::string> x(relFiles->CompactionList.front());
@@ -343,7 +350,7 @@ namespace BACH {
     }
 
     void DB::ProgressRelVersion(VersionEdit *edit, time_t time,
-                             std::shared_ptr<relMemTable> size, bool force_leveling) {
+                                std::shared_ptr<relMemTable> size, bool force_leveling) {
         std::unique_lock<std::mutex> version_lock(version_mutex);
         RelVersion *tmp = current_rel_version;
         tmp->AddSizeEntry(size);

@@ -25,9 +25,9 @@ namespace BACH {
             if (rel_version) rel_version->DecRef();
             if (write_epoch != MAXTIME) {
                 db->write_epoch_table.erase(time_pos);
-                db->ProgressReadVersion();
+                if (version) db->ProgressReadVersion();
 
-                db->ProgressReadRelVersion();
+                if (rel_version) db->ProgressReadRelVersion();
             }
         }
     }

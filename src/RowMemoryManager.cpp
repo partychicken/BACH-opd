@@ -72,7 +72,7 @@ namespace BACH
 		x.vertex_id_b = 0;
 		x.relPersistence = memtable;
 		x.key_min = memtable->min_key;
-		db->Files->AddCompaction(x);
+		db->relFiles->AddCompaction(x);
 
 	}
 

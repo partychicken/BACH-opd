@@ -88,15 +88,15 @@ namespace BACH
 		TempColumn tmp(memtable.get(), memtable->total_tuple, memtable->column_num);
 		idx_t** data = new idx_t*[memtable->column_num];
 		std::vector<OrderedDictionary*> dicts(memtable->column_num - 1);
-		for (size_t i = 0; i < memtable->column_num; i++) {
+		for (size_t i = 0; i < memtable->column_num - 1; i++) {
 			data[i] = new idx_t[memtable->total_tuple];
 			dicts[i] = new OrderedDictionary();
-			dicts[i]->importData(tmp.GetColumn(i + 1), memtable->column_num);
-			dicts[i]->CompressData(data[i], tmp.GetColumn(i + 1), memtable->column_num);
+			dicts[i]->importData(tmp.GetColumn(i + 1), memtable->total_tuple);
+			dicts[i]->CompressData(data[i], tmp.GetColumn(i + 1), memtable->total_tuple);
 			temp_file_metadata->dictionary.push_back(*dicts[i]);
 			delete dicts[i];
 		}
-		rfb.ArrangeRelFileInfo(tmp.GetColumn(0), memtable->total_tuple, 64, memtable->column_num, data);
+		rfb.ArrangeRelFileInfo(tmp.GetColumn(0), memtable->total_tuple, 64, memtable->column_num - 1, data);
 
 		/*delete data;*/
 		for (size_t i = 0; i < memtable->column_num; i++)

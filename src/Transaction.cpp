@@ -167,7 +167,10 @@ namespace BACH {
             return Tuple();
         }
         Tuple x = db->RowMemtable->GetTuple(key, write_epoch);
-        if (!std::isnan(x.property)) {
+        // if (!std::isnan(x.property)) {
+        //     return x;
+        // }
+        if (!x.row.empty()) {
             return x;
         }
 

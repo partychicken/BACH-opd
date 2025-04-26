@@ -5,7 +5,7 @@ namespace BACH
 	TempColumn::TempColumn(relMemTable* row, size_t _size, size_t _column_num) : size(_size), column_num(_column_num)
 	{
 		data = new std::string * [column_num];
-		for (size_t i = 0; i < size; i++)
+		for (size_t i = 0; i < column_num; i++)
 		{
 			data[i] = new std::string[_size];
 		}

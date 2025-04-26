@@ -35,6 +35,17 @@ namespace BACH {
 
         VersionEdit *MergeRelFile(Compaction &compaction);
 
+        bool ListEmpty() {
+            if (CompactionCVMutex.try_lock()) {
+                bool empty = CompactionList.empty();
+                CompactionCVMutex.unlock();
+                return empty;
+            }
+            else {
+                return false;
+            }
+        }
+
         idx_t GetFileID() {
             return ++id;
         };

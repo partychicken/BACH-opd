@@ -31,6 +31,7 @@ namespace BACH
 		VersionEdit* MergeSSTable(Compaction& compaction);
 		idx_t GetFileID(
 			label_t label, idx_t level, vertex_t src_b);
+		bool ListEmpty();
 
 	private:
 		DB* db;

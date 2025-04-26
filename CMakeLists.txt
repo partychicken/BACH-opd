@@ -17,6 +17,7 @@ file(GLOB_RECURSE srcs CONFIGURE_DEPENDS src/*.cpp)
 
 add_library(bach SHARED bind/BACH.cpp ${srcs} "src/TupleEntry.cpp")
 target_include_directories(bach PUBLIC include)
+target_include_directories(bach PUBLIC include/dynamic_bitset/include)
 target_compile_features(bach PUBLIC cxx_std_20)
 
 add_subdirectory(include/dynamic_bitset)
@@ -27,7 +28,10 @@ target_link_libraries(bach PRIVATE folly)
 set(BUILD_TEST ON)
 set(DEBUG ON)
 
-set(CMAKE_CXX_FLAGS "-O3 ${CMAKE_CXX_FLAGS}")
+# set(CMAKE_CXX_FLAGS "-O3 ${CMAKE_CXX_FLAGS}")
+
+option(BUILD_UNITTEST "Build unit tests" OFF)
+set(BUILD_UNITTEST ON)
 
 if(DEBUG)
 	set(CMAKE_CXX_FLAGS " -g -Wall ${CMAKE_CXX_FLAGS}")
@@ -42,4 +46,8 @@ if(BUILD_TEST)
 	if (CMAKE_VERSION VERSION_GREATER 3.12)
 	  set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 20)
 	endif()
+endif()
+
+if(BUILD_UNITTEST)
+	add_subdirectory(${PROJECT_SOURCE_DIR}/test)
 endif()

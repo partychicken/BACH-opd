@@ -121,4 +121,15 @@ namespace BACH {
 			FileNumList[label][level].resize(x + 1, 0);
 		return FileNumList[label][level][x]++;
 	}
+
+	bool FileManager::ListEmpty() {
+		if (CompactionCVMutex.try_lock()) {
+			bool empty = CompactionList.empty();
+			CompactionCVMutex.unlock();
+			return empty;
+		}
+		else {
+			return false;
+		}
+	}
 }

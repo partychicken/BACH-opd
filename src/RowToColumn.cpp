@@ -33,7 +33,7 @@ namespace BACH
 
 	TempColumn::~TempColumn()
 	{
-		for (size_t i = 0; i < size; i++)
+		for (size_t i = 0; i < column_num; i++)
 		{
 			delete[] data[i];
 		}

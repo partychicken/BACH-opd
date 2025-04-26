@@ -43,12 +43,15 @@ namespace BACH {
         }
 
         void SetKey(Key_t *keys, idx_t key_num = 0, size_t key_size = 0) {
-            if (key_size) {
-                writer->append(reinterpret_cast<char *>(keys), key_size);
-            } else if (key_num) {
+            // if (key_size) {
+            //     writer->append(reinterpret_cast<char *>(keys), key_size);
+            // } else
+            if (key_num) {
                 std::string temp_data;
                 for (idx_t i = 0; i < key_num; i++) {
-                    util::PutFixed(temp_data, keys[i]);
+                    //util::PutFixed(temp_data, keys[i]);
+                    keys[i].resize(key_size);
+                    temp_data.append(keys[i]);
                 }
                 writer->append(temp_data.data(), temp_data.size());
             } else {

@@ -45,19 +45,19 @@ namespace BACH
                     block_key_num = single_block_num;
                     key_offset = now_ptr;
                     for(idx_t j = 0; j < col_num; j++) {
-                        val_offset[i] = now_ptr;
-                        block_val_num[i] = single_block_num;
+                        val_offset[j] = now_ptr;
+                        block_val_num[j] = single_block_num;
                     }
 
                 } else {
                     block_key_num = key_num - single_block_num * (block_cnt - 1);
                     key_offset = now_ptr;
                     for(idx_t j = 0; j < col_num; j++) {
-                        val_offset[i] = now_ptr;
-                        block_val_num[i] = key_num - single_block_num * (block_cnt - 1);
+                        val_offset[j] = now_ptr;
+                        block_val_num[j] = key_num - single_block_num * (block_cnt - 1);
                     }
                 }
-                BlockMetaT<Key_t> meta{std::make_shared<BloomFilter>(), 0, 0, 0, 0};
+                BlockMetaT<Key_t> meta{std::make_shared<BloomFilter>(), "", "", 0, 0};
                 BlockBuilder<Key_t>* builder = new BlockBuilder<Key_t>(writer, options);
                 size_t block_size = this->SetBlock(builder, meta.filter, keys + key_offset,
                                              block_key_num, key_size, col_num,

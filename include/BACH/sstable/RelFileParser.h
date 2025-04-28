@@ -30,37 +30,39 @@ namespace BACH
         RelFileParser( FileReader* _fileReader,
         std::shared_ptr<Options> _options, size_t _file_size):
             reader(_fileReader), options(_options), file_size(_file_size)  {
-            size_t header_size = 2 * sizeof(Key_t) + sizeof(size_t) + 3 * sizeof(idx_t);
+            auto key_size = Options::KEY_SIZE;
+            // 
+            size_t header_size = 2 * key_size + sizeof(size_t) + 3 * sizeof(idx_t);
             char infobuf[header_size + 10];
             if(!reader->rread(infobuf, header_size, header_size)) {
                 std::cout << "read fail begin" << std::endl;
                 ++*(int *)NULL;
             }
             util::DecodeFixed(infobuf, key_min);
-            util::DecodeFixed(infobuf + sizeof(Key_t), key_max);
-            util::DecodeFixed(infobuf + sizeof(Key_t) * 2, key_num);
-            util::DecodeFixed(infobuf + sizeof(Key_t) * 2 + sizeof(idx_t), col_num);
-            util::DecodeFixed(infobuf + sizeof(Key_t) * 2 + sizeof(idx_t) * 2, block_count);
-            util::DecodeFixed(infobuf + sizeof(Key_t) * 2 + sizeof(idx_t) * 3, block_meta_begin_pos);
+            util::DecodeFixed(infobuf + key_size, key_max);
+            util::DecodeFixed(infobuf + key_size * 2, key_num);
+            util::DecodeFixed(infobuf + key_size * 2 + sizeof(idx_t), col_num);
+            util::DecodeFixed(infobuf + key_size * 2 + sizeof(idx_t) * 2, block_count);
+            util::DecodeFixed(infobuf + key_size * 2 + sizeof(idx_t) * 3, block_meta_begin_pos);
 
-            size_t meta_size = 2 * sizeof(Key_t) + 3 * sizeof(size_t);
+            size_t meta_size = 2 * key_size + 3 * sizeof(size_t);
             size_t now_meta_offset = block_meta_begin_pos;
             for(idx_t i = 0; i < block_count; i++) {
-                BlockMetaT<Key_t> meta{std::make_shared<BloomFilter>(), 0, 0, 0, 0};
+                BlockMetaT<Key_t> meta{ std::make_shared<BloomFilter>(), "", "", 0, 0 };
                 char infobuf[meta_size];
-                if(!reader->fread(infobuf, now_meta_offset, meta_size)) {
+                if(!reader->fread(infobuf, meta_size, now_meta_offset)) {
                     std::cout << "read fail begin" << std::endl;
                     ++*(int *)NULL;
                 }
                 size_t filter_size = 0;
                 util::DecodeFixed(infobuf, meta.key_min);
-                util::DecodeFixed(infobuf + sizeof(Key_t), meta.key_max);
-                util::DecodeFixed(infobuf + sizeof(Key_t) * 2, meta.offset_in_file);
-                util::DecodeFixed(infobuf + sizeof(Key_t) * 2 + sizeof(size_t), meta.block_size);
-                util::DecodeFixed(infobuf + sizeof(Key_t) * 2 + sizeof(size_t) * 2, filter_size);
+                util::DecodeFixed(infobuf + key_size, meta.key_max);
+                util::DecodeFixed(infobuf + key_size * 2, meta.offset_in_file);
+                util::DecodeFixed(infobuf + key_size * 2 + sizeof(size_t), meta.block_size);
+                util::DecodeFixed(infobuf + key_size * 2 + sizeof(size_t) * 2, filter_size);
                 char filterbuf[filter_size + 1];
                 filterbuf[filter_size] = 0;
-                if(!reader->fread(filterbuf, now_meta_offset + meta_size, filter_size)) {
+                if(!reader->fread(filterbuf, filter_size, now_meta_offset + meta_size)) {
                     std::cout << "read fail begin" << std::endl;
                     ++*(int *)NULL;
                 }

@@ -6,6 +6,7 @@
 #include <string>
 #include "Options.h"
 #include "types.h"
+#include <cstring>
 namespace BACH
 {
 	namespace util
@@ -13,15 +14,28 @@ namespace BACH
 		template<typename T>
 		inline void PutFixed(std::string& dst, T val)
 		{
-			uint32_t n = sizeof(val);
-			dst.append((char*)(&val), n);
+			if constexpr (std::is_same_v<T, std::string>) {
+				size_t copy_len = Options::KEY_SIZE;
+				val.resize(copy_len);
+				dst.append(val, copy_len);
+			}
+			else {
+				uint32_t n = sizeof(val);
+				dst.append((char*)(&val), n);
+			}
 		}
 		template<typename T>
 		inline void DecodeFixed(const char* data, T& val)
 		{
-			val = *(reinterpret_cast<const T*>(data));
-		}
+			if constexpr (std::is_same_v<T, std::string>) {
+				val = std::string(data, Options::KEY_SIZE);
+				
+			}
+			else {
+				val = *(reinterpret_cast<const T*>(data));
+			}
 
+		}
 		inline uint32_t murmur_hash2(const void* key, uint32_t len) {
 			// 'm' and 'r' are mixing constants generated offline.
 			// They're not really 'magic', they just happen to work well.

@@ -33,7 +33,7 @@ TEST_CASE("FILE IO Test", "[compaction]") {
 
     std::cout << "Finished insert" << std::endl;
 
-    while (!x.relFiles->ListEmpty()) { sleep(1); }
+    while (x.Compacting.load(std::memory_order_acquire)) { sleep(1); }
     auto z = x.BeginRelTransaction();
     auto t = z.GetTuple("0");
 	for (int i = 0; i < 200; i++) {

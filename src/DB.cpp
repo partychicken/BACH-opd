@@ -309,6 +309,7 @@ namespace BACH {
                 return;
             std::unique_lock<std::mutex> lock(relFiles->CompactionCVMutex);
             if (!relFiles->CompactionList.empty()) {
+                Compacting.store(true, std::memory_order_release);
                 working_compact_thread.fetch_add(1, std::memory_order_relaxed);
                 RelCompaction<std::string> x(relFiles->CompactionList.front());
                 relFiles->CompactionList.pop();
@@ -328,6 +329,7 @@ namespace BACH {
                 delete edit;
                 working_compact_thread.fetch_add(-1, std::memory_order_relaxed);
                 ProgressReadRelVersion();
+                Compacting.store(false, std::memory_order_release);
             } else {
                 relFiles->CompactionCV.wait_for(lock, std::chrono::milliseconds(200));
                 //ProgressReadVersion();

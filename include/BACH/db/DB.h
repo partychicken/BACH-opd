@@ -40,7 +40,7 @@ namespace BACH
 		void ProgressVersion(VersionEdit* edit, time_t time,
 			std::shared_ptr<SizeEntry> size = NULL, bool force_level = false);
 		void ProgressRelVersion(VersionEdit* edit, time_t time,
-		                     std::shared_ptr<relMemTable> size = nullptr, bool force_level = false);
+			std::shared_ptr<relMemTable> size = nullptr, bool force_level = false);
 
 		//void Persistence(std::string_view label, vertex_t merge_id);
 		//void TestMerge(Compaction& x, idx_t type);
@@ -54,6 +54,7 @@ namespace BACH
 		std::unique_ptr<RelFileManager> relFiles;
 		std::unique_ptr<rowMemoryManager> RowMemtable;
 
+		std::atomic<bool> Compacting{ false };
 
 	private:
 		std::atomic<time_t> epoch_id;

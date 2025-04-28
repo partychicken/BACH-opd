@@ -59,8 +59,15 @@ namespace BACH {
 
         RelFileMetaData() = default;
 
-        RelFileMetaData(RelFileMetaData &&x) : dictionary(x.dictionary), key_min(x.key_min), key_max(x.key_max){}
-        RelFileMetaData(const RelFileMetaData &x) : dictionary(x.dictionary), key_min(x.key_min), key_max(x.key_max){
+        //RelFileMetaData(RelFileMetaData &&x) : dictionary(x.dictionary), key_min(x.key_min), key_max(x.key_max){}
+        //RelFileMetaData(const RelFileMetaData &x) : dictionary(x.dictionary), key_min(x.key_min), key_max(x.key_max){
+        //}
+        
+        RelFileMetaData(RelFileMetaData&& x) : dictionary(x.dictionary), key_min(x.key_min), key_max(x.key_max), 
+        FileMetaData(x), key_num(x.key_num), col_num(x.col_num){
+        }
+        RelFileMetaData(const RelFileMetaData &x) : dictionary(x.dictionary), key_min(x.key_min), key_max(x.key_max),
+            FileMetaData(x), key_num(x.key_num), col_num(x.col_num) {
         }
 
         RelFileMetaData(label_t _label, idx_t _level, vertex_t _vertex_id_b,

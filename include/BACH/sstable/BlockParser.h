@@ -176,7 +176,7 @@ namespace BACH
         size_t block_size = 0;
 		//std::shared_ptr <BloomFilter> filter = NULL;
         idx_t key_num = 0, col_num = 0;
-        size_t key_size = 0;
+        size_t key_size = Options::KEY_SIZE;
         size_t* col_size = nullptr;
         size_t key_data_endpos = 0;
         size_t* col_data_endpos = nullptr;

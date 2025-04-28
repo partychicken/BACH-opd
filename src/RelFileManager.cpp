@@ -180,7 +180,7 @@ namespace BACH {
                 }
 
                 //write current buffer to file
-                rel_builder->ArrangeRelFileInfo(order_key_buf, key_buf_idx, sizeof(std::string), col_num, real_val_buf);
+                rel_builder->ArrangeRelFileInfo(order_key_buf, key_buf_idx, db->options->KEY_SIZE, col_num, real_val_buf);
                 temp_file_metadata->key_max = last_key;
                 temp_file_metadata->key_num = key_buf_idx;
                 temp_file_metadata->col_num = col_num;

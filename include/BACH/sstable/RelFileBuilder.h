@@ -82,7 +82,7 @@ namespace BACH
                 //temporarily not put it in
             }
             //put file meta here
-            size_t header_size = 2 * sizeof(Key_t) + sizeof(size_t) + 3 * sizeof(idx_t);
+            size_t header_size = 2 * key_size + sizeof(size_t) + 3 * sizeof(idx_t);
             std::string meta_data;
             util::PutFixed(meta_data, key_min);
             util::PutFixed(meta_data, key_max);
@@ -90,7 +90,16 @@ namespace BACH
             util::PutFixed(meta_data, col_num);
             util::PutFixed(meta_data, block_count);
             util::PutFixed(meta_data, block_meta_begin_pos);
+            writer->append(meta_data.data(), meta_data.size());
             file_size = now_offset_in_file + header_size;
+
+            
+
+            std::cout << "\n" << std::cin;
+            std::cout << "meta_data: " << meta_data << std::cin;
+			std::cout << "file_size: " << file_size << std::cin;
+            std::cout << "\n" << std::cin;
+
             writer->flush();
         }
         void SetDict();//optional

@@ -96,7 +96,7 @@ namespace BACH
 			temp_file_metadata->dictionary.push_back(*dicts[i]);
 			delete dicts[i];
 		}
-		rfb.ArrangeRelFileInfo(tmp.GetColumn(0), memtable->total_tuple, 64, memtable->column_num - 1, data);
+		rfb.ArrangeRelFileInfo(tmp.GetColumn(0), memtable->total_tuple, db->options->KEY_SIZE, memtable->column_num - 1, data);
 
 		/*delete data;*/
 		for (size_t i = 0; i < memtable->column_num; i++)

@@ -40,9 +40,6 @@ namespace BACH
             idx_t block_val_num[col_num];
             size_t now_offset_in_file = 0;
 
-            std :: cout << "block_cnt = " << block_cnt << std :: endl;
-            std :: cout << "block_num = " << single_block_num << std ::endl;
-
             for(int i = 0; i < block_cnt; i++) {
                 if(i < block_cnt - 1) {
                     block_key_num = single_block_num;

@@ -3,6 +3,7 @@
 #include <memory>
 #include <vector>
 #include <utility>
+#include <iostream>
 #include <sul/dynamic_bitset.hpp>
 #include "BloomFilter.h"
 #include "BACH/file/FileWriter.h"
@@ -57,7 +58,7 @@ namespace BACH
                         block_val_num[j] = key_num - single_block_num * (block_cnt - 1);
                     }
                 }
-                BlockMetaT<Key_t> meta{std::make_shared<BloomFilter>(), "", "", 0, 0};
+                BlockMetaT<Key_t> meta{std::make_shared<BloomFilter>(block_key_num, options->FALSE_POSITIVE), "", "", 0, 0};
                 BlockBuilder<Key_t>* builder = new BlockBuilder<Key_t>(writer, options);
                 size_t block_size = this->SetBlock(builder, meta.filter, keys + key_offset,
                                              block_key_num, key_size, col_num,
@@ -75,6 +76,9 @@ namespace BACH
 
             block_count = block_cnt;
             block_meta_begin_pos = now_offset_in_file;
+
+            std::cout << "block_meta_begin_pos: " << block_meta_begin_pos << std::endl;
+
             now_offset_in_file += this->SetBlockMeta(now_offset_in_file);
 
             if(global_filter != nullptr) {
@@ -93,12 +97,7 @@ namespace BACH
             writer->append(meta_data.data(), meta_data.size());
             file_size = now_offset_in_file + header_size;
 
-            
-
-            std::cout << "\n" << std::cin;
-            std::cout << "meta_data: " << meta_data << std::cin;
-			std::cout << "file_size: " << file_size << std::cin;
-            std::cout << "\n" << std::cin;
+        
 
             writer->flush();
         }
@@ -122,7 +121,7 @@ namespace BACH
                               Key_t* keys, idx_t key_num, size_t key_size, idx_t col_num,
                               idx_t** vals, idx_t* val_nums, idx_t *val_offset) {
             size_t tot_size = 0;
-            block_builder->SetKey(keys, key_num, key_num * key_size);
+            block_builder->SetKey(keys, key_num, key_size);
             tot_size += key_num * key_size;
             size_t* col_size = static_cast<size_t*>(malloc(col_num * sizeof(size_t)));
             for(idx_t i = 0; i < col_num; i++) {
@@ -146,8 +145,10 @@ namespace BACH
                 std::string filter_data = block_meta[i].filter->data();
                 util::PutFixed(metadata, static_cast<size_t>(filter_data.size()));
                 metadata += filter_data;
+                std::cout << "(meta) actual size: " << metadata.size() << std::endl;
             }
             writer->append(metadata.data(), metadata.size());
+            
             return metadata.size();
             }
     };

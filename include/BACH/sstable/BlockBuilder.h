@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <vector>
+#include <iostream>
 #include "BloomFilter.h"
 #include "BACH/file/FileWriter.h"
 #include "BACH/utils/types.h"
@@ -39,6 +40,7 @@ namespace BACH {
             util::PutFixed(metadata, col_num);
             util::PutFixed(metadata, key_size);
             writer->append(metadata.data(), metadata.size());
+            std::cout << "actual size: " << writer->get_offset() << std::endl;
             writer->flush();
         }
 

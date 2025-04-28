@@ -59,5 +59,7 @@ namespace BACH
 
     bool RelFileCompareWithPair(FileMetaData* lhs, const std::pair<std::string, idx_t> &rhs);
 
+    bool RelFileCompareWithPairUpper(const std::pair<std::string, idx_t>& rhs, FileMetaData* lhs);
+
 	bool RelFileCompare(FileMetaData* lhs, FileMetaData* rhs);
 }

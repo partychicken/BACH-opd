@@ -17,7 +17,7 @@ namespace BACH
 			if constexpr (std::is_same_v<T, std::string>) {
 				size_t copy_len = Options::KEY_SIZE;
 				val.resize(copy_len);
-				dst.append(val, copy_len);
+				dst.append(val);
 			}
 			else {
 				uint32_t n = sizeof(val);
@@ -157,7 +157,11 @@ namespace BACH
 		template<typename T>
 		inline T GetDecodeFixed(const char* data)
 		{
-			return *(reinterpret_cast<const T*>(data));
+			if constexpr (std::is_same_v<T, std::string>) {
+				return std::string(data, Options::KEY_SIZE);
+			}
+			else
+				return *(reinterpret_cast<const T*>(data));
 		}
 	}
 }

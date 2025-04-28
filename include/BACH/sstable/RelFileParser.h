@@ -47,6 +47,7 @@ namespace BACH
 
             size_t meta_size = 2 * key_size + 3 * sizeof(size_t);
             size_t now_meta_offset = block_meta_begin_pos;
+            std::cout << "now_meta_offset: " << now_meta_offset << std::endl;
             for(idx_t i = 0; i < block_count; i++) {
                 BlockMetaT<Key_t> meta{ std::make_shared<BloomFilter>(), "", "", 0, 0 };
                 char infobuf[meta_size];
@@ -71,6 +72,7 @@ namespace BACH
                 block_meta.push_back(meta);
 
                 now_meta_offset += meta_size + filter_size;
+                std::cout << "now meta offset: " << now_meta_offset << std::endl;
             }
         }
         RelFileParser(RelFileParser &&x) = default;
@@ -83,7 +85,8 @@ namespace BACH
                 if(key < meta.key_min || key > meta.key_max) {
                     continue;
                 }
-                if(meta.filter->exists(key)) {
+                //if(meta.filter->exists(key)) {
+                if(true) {
                     BlockParser<Key_t> block_parser(reader, options,
                                      meta.offset_in_file, meta.block_size);
                     Tuple res = block_parser.GetTuple(key);

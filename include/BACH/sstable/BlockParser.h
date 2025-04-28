@@ -73,6 +73,9 @@ namespace BACH
 			size_t single_read_size = single_read_num * key_size;
 			int read_times = (key_num - 1) / single_read_num + 1;
 			size_t offset = 0;
+			if constexpr (std::is_same_v<std::string, Key_t>) {
+				key.resize(Options::KEY_SIZE);
+			}
 			for(int i = 0; i < read_times - 1; i++) {
 				char buffer[single_read_size];
 				if (!reader->fread(buffer, single_read_size, offset)) {

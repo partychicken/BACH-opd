@@ -176,14 +176,14 @@ namespace BACH {
 
         RelVersionIterator iter(rel_version, key, key);
         while (!iter.End()) {
-            if (key > reinterpret_cast<RelFileMetaData<std::string> *>(iter.GetFile())->key_min && key <
+            if (key >= reinterpret_cast<RelFileMetaData<std::string> *>(iter.GetFile())->key_min && key <=
                 reinterpret_cast<RelFileMetaData<std::string> *>(iter.GetFile())->key_max)
                 // ԭ���ж�����Ϊ(*iter.GetFile()->filter)[src - iter.GetFile()->vertex_id_b]
                 if (transferKeyToHash<std::string>(key)) {
                     RelFileParser<std::string> parser(db->ReaderCaches->find(iter.GetFile()), db->options,
                                                       iter.GetFile()->file_size);
                     Tuple found = parser.GetTuple(key);
-                    if (!std::isnan(found.property))
+                    if (!found.row.empty())
                         return found;
                 }
             iter.next();

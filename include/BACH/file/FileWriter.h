@@ -8,7 +8,7 @@ namespace BACH
 {
 	class FileWriter final {
 	private:
-		static constexpr int32_t BUFFER_SIZE = 1024 * 64;
+		static constexpr int32_t BUFFER_SIZE = 1024 * 128;
 		int32_t buffer_offset = 0;
 		char buffer[BUFFER_SIZE]{};
 
@@ -22,7 +22,7 @@ namespace BACH
 
 		bool append(const char* data, int32_t len, bool flush = false);
 		bool flush();
-
+		size_t get_offset() const { return buffer_offset; }
 		void sync();
 		size_t file_size() const { return cnt; };
 		void close();

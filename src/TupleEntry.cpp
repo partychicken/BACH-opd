@@ -86,11 +86,9 @@ namespace BACH
 				return entry.tuple;
             }
             else {
-                std::cout << "Key not found" << std::endl;
             }
 		}
 		else {
-			std::cout << "Key not found" << std::endl;
 		}
 
 

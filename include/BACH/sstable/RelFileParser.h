@@ -112,7 +112,9 @@ namespace BACH
                     keys[idx++] = block_key[j];
                 }
                 key_num += block_key_num;
-                free(block_key);
+                if constexpr (std::is_same_v<Key_t, std::string>) {
+                    delete[] block_key;
+                } else free(block_key);
             }
         }
         void GetValCol(idx_t *vals, idx_t &val_num, idx_t col_id){

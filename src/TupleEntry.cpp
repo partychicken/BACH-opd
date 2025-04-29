@@ -161,6 +161,9 @@ namespace BACH
         if (key < min_key) {
             min_key = key;
         }
+        if (min_key == "") {
+            min_key = key;
+        }
     }
 
     void relMemTable::FilterByValueRange(time_t timestamp, const std::function<bool(Tuple&)>& func, AnswerMerger& am) {

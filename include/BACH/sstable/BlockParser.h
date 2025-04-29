@@ -37,20 +37,24 @@ namespace BACH
 			size_t col_size_count = col_num * sizeof(size_t);
 			size_t col_size_beginpos =  block_end - (offset + col_size_count);
 			char colbuf[col_size_count];
-			if(!reader->fread(infobuf, col_size_count, col_size_beginpos)) {
+			if(!reader->fread(colbuf, col_size_count, col_size_beginpos)) {
 				std::cout << "read fail begin colsiz" << std::endl;
 				++*(int *)NULL;
 			}
-			for(idx_t i = 0; i < col_num; i++) {
+
+			col_size = new size_t[col_num];
+
+			for (idx_t i = 0; i < col_num; i++) {
 				util::DecodeFixed(colbuf, col_size[i]);
 			}
 
 			key_data_endpos = key_size * key_num + offset_in_file;
 			size_t nowpos = key_data_endpos + offset_in_file;
 			col_data_endpos = static_cast<size_t*>(malloc(col_num * sizeof(size_t)));
-			for(idx_t i = 0; i < col_num; i++) {
+			for (idx_t i = 0; i < col_num; i++) {
 				col_data_endpos[i] = nowpos + key_num * col_size[i];
 			}
+
 		}
     	BlockParser(BlockParser &&x):
 			reader(x.reader), options(x.options), key_num(x.key_num),
@@ -65,7 +69,8 @@ namespace BACH
 				reader->DecRef();
 			}
 			free(col_data_endpos);
-			free(col_size);
+			if(col_size)
+				free(col_size);
 		}
 
 		Tuple GetTuple(Key_t key) {
@@ -73,9 +78,6 @@ namespace BACH
 			size_t single_read_size = single_read_num * key_size;
 			int read_times = (key_num - 1) / single_read_num + 1;
 			size_t offset = 0;
-			if constexpr (std::is_same_v<std::string, Key_t>) {
-				key.resize(Options::KEY_SIZE);
-			}
 			for(int i = 0; i < read_times - 1; i++) {
 				char buffer[single_read_size];
 				if (!reader->fread(buffer, single_read_size, offset)) {
@@ -161,10 +163,12 @@ namespace BACH
 		Tuple GetTupleWithIdx(Key_t key, idx_t idx) {
     		Tuple result;
     		result.col_num = col_num + 1;
-    		if constexpr(!std::is_same_v<Key_t, std::string>) result.row.push_back(key.to_string());
+			if constexpr (!std::is_same_v<Key_t, std::string>) result.row.push_back(key.to_string());
+			else result.row.push_back(key);
     		for(idx_t i = 0; i < col_num; i++) {
     			size_t now_size = col_size[i];
-    			size_t now_begin = i ? col_data_endpos[i - 1] : key_data_endpos;
+    			//size_t now_begin = i ? col_data_endpos[i - 1] : key_data_endpos;
+    			size_t now_begin = col_data_endpos[i];
     			char buffer[now_size + 1];
     			if(!reader->fread(buffer, now_size, now_begin + idx * now_size)) {
     				std::cout << "read fail dst" << std::endl;

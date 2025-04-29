@@ -80,6 +80,9 @@ namespace BACH
         ~RelFileParser() = default;
 
         Tuple GetTuple(Key_t key){
+            if constexpr (std::is_same_v<std::string, Key_t>) {
+                key.resize(Options::KEY_SIZE);
+            }
             for(idx_t i = 0; i < block_count; i++) {
                 BlockMetaT<Key_t> &meta = block_meta[i];
                 if(key < meta.key_min || key > meta.key_max) {

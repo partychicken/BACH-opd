@@ -112,7 +112,7 @@ namespace BACH {
 
         std::cout << "Arrived" << std::endl;
         /*delete data;*/
-        for (size_t i = 0; i < memtable->column_num; i++) {
+        for (size_t i = 0; i < memtable->column_num - 1; i++) {
             delete data[i];
         }
         delete[] data;

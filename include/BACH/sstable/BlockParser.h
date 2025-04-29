@@ -49,10 +49,11 @@ namespace BACH
 			}
 
 			key_data_endpos = key_size * key_num + offset_in_file;
-			size_t nowpos = key_data_endpos + offset_in_file;
+			size_t nowpos = key_data_endpos;
 			col_data_endpos = static_cast<size_t*>(malloc(col_num * sizeof(size_t)));
 			for (idx_t i = 0; i < col_num; i++) {
-				col_data_endpos[i] = nowpos + key_num * col_size[i];
+				nowpos += key_num * col_size[i];
+				col_data_endpos[i] = nowpos;
 			}
 
 		}
@@ -77,7 +78,7 @@ namespace BACH
 			idx_t single_read_num = this->options->READ_BUFFER_SIZE / key_size;
 			size_t single_read_size = single_read_num * key_size;
 			int read_times = (key_num - 1) / single_read_num + 1;
-			size_t offset = 0;
+			size_t offset = offset_in_file;
 			for(int i = 0; i < read_times - 1; i++) {
 				char buffer[single_read_size];
 				if (!reader->fread(buffer, single_read_size, offset)) {
@@ -116,7 +117,7 @@ namespace BACH
 		Key_t* GetKeyCol() {
 			//needs seperately buffering ?
 			char* buffer = static_cast<char*>(malloc(key_num * key_size));
-			if (!reader->fread(buffer, key_num * key_size, 0)) {
+			if (!reader->fread(buffer, key_num * key_size, offset_in_file)) {
 				std::cout << "read fail dst" << std::endl;
 				++*(int *)NULL;
 			}
@@ -160,15 +161,15 @@ namespace BACH
 		FileReader* reader;
 		std::shared_ptr<Options> options;
 
-		Tuple GetTupleWithIdx(Key_t key, idx_t idx) {
+		Tuple GetTupleWithIdx(Key_t key, const idx_t &idx) {
     		Tuple result;
     		result.col_num = col_num + 1;
 			if constexpr (!std::is_same_v<Key_t, std::string>) result.row.push_back(key.to_string());
 			else result.row.push_back(key);
     		for(idx_t i = 0; i < col_num; i++) {
     			size_t now_size = col_size[i];
-    			//size_t now_begin = i ? col_data_endpos[i - 1] : key_data_endpos;
-    			size_t now_begin = col_data_endpos[i];
+    			size_t now_begin = i ? col_data_endpos[i - 1] : key_data_endpos;
+    			//size_t now_begin = col_data_endpos[i];
     			char buffer[now_size + 1];
     			if(!reader->fread(buffer, now_size, now_begin + idx * now_size)) {
     				std::cout << "read fail dst" << std::endl;

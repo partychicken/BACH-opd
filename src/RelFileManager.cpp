@@ -99,7 +99,7 @@ namespace BACH {
                                                + file_name);
         auto rel_builder = new RelFileBuilder<std::string>(fw, db->options);
 
-        std::string *order_key_buf = static_cast<std::string *>(malloc(sizeof(std::string) * (key_tot_num / file_num + 5)));
+        std::string *order_key_buf = new std::string[key_tot_num / file_num + 5];
         int key_buf_idx = 0;
         std::pair<idx_t, idx_t> *val_buf[col_num];
         for (idx_t i = 0; i < col_num; i++) {
@@ -114,8 +114,12 @@ namespace BACH {
 
         VersionEdit *edit = new VersionEdit();
 
+        for (auto &file: compaction.file_list) {
+            edit->EditFileList.push_back(file);
+            edit->EditFileList.back()->deletion = true;
+        }
         //std::set<DictMappingEntry> s[col_num];
-        std::map<std::string, std::vector<std::pair<int, idx_t> >> s[col_num]; //<file_id, origin_index>
+        std::map<std::string, std::vector<std::pair<int, idx_t> > > s[col_num]; //<file_id, origin_index>
         int remap[col_num][file_num][key_tot_num]; //third dimension is larger than the necessary's, needing optimized
         // in the first stage, remap denotes whether the index exists in set;
         // in the second stage, remap denotes the new index that the old one should be mapped to
@@ -130,7 +134,7 @@ namespace BACH {
 
             if (now_message.offset < key_num[now_message.file_idx] - 1) {
                 q.push(TupleMessage<std::string>(keys[now_message.file_idx][now_message.offset + 1],
-                                           now_message.offset + 1, now_message.file_idx));
+                                                 now_message.offset + 1, now_message.file_idx));
             }
 
             if (now_message.key == last_key) {
@@ -141,7 +145,7 @@ namespace BACH {
             order_key_buf[key_buf_idx] = now_message.key;
             for (idx_t i = 0; i < col_num; i++) {
                 val_buf[i][key_buf_idx] = std::make_pair(now_message.file_idx,
-                                                    vals[now_message.file_idx][i][now_message.offset]);
+                                                         vals[now_message.file_idx][i][now_message.offset]);
                 if (!remap[i][now_message.file_idx][now_message.offset]) {
                     remap[i][now_message.file_idx][now_message.offset] = 1;
                     auto nowstr = (*DictList)[i].getString(val_buf[i][key_buf_idx].second);
@@ -180,7 +184,8 @@ namespace BACH {
                 }
 
                 //write current buffer to file
-                rel_builder->ArrangeRelFileInfo(order_key_buf, key_buf_idx, db->options->KEY_SIZE, col_num, real_val_buf);
+                rel_builder->ArrangeRelFileInfo(order_key_buf, key_buf_idx, db->options->KEY_SIZE, col_num,
+                                                real_val_buf);
                 temp_file_metadata->key_max = last_key;
                 temp_file_metadata->key_num = key_buf_idx;
                 temp_file_metadata->col_num = col_num;
@@ -194,20 +199,17 @@ namespace BACH {
                 }
 
                 //open new file
-                temp_file_metadata = new RelFileMetaData<std::string>(0, compaction.target_level, compaction.vertex_id_b,
-                                                                     ++now_file_id, "rel", q.top().key, "", 0, 0);
+                temp_file_metadata = new RelFileMetaData<std::string>(0, compaction.target_level,
+                                                                      compaction.vertex_id_b,
+                                                                      ++now_file_id, "rel", q.top().key, "", 0, 0);
                 std::string file_name = temp_file_metadata->file_name;
                 fw = std::make_shared<FileWriter>(db->options->STORAGE_DIR + "/"
-                                                       + file_name);
+                                                  + file_name);
                 delete rel_builder;
                 rel_builder = new RelFileBuilder<std::string>(fw, db->options);
             }
         }
 
-        for (auto &file: compaction.file_list) {
-            edit->EditFileList.push_back(file);
-            edit->EditFileList.back()->deletion = true;
-        }
         return edit;
     }
 }

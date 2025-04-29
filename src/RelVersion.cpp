@@ -105,8 +105,12 @@ namespace BACH {
         }
 
         size_t edit_size = edit->EditFileList.size();
-        if ((edit_size & 1) && FileIndex[level].size()) {
+        if ((edit_size & 1) && FileIndex[level].size() && edit_size != 1) {
             std::cerr << "FUCK edit size" << std::endl;
+            return c;
+        }
+
+        if (edit_size == 1) {
             return c;
         }
 
@@ -152,6 +156,7 @@ namespace BACH {
         if (c == nullptr)
             c = new RelCompaction<std::string>();
         c->file_list.push_back(down_file_meta);
+        down_file_meta->merging = true;
         c->key_min = min(key_min, static_cast<RelFileMetaData<std::string> *>(*iter1)->key_min);
         c->target_level = level + 1;
         for (auto i = iter1; i != iter2; ++i)

@@ -73,7 +73,11 @@ namespace BACH
                 now_meta_offset += meta_size + filter_size;
             }
         }
-        RelFileParser(RelFileParser &&x) = default;
+        RelFileParser(RelFileParser &&x) : reader(x.reader), options(x.options), file_size(x.file_size),
+        col_num(x.col_num), key_num(x.key_num), block_count(x.block_count), key_min(x.key_min), key_max(x.key_max),
+        block_meta_begin_pos(x.block_meta_begin_pos), block_meta(x.block_meta){
+            x.valid = false;
+        }
 
         ~RelFileParser() {
             if (valid) {

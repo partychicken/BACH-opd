@@ -217,8 +217,8 @@ namespace BACH {
             return false;
         if (level == 0) {
             for (auto x: version->FileIndex[level]) {
-                if (static_cast<RelFileMetaData<std::string> *>(version->FileIndex[level][idx])->key_min > key_max
-                    || static_cast<RelFileMetaData<std::string> *>(version->FileIndex[level][idx])->key_max < key_min) {
+                if (static_cast<RelFileMetaData<std::string> *>(x)->key_min > key_max
+                    || static_cast<RelFileMetaData<std::string> *>(x)->key_max < key_min) {
                     continue;
                 }
                 return true;

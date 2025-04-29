@@ -65,9 +65,6 @@ namespace BACH {
         }
 
         ~BlockParser() {
-            if (valid) {
-                reader->DecRef();
-            }
             free(col_data_endpos);
             if (col_size)
                 free(col_size);
@@ -120,14 +117,14 @@ namespace BACH {
                 std::cout << "read fail dst" << std::endl;
                 ++*(int *) NULL;
             }
-            if constexpr (std::is_same_v<Key_t, std::string>) {
+            //if constexpr (std::is_same_v<Key_t, std::string>) {
                 std::string* res = new std::string[key_num];
                 for (idx_t i = 0; i < key_num; i++) {
                     res[i] = std::string(buffer + key_size * i, key_size);
                 }
                 return res;
-            }
-            return reinterpret_cast<Key_t *>(buffer);
+            // }
+            // return reinterpret_cast<Key_t *>(buffer);
         }
 
         //output raw pointers, needing free outside after copy

@@ -76,7 +76,7 @@ namespace BACH {
         int key_tot_num = 0, key_done = 0;
         memset(now_idx, 0, sizeof(now_idx));
         for (size_t i = 0; i < parsers.size(); i++) {
-            keys[i] = static_cast<std::string *>(malloc(sizeof(key_t) * parsers[i].GetKeyNum()));
+            keys[i] = new std::string[parsers[i].GetKeyNum()];
             idx_t check_size = 0;
             parsers[i].GetKeyCol(keys[i], check_size);
             if (check_size != parsers[i].GetKeyNum()) {
@@ -121,14 +121,14 @@ namespace BACH {
         // in the second stage, remap denotes the new index that the old one should be mapped to
         memset(remap, 0, sizeof(remap));
 
-        std::string last_key = 0;
+        std::string last_key = "";
         idx_t now_file_id = compaction.file_id;
 
         while (!q.empty()) {
             TupleMessage<std::string> now_message = q.top();
             q.pop();
 
-            if (now_message.offset < key_num[now_message.file_idx]) {
+            if (now_message.offset < key_num[now_message.file_idx] - 1) {
                 q.push(TupleMessage<std::string>(keys[now_message.file_idx][now_message.offset + 1],
                                            now_message.offset + 1, now_message.file_idx));
             }

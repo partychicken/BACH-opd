@@ -75,7 +75,11 @@ namespace BACH
         }
         RelFileParser(RelFileParser &&x) = default;
 
-        ~RelFileParser() = default;
+        ~RelFileParser() {
+            if (valid) {
+                reader -> DecRef();
+            }
+        };
 
         Tuple GetTuple(Key_t key){
             if constexpr (std::is_same_v<std::string, Key_t>) {

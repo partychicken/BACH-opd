@@ -77,8 +77,6 @@ namespace BACH
             block_count = block_cnt;
             block_meta_begin_pos = now_offset_in_file;
 
-            std::cout << "block_meta_begin_pos: " << block_meta_begin_pos << std::endl;
-
             now_offset_in_file += this->SetBlockMeta(now_offset_in_file);
 
             if(global_filter != nullptr) {
@@ -145,7 +143,6 @@ namespace BACH
                 std::string filter_data = block_meta[i].filter->data();
                 util::PutFixed(metadata, static_cast<size_t>(filter_data.size()));
                 metadata += filter_data;
-                std::cout << "(meta) actual size: " << metadata.size() << std::endl;
             }
             writer->append(metadata.data(), metadata.size());
             

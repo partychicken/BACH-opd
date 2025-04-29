@@ -40,7 +40,7 @@ namespace BACH {
             util::PutFixed(metadata, col_num);
             util::PutFixed(metadata, key_size);
             writer->append(metadata.data(), metadata.size());
-            std::cout << "actual size: " << writer->get_offset() << std::endl;
+
             writer->flush();
         }
 

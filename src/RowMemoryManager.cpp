@@ -109,8 +109,6 @@ namespace BACH {
 			delete dicts[i];
 		}
 		rfb.ArrangeRelFileInfo(tmp.GetColumn(0), memtable->total_tuple, db->options->KEY_SIZE, memtable->column_num - 1, data);
-
-        std::cout << "Arrived" << std::endl;
         /*delete data;*/
         for (size_t i = 0; i < memtable->column_num - 1; i++) {
             delete data[i];

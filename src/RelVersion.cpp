@@ -176,6 +176,7 @@ namespace BACH {
     void RelVersionIterator::next() {
         if (end)
             return;
+        if (level == 0) ++idx;
         if (idx == version->FileIndex[level].size() - 1 ||
             (static_cast<RelFileMetaData<std::string> *>(version->FileIndex[level][++idx])->key_min > key_max))
             nextlevel();
@@ -193,6 +194,16 @@ namespace BACH {
     bool RelVersionIterator::findsrc() {
         if (version->FileIndex[level].empty())
             return false;
+        if (level == 0) {
+            for (auto x : version->FileIndex[level]) {
+                if (static_cast<RelFileMetaData<std::string> *>(version->FileIndex[level][idx])->key_min > key_max
+                || static_cast<RelFileMetaData<std::string> *>(version->FileIndex[level][idx])->key_max < key_min) {
+                    continue;
+                }
+                return true;
+            }
+            return false;
+        }
         auto x = std::lower_bound(version->FileIndex[level].begin(),
                                   version->FileIndex[level].end(),
                                   std::make_pair(key_min, 0),
@@ -209,7 +220,7 @@ namespace BACH {
     bool RelFileCompareWithPair(FileMetaData *lhs, const std::pair<std::string, idx_t> &rhs) {
         auto rlhs = static_cast<RelFileMetaData<std::string> *>(lhs);
         //return rlhs->key_min == rhs.first ? rlhs->file_id < rhs.second : rlhs->key_min < rhs.first;
-        return rlhs->key_min <= rhs.first;
+        return rlhs->key_min < rhs.first;
     }
     
     bool RelFileCompareWithPairUpper(const std::pair<std::string, idx_t> &rhs, FileMetaData* lhs) {

@@ -4,13 +4,13 @@ namespace BACH {
     Transaction::Transaction(time_t _write_epoch, time_t _read_epoch,
                              DB *db, Version *_version, time_t pos) : write_epoch(_write_epoch),
                                                                       read_epoch(_read_epoch), db(db), time_pos(pos),
-                                                                      version(_version),rel_version(nullptr)  {
+                                                                      version(_version), rel_version(nullptr) {
     }
 
     Transaction::Transaction(time_t _write_epoch, time_t _read_epoch,
                              DB *db, RelVersion *_version, time_t pos) : write_epoch(_write_epoch),
                                                                          read_epoch(_read_epoch), db(db), time_pos(pos),
-                                                                         version(nullptr),rel_version(_version) {
+                                                                         version(nullptr), rel_version(_version) {
     }
 
     Transaction::Transaction(Transaction &&txn) : write_epoch(txn.write_epoch), read_epoch(txn.read_epoch),
@@ -183,8 +183,14 @@ namespace BACH {
                     RelFileParser<std::string> parser(db->ReaderCaches->find(iter.GetFile()), db->options,
                                                       iter.GetFile()->file_size);
                     Tuple found = parser.GetTuple(key);
-                    if (!found.row.empty())
+                    if (!found.row.empty()) {
+                        for (int i = 1; i < found.row.size(); i++) {
+                            idx_t col_id = *((idx_t *) found.row[i].data());
+                            found.row[i] = static_cast<RelFileMetaData<std::string> *>(iter.GetFile())->dictionary[i - 1].
+                            getString(col_id);
+                        }
                         return found;
+                    }
                 }
             iter.next();
         }
@@ -220,8 +226,8 @@ namespace BACH {
             for (auto cur_file: cur_level) {
                 auto reader = db->ReaderCaches->find(cur_file);
                 auto parser = RelFileParser<std::string>(reader, db->options, cur_file->file_size);
-                auto DictList = reinterpret_cast<RelFileMetaData<std::string>*>(cur_file)->dictionary;
-                RowGroup cur_row_group(db, reinterpret_cast<RelFileMetaData<std::string>*>(cur_file));
+                auto DictList = reinterpret_cast<RelFileMetaData<std::string> *>(cur_file)->dictionary;
+                RowGroup cur_row_group(db, reinterpret_cast<RelFileMetaData<std::string> *>(cur_file));
                 cur_row_group.GetKeyData();
                 cur_row_group.GetAllColData();
                 cur_row_group.MaterializeAll(am);

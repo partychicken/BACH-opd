@@ -60,73 +60,37 @@ namespace BACH {
     RelCompaction<std::string> *RelVersion::GetCompaction(VersionEdit *edit, bool force_level) {
         RelFileMetaData<std::string> *begin_file_meta = static_cast<RelFileMetaData<std::string> *>(*(edit->EditFileList
             .begin()));
-        idx_t level = begin_file_meta->level + 1;
+        idx_t level = begin_file_meta->level;
         RelCompaction<std::string> *c = NULL;
-        // if (force_level)
-        // {
-        // 	c = new Compaction();
-        // 	c->vertex_id_b = src_b;
-        // 	c->label_id = label;
-        // 	c->target_level = level;
-        // 	auto iter = std::lower_bound(FileIndex[label][level].begin(),
-        // 		FileIndex[label][level].end(),
-        // 		std::make_pair(src_b + 1, (idx_t)0),
-        // 		FileCompareWithPair);
-        // 	if (iter == FileIndex[label][level].end() || (*iter)->vertex_id_b != src_b)
-        // 		return NULL;
-        // 	for (; iter != FileIndex[label][level].end() && (*iter)->vertex_id_b == src_b; --iter)
-        // 		if (!(*iter)->merging)
-        // 		{
-        // 			c->file_list.push_back(*iter);
-        // 			(*iter)->merging = true;
-        // 			if (iter == FileIndex[label][level].begin())
-        // 				break;
-        // 		}
-        // 		else
-        // 		{
-        // 			break;
-        // 		}
-        // 	if (c->file_list.size() <= 1)
-        // 	{
-        // 		for (auto i : c->file_list)
-        // 			i->merging = false;
-        // 		delete c;
-        // 		c = NULL;
-        // 	}
-        // }
-        if (level == db->options->MAX_LEVEL - 1) {
-            return c;
-        }
-        if (level == 1 && FileIndex[0].size() <= db->options->ZERO_LEVEL_FILES) {
-            return c;
-        }
-        if (level != 1 && FileIndex[level - 1].size() <= (1 << (level - 1))) {
-            return c;
-        }
-
-        size_t edit_size = edit->EditFileList.size();
-        if ((edit_size & 1) && FileIndex[level].size() && edit_size != 1) {
-            std::cerr << "FUCK edit size" << std::endl;
-            return c;
-        }
-
-        if (edit_size == 1) {
-            return c;
-        }
-
-        //the former half is to deleted, and the latter half is new Files. Here rand a new file to push down.
-        size_t half_edit_size = edit_size >> 1;
-
-        int down_fileid = 0;
-        RelFileMetaData<std::string> *down_file_meta = static_cast<RelFileMetaData<std::string> *>(edit->EditFileList[
-            down_fileid]);
-        do {
-            if (level == 1) {
+        RelFileMetaData<std::string> *down_file_meta;
+        if (level == 0) {
+            if (FileIndex[level].size() <= db->options->ZERO_LEVEL_FILES) {
+                return c;
+            }
+            int down_fileid = 0;
+            do {
                 down_fileid = rand() % db->options->ZERO_LEVEL_FILES;
-                level = 0;
-            } else down_fileid = rand() % half_edit_size + half_edit_size;
-            down_file_meta = static_cast<RelFileMetaData<std::string> *>(FileIndex[level][down_fileid]);
-        } while (down_file_meta->merging);
+                down_file_meta = static_cast<RelFileMetaData<std::string> *>(FileIndex[level][down_fileid]);
+            } while (down_file_meta->merging);
+        } else {
+            level++; // the level which adds a new file
+            if (level == db->options->MAX_LEVEL - 1) {
+                return c;
+            }
+            if (FileIndex[level].size() <= (1 << (level - 1))) {
+                return c;
+            }
+            size_t edit_size = edit->EditFileList.size();
+            if (edit_size & 1) {
+                std::cerr << "FUCK edit size" << std::endl;
+                return c;
+            }
+            int down_fileid = 0;
+            do {
+                down_fileid = rand() % FileIndex[level].size();
+                down_file_meta = static_cast<RelFileMetaData<std::string> *>(FileIndex[level][down_fileid]);
+            } while (down_file_meta->merging);
+        }
 
         std::string key_min = down_file_meta->key_min;
         std::string key_max = down_file_meta->key_max;

@@ -61,6 +61,7 @@ namespace BACH {
         RelFileMetaData<std::string> *begin_file_meta = static_cast<RelFileMetaData<std::string> *>(*(edit->EditFileList
             .begin()));
         idx_t level = begin_file_meta->level;
+        // the level which adds a new file
         RelCompaction<std::string> *c = NULL;
         RelFileMetaData<std::string> *down_file_meta;
         if (level == 0) {
@@ -73,11 +74,10 @@ namespace BACH {
                 down_file_meta = static_cast<RelFileMetaData<std::string> *>(FileIndex[level][down_fileid]);
             } while (down_file_meta->merging);
         } else {
-            level++; // the level which adds a new file
             if (level == db->options->MAX_LEVEL - 1) {
                 return c;
             }
-            if (FileIndex[level].size() <= (1 << (level - 1))) {
+            if (FileIndex[level].size() <= util::fast_pow(10, level - 1) * 4) {
                 return c;
             }
             size_t edit_size = edit->EditFileList.size();
@@ -166,7 +166,9 @@ namespace BACH {
     void RelVersionIterator::next() {
         if (end)
             return;
-        if (level == 0) ++idx;
+        if (level == 0 && idx < version->FileIndex[level].size() - 1) {
+            ++idx;
+        }
         if (idx == version->FileIndex[level].size() - 1 ||
             (static_cast<RelFileMetaData<std::string> *>(version->FileIndex[level][++idx])->key_min > key_max))
             nextlevel();

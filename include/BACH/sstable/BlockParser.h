@@ -181,7 +181,7 @@ namespace BACH {
                     std::cout << "read fail dst" << std::endl;
                     ++*(int *) NULL;
                 }
-                result.row.push_back(std::string(buffer));
+                result.row.push_back(std::string(buffer, now_size));
             }
             return result;
         }

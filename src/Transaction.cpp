@@ -186,7 +186,8 @@ namespace BACH {
                     if (!found.row.empty()) {
                         for (int i = 1; i < found.row.size(); i++) {
                             idx_t col_id = *((idx_t *) found.row[i].data());
-                            found.row[i] = static_cast<RelFileMetaData<std::string> *>(iter.GetFile())->dictionary[i - 1].
+                            found.row[i] = static_cast<RelFileMetaData<std::string> *>(iter.GetFile())->dictionary[
+                                i - 1].
                             getString(col_id);
                         }
                         return found;

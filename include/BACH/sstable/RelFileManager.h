@@ -31,20 +31,9 @@ namespace BACH {
 
         ~RelFileManager() = default;
 
-        void AddCompaction(RelCompaction<std::string> &compaction);
+        void AddCompaction(RelCompaction<std::string> &compaction, bool high = true);
 
         VersionEdit *MergeRelFile(Compaction &compaction);
-
-        bool ListEmpty() {
-            if (CompactionCVMutex.try_lock()) {
-                bool empty = CompactionList.empty();
-                CompactionCVMutex.unlock();
-                return empty;
-            }
-            else {
-                return false;
-            }
-        }
 
         idx_t GetFileID() {
             return ++id;
@@ -52,9 +41,12 @@ namespace BACH {
 
     private:
         DB *db;
-        std::mutex CompactionCVMutex;
-        std::condition_variable CompactionCV;
-        std::queue<RelCompaction<std::string>> CompactionList;
+		std::mutex HighCompactionCVMutex;
+        std::condition_variable HighCompactionCV;
+        std::queue<RelCompaction<std::string>> HighCompactionList;
+		std::mutex LowCompactionCVMutex;
+        std::condition_variable LowCompactionCV;
+        std::queue<RelCompaction<std::string>> LowCompactionList;
         std::vector< //level
             std::vector< //key-min
                 idx_t> > FileNumList;

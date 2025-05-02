@@ -5,10 +5,18 @@ namespace BACH {
     RelFileManager::RelFileManager(DB *_db) : db(_db) {
     }
 
-    void RelFileManager::AddCompaction(RelCompaction<std::string> &compaction) {
-        std::unique_lock<std::mutex> lock(CompactionCVMutex);
-        CompactionList.push(compaction);
-        CompactionCV.notify_one();
+    void RelFileManager::AddCompaction(RelCompaction<std::string> &compaction, bool high) {
+        if (high) {
+            std::unique_lock<std::mutex> lock(HighCompactionCVMutex);
+            HighCompactionList.push(compaction);
+            HighCompactionCV.notify_one();
+            return;
+        }
+        else {
+            std::unique_lock<std::mutex> lock(LowCompactionCVMutex);
+            LowCompactionList.push(compaction);
+            LowCompactionCV.notify_one();
+        }
     }
 
     template<typename Key_t>
@@ -179,8 +187,8 @@ namespace BACH {
                 //write current buffer to file
                 rel_builder->ArrangeRelFileInfo(order_key_buf, key_buf_idx, db->options->KEY_SIZE, col_num,
                                                 real_val_buf);
-                temp_file_metadata->key_min = order_key_buf[0];
-                temp_file_metadata->key_max = last_key;
+                temp_file_metadata->key_min = std::string(order_key_buf[0].c_str());
+                temp_file_metadata->key_max = std::string(last_key);
                 temp_file_metadata->key_num = key_buf_idx;
                 temp_file_metadata->col_num = col_num;
                 edit->EditFileList.push_back(temp_file_metadata);
@@ -191,16 +199,18 @@ namespace BACH {
                 for (idx_t i = 0; i < col_num; i++) {
                     s[i].clear();
                 }
-
-                //open new file
-                temp_file_metadata = new RelFileMetaData<std::string>(0, compaction.target_level,
-                                                                      compaction.vertex_id_b,
-                                                                      ++now_file_id, "", q.top().key, "", 0, 0);
-                std::string file_name = temp_file_metadata->file_name;
-                fw = std::make_shared<FileWriter>(db->options->STORAGE_DIR + "/"
-                                                  + file_name);
-                delete rel_builder;
-                rel_builder = new RelFileBuilder<std::string>(fw, db->options);
+                if(!q.empty())
+                {
+                    //open new file
+                    temp_file_metadata = new RelFileMetaData<std::string>(0, compaction.target_level,
+                                                                        compaction.vertex_id_b,
+                                                                        ++now_file_id, "", q.top().key, "", 0, 0);
+                    std::string file_name = temp_file_metadata->file_name;
+                    fw = std::make_shared<FileWriter>(db->options->STORAGE_DIR + "/"
+                                                    + file_name);
+                    delete rel_builder;
+                    rel_builder = new RelFileBuilder<std::string>(fw, db->options);
+                }
             }
         }
         if (key_buf_idx) {

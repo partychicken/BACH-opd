@@ -9,21 +9,21 @@ SET(CMAKE_C_COMPILER "gcc-12")
 SET(CMAKE_CXX_COMPILER "g++-12")
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-project ("BACH_demo" LANGUAGES CXX)
+project ("BACH-OPD" LANGUAGES CXX)
 
 include_directories(${PROJECT_SOURCE_DIR})
 
 file(GLOB_RECURSE srcs CONFIGURE_DEPENDS src/*.cpp)
 
-add_library(bach SHARED bind/BACH.cpp ${srcs} "src/TupleEntry.cpp")
-target_include_directories(bach PUBLIC include)
-target_include_directories(bach PUBLIC include/dynamic_bitset/include)
-target_compile_features(bach PUBLIC cxx_std_20)
+add_library(bach-opd SHARED bind/BACH.cpp ${srcs} "src/TupleEntry.cpp")
+target_include_directories(bach-opd PUBLIC include)
+target_include_directories(bach-opd PUBLIC include/dynamic_bitset/include)
+target_compile_features(bach-opd PUBLIC cxx_std_20)
 
 add_subdirectory(include/dynamic_bitset)
-target_link_libraries(bach PRIVATE sul::dynamic_bitset)
+target_link_libraries(bach-opd PRIVATE sul::dynamic_bitset)
 add_subdirectory(include/folly)
-target_link_libraries(bach PRIVATE folly)
+target_link_libraries(bach-opd PRIVATE folly)
 
 set(BUILD_TEST ON)
 set(DEBUG ON)
@@ -35,7 +35,7 @@ set(BUILD_UNITTEST ON)
 
 if(DEBUG)
 	set(CMAKE_CXX_FLAGS " -g -Wall ${CMAKE_CXX_FLAGS}")
-	target_link_options(bach PRIVATE -lprofiler -ltcmalloc)
+	target_link_options(bach-opd PRIVATE -lprofiler -ltcmalloc)
 endif()
 
 if(BUILD_TEST)

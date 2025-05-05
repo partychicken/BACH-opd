@@ -16,5 +16,5 @@ target_include_directories(tp_tests PRIVATE
 )
 
 # �������Ѿ����ɵ����ݿ��
-target_link_libraries(tp_tests PRIVATE bach folly)
+target_link_libraries(tp_tests PRIVATE bach-opd folly)
 

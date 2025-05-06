@@ -38,7 +38,7 @@ namespace BACH {
             if (!now_res.row.empty()) {
                 return now_res;
             }
-            x = x->next;
+            x = x->next.lock();
         }
         return Tuple();
     }
@@ -56,7 +56,7 @@ namespace BACH {
         while (x) {
             std::shared_lock<std::shared_mutex> lock(x->mutex);
             auto now_res = x->ScanTuples(start_key, end_key, timestamp);
-            x = x->next;
+            x = x->next.lock();
         }
         return std::vector<Tuple>();
     }

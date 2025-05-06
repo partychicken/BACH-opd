@@ -95,9 +95,10 @@ namespace BACH {
             }
             key_tot_num += (key_num[i] = check_size);
 
+            idx_t tmp = 0;
             for (idx_t j = 0; j < col_num; j++) {
                 vals[i][j] = static_cast<idx_t *>(malloc(sizeof(idx_t) * check_size));
-                parsers[i].GetValCol(vals[i][j], check_size, j);
+                parsers[i].GetValCol(vals[i][j], tmp, j);
             }
             q.push(TupleMessage<std::string>(keys[i][0], 0, i));
         }

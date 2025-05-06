@@ -86,7 +86,7 @@ namespace BACH {
         int key_num[file_num], now_idx[file_num];
         int key_tot_num = 0, key_done = 0;
         memset(now_idx, 0, sizeof(now_idx));
-        for (size_t i = 0; i < parsers.size(); i++) {
+        for (int i = 0; i < file_num; i++) {
             keys[i] = new std::string[parsers[i].GetKeyNum()];
             idx_t check_size = 0;
             parsers[i].GetKeyCol(keys[i], check_size);
@@ -96,7 +96,7 @@ namespace BACH {
             key_tot_num += (key_num[i] = check_size);
 
             for (idx_t j = 0; j < col_num; j++) {
-                vals[i][j] = static_cast<idx_t *>(malloc(sizeof(idx_t) * parsers[i].GetKeyNum()));
+                vals[i][j] = static_cast<idx_t *>(malloc(sizeof(idx_t) * check_size));
                 parsers[i].GetValCol(vals[i][j], check_size, j);
             }
             q.push(TupleMessage<std::string>(keys[i][0], 0, i));
@@ -217,19 +217,28 @@ namespace BACH {
                 }
             }
         }
-        if (key_buf_idx) {
-        }
-        if (rel_builder) delete rel_builder;
-        if (order_key_buf) delete[] order_key_buf;
-        //for (idx_t i = 0; i < col_num; i++) free(real_val_buf[i]);
 
+        if (key_buf_idx) {
+            //if it has deletion, an extra flush is needed;
+            //no implement yet
+        }
         for (auto &file: compaction.file_list) {
             edit->EditFileList.push_back(file);
             edit->EditFileList.back()->deletion = true;
         }
 
+        for (int i = 0; i < file_num; i++) {
+            delete[] keys[i];
+            for (idx_t j = 0; j < col_num; j++) {
+                free(vals[i][j]);
+            }
+        }
+        if (rel_builder) delete rel_builder;
+        if (order_key_buf) delete[] order_key_buf;
+        for (idx_t i = 0; i < col_num; i++) {
+            if (real_val_buf[i]) free(real_val_buf[i]);
+        }
         DictList.clear();
-
         return edit;
     }
 }

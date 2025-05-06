@@ -14,6 +14,6 @@ target_include_directories(ap_tests PRIVATE
     ${PROJECT_SOURCE_DIR}/include/catch
 )
 
-# 链接你已经生成的数据库库
-target_link_libraries(ap_tests PRIVATE bach)
+# 链接你已经生成的数据库
+target_link_libraries(ap_tests PRIVATE bach-opd folly)
 

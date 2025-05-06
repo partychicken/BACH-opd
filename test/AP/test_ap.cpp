@@ -35,7 +35,7 @@ TEST_CASE("FILE VALUE SCAN TEST", "[AP]") {
 
     std::cout << "\nFinished insert" << std::endl;
 
-    while (x.Compacting.load(std::memory_order_acquire)) { sleep(1); }
+    while (x.Compacting()) { sleep(1); }
     auto z = x.BeginRelTransaction();
 	std::string a("10"), b("200");
     z.GetTuplesFromRange(1, a, b);

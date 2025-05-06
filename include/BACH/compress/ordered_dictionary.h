@@ -11,6 +11,8 @@ namespace BACH {
     public:
         
         OrderedDictionary(){}
+        ~OrderedDictionary() = default;
+        OrderedDictionary(const OrderedDictionary &other) = default;
 
         explicit OrderedDictionary(const std::vector<std::string>& data);
 

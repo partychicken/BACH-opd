@@ -125,15 +125,15 @@ namespace BACH {
     void rowMemoryManager::FilterByValueRange(time_t timestamp, const std::function<bool(Tuple &)> &func,
                                               AnswerMerger &am) {
         auto x = currentMemTable;
-        while (x) {
+        while (x->total_tuple) {
             std::shared_lock<std::shared_mutex> lock(x->mutex);
             x->FilterByValueRange(timestamp, func, am);
         }
     }
 
-    template<typename func>
-    std::function<bool(Tuple &)> CreateValueFilterFunction(const idx_t column_idx, const func &value_min,
-                                                           const func &value_max) {
+    //template<typename func>
+    std::function<bool(Tuple &)> CreateValueFilterFunction(const idx_t column_idx, const std::string &value_min,
+                                                           const std::string &value_max) {
         return [value_min, value_max, column_idx](Tuple &tuple) {
             if (tuple.GetRow(column_idx) >= value_min && tuple.GetRow(column_idx) <= value_max) {
                 return true;

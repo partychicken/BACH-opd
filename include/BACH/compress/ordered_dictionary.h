@@ -30,6 +30,14 @@ namespace BACH {
             return indexToString.size();
         }
 
+		std::unordered_map<std::string, int> getAllMapping() const {
+			return stringToIndex;
+		}
+
+		std::vector<std::string> getAllStrings() const {
+			return indexToString;
+		}
+
     private:
         
         std::unordered_map<std::string, int> stringToIndex;

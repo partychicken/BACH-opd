@@ -28,8 +28,6 @@ namespace BACH
 
 	class DB;
 
-    // 当前是个非拜占庭的模型，输入的tuple并没有硬性规定列数
-    // 暂时没有限制这个事,默认输入数据合法
 	class rowMemoryManager
 	{
     public:
@@ -63,7 +61,7 @@ namespace BACH
 	};
 
     // value filter function factory
-	std::function<bool(Tuple&)> CreateValueFilterFunction(const idx_t column_idx, const std::string& value_min,
+    std::function<bool(Tuple&)> CreateValueFilterFunction(const idx_t column_idx, const std::string& value_min,
         const std::string& value_max);
 
 

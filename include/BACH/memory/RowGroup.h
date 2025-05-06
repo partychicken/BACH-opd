@@ -17,7 +17,7 @@ namespace BACH {
         RowGroup(DB* _db,  RelFileMetaData<std::string>* _file);
 
         ~RowGroup() {
-            if(keys != nullptr) free(keys);
+            if(keys != nullptr) delete[] keys;
             for(auto x : cols) {
                 if(x != nullptr) free(x);
             }
@@ -41,7 +41,13 @@ namespace BACH {
         void Materialize(Vector &result, AnswerMerger &am);
 
         template<typename Func>
-        void ApplyRangeFilter(idx_t col_id, Func* left_bound, Func* right_bound, AnswerMerger &am);
+        void ApplyRangeFilter(idx_t col_id, Func left_bound, Func right_bound, AnswerMerger &am) {
+            Vector res;
+            while (Scan(col_id, res)) {
+                RangeFilter(res, left_bound, right_bound);
+                Materialize(res, am);
+            }
+        }
 
         void MaterializeAll(AnswerMerger &am);
 
@@ -50,7 +56,7 @@ namespace BACH {
         idx_t key_num, col_num;
         RelFileMetaData<std::string>* file;
         idx_t* scan_pos;
-        std::string* keys;
+        std::string* keys = nullptr;
         std::vector<idx_t*> cols;
         RelFileParser<std::string>* parser;
 

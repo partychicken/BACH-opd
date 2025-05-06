@@ -9,7 +9,8 @@ namespace BACH {
         col_num = file->col_num;
         scan_pos = static_cast<idx_t *>(malloc(col_num * sizeof(idx_t)));
         memset(scan_pos, 0, col_num * sizeof(idx_t));
-        keys = static_cast<std::string *>(malloc(key_num * sizeof(std::string)));
+        //keys = static_cast<std::string *>(malloc(key_num * sizeof(std::string)));
+        keys = new std::string[key_num];
         cols.resize(col_num);
         for (idx_t i = 0; i < col_num; i++) {
             cols[i] = static_cast<idx_t *>(malloc(key_num * sizeof(idx_t)));
@@ -44,23 +45,24 @@ namespace BACH {
                 Tuple tmp;
                 tmp.col_num = col_num;
                 tmp.row.push_back(keys[offset + i]);
-                for (idx_t j = 0; j < col_num; j++) {
+                for (idx_t j = 0; j < col_num - 1; j++) {
                     tmp.row.push_back(dict(j)->getString(cols[j][offset + i]));
                 }
                 am.insert_answer(keys[offset + i], std::move(tmp), 0);
+				std::cout << "\nMaterialize: " << keys[offset + i]  << std::endl;
             }
         }
     }
 
 
-    template<typename Func>
-    void RowGroup::ApplyRangeFilter(idx_t col_id, Func *left_bound, Func *right_bound, AnswerMerger &am) {
-        Vector res;
-        while (Scan(col_id, res)) {
-            RangeFilter(res, left_bound, right_bound);
-            Materialize(res, am);
-        }
-    }
+    //template<typename Func>
+    //void RowGroup::ApplyRangeFilter(idx_t col_id, Func *left_bound, Func *right_bound, AnswerMerger &am) {
+    //    Vector res;
+    //    while (Scan(col_id, res)) {
+    //        RangeFilter(res, left_bound, right_bound);
+    //        Materialize(res, am);
+    //    }
+    //}
 
 
     void RowGroup::MaterializeAll(AnswerMerger &am) {

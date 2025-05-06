@@ -122,6 +122,8 @@ namespace BACH {
                 for (idx_t i = 0; i < key_num; i++) {
                     res[i] = std::string(buffer + key_size * i, key_size);
                 }
+                free(buffer);
+
                 return res;
             // }
             // return reinterpret_cast<Key_t *>(buffer);

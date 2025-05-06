@@ -13,6 +13,7 @@ namespace BACH {
                 if(update) {
                     answers[key] = x;
                 }
+                return;
             }
             answers[key] = x;
         }

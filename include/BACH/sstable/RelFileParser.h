@@ -119,7 +119,7 @@ namespace BACH
                 for(idx_t j = 0; j < block_key_num; j++) {
                     keys[idx++] = block_key[j];
                 }
-                key_num += block_key_num;
+                //key_num += block_key_num;
                 if constexpr (std::is_same_v<Key_t, std::string>) {
                     delete[] block_key;
                 } else free(block_key);
@@ -136,7 +136,7 @@ namespace BACH
                 for(idx_t j = 0; j < block_key_num; j++) {
                     vals[idx++] = block_vals[j];
                 }
-                val_num += block_key_num;
+                //val_num += block_key_num;
                 free(block_vals);
             }
         }

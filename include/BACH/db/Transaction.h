@@ -1,13 +1,18 @@
 #pragma once
 
 #include <string>
+#include <unordered_map>
 #include "DB.h"
 #include "BACH/sstable/SSTableParser.h"
 #include "BACH/common/tuple.h"
 #include "BACH/sstable/RelVersion.h"
 #include "BACH/sstable/FileMetaData.h"
 #include "BACH/sstable/BloomFilter.h"
- 
+#include "BACH/memory/RowMemoryManager.h"
+#include "BACH/memory/RowGroup.h"
+#include "BACH/memory/AnswerMerger.h" 
+
+
 namespace BACH
 {
 	class Transaction
@@ -49,9 +54,41 @@ namespace BACH
         void PutTuple(Tuple tuple, tp_key key, tuple_property_t property);
         void DelTuple(Tuple tuple, tp_key key);
         Tuple GetTuple(tp_key key);
+
+
         // OLAP operation
-		template<typename Func>
-        void GetTuplesFromRange(idx_t col_id, Func* left_bound, Func* right_bound);
+		void GetTuplesFromRange(idx_t col_id, std::string left_bound, std::string right_bound) {
+			AnswerMerger am;
+			// add in-memory data into am here;
+			auto vf = CreateValueFilterFunction(col_id, left_bound, right_bound);
+			db->RowMemtable->FilterByValueRange(write_epoch, vf, am);
+
+			auto files = rel_version->FileIndex;
+
+			//auto MakeLeftBoundFunc = [](const std::string& right_bound) {
+			//	// 返回一个不捕获变量的 lambda（因为 right_bound 是值捕获，闭包类型仍然是函数对象）
+			//	return [=](const std::string& s) {
+			//		return s < right_bound;
+			//		};
+			//	};
+
+			//auto left_func = MakeLeftBoundFunc(left_bound);
+
+			//auto right_func = MakeLeftBoundFunc(right_bound);
+
+			for (auto cur_level : files) {
+				for (auto cur_file : cur_level) {
+					//auto reader = db->ReaderCaches->find(cur_file);
+					//auto parser = RelFileParser<std::string>(reader, db->options, cur_file->file_size);
+					//auto DictList = static_cast<RelFileMetaData<std::string> *>(cur_file)->dictionary;
+					RowGroup cur_row_group(db, static_cast<RelFileMetaData<std::string> *>(cur_file));
+					cur_row_group.GetKeyData();
+					cur_row_group.GetAllColData();
+					// minus 1 because the first column is key
+					cur_row_group.ApplyRangeFilter(col_id - 1, left_bound, right_bound, am);
+				}
+			}
+		}
 
         void ScanTuples();
 

@@ -147,18 +147,18 @@ namespace BACH {
 
             order_key_buf[key_buf_idx] = now_message.key;
             for (idx_t i = 0; i < col_num; i++) {
-                val_buf[i][key_buf_idx] = std::make_pair(now_message.file_idx,
-                                                         vals[now_message.file_idx][i][now_message.offset]);
-                if (!remap[i][now_message.file_idx][now_message.offset]) {
-                    remap[i][now_message.file_idx][now_message.offset] = 1;
+                idx_t tmp_val = vals[now_message.file_idx][i][now_message.offset];
+                val_buf[i][key_buf_idx] = std::make_pair(now_message.file_idx, tmp_val);
+                if (!remap[i][now_message.file_idx][tmp_val]) {
+                    remap[i][now_message.file_idx][tmp_val] = 1;
                     //auto nowstr = (*DictList[now_message.file_idx])[i].getString(val_buf[i][key_buf_idx].second);
                     auto nowstr = (DictList[now_message.file_idx])[i].getString(val_buf[i][key_buf_idx].second);
                     auto it = s[i].lower_bound(nowstr);
                     if (it != s[i].end() && it->first == nowstr) {
-                        it->second.push_back(std::make_pair(now_message.file_idx, now_message.offset));
+                        it->second.push_back(std::make_pair(now_message.file_idx, tmp_val));
                     } else {
                         std::vector<std::pair<int, idx_t> > tmp;
-                        tmp.push_back(std::make_pair(now_message.file_idx, now_message.offset));
+                        tmp.push_back(std::make_pair(now_message.file_idx, tmp_val));
                         s[i].insert(std::make_pair(nowstr, tmp));
                     }
                 }

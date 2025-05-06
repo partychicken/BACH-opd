@@ -228,6 +228,8 @@ namespace BACH {
             edit->EditFileList.back()->deletion = true;
         }
 
+        DictList.clear();
+
         return edit;
     }
 }

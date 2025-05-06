@@ -12,8 +12,15 @@ namespace BACH {
         FileTotalSize = _prev->FileTotalSize;
         for (auto i: edit->EditFileList) {
             if (i->deletion) {
-                auto x = std::lower_bound(FileIndex[i->level].begin(),
-                                          FileIndex[i->level].end(), i, RelFileCompare);
+                auto x = FileIndex[i->level].begin();
+                if(i->level == 0) {
+                    while(x != FileIndex[i->level].end() && (*x)->file_id != i->file_id) {
+                        x++;
+                    }
+                } else {
+                    x = std::lower_bound(FileIndex[i->level].begin(),
+                                              FileIndex[i->level].end(), i, RelFileCompare);
+                }
                 if ((*x)->file_id != i->file_id) {
                     //error
                     std::cout << "delete a file that not exist" << std::endl;
@@ -23,13 +30,18 @@ namespace BACH {
                 FileTotalSize[i->level] -= i->file_size;
             } else {
                 if (FileIndex.size() <= i->level)
-                    FileIndex.resize(i->level + 2),
-                    FileTotalSize.resize(i->level + 2);
-                auto x = std::upper_bound(FileIndex[i->level].begin(),
-                                          FileIndex[i->level].end(), i, RelFileCompare);
+                    FileIndex.resize(i->level + 1),
+                    FileTotalSize.resize(i->level + 1);
                 auto f = new RelFileMetaData(*static_cast<RelFileMetaData<std::string> *>(i));
-                FileIndex[i->level].insert(x, f);
-                FileTotalSize[i->level] += i->file_size;
+                if (i->level == 0) {
+                    FileIndex[i->level].push_back(f);
+                    FileTotalSize[i->level] += i->file_size;
+                } else {
+                    auto x = std::upper_bound(FileIndex[i->level].begin(),
+                    FileIndex[i->level].end(), i, RelFileCompare);
+                    FileIndex[i->level].insert(x, f);
+                    FileTotalSize[i->level] += i->file_size;
+                }
             }
         }
         for (auto &i: FileIndex)
@@ -57,85 +69,47 @@ namespace BACH {
             }
     }
 
-    RelCompaction<std::string> *RelVersion::GetCompaction(VersionEdit *edit, bool force_level) {
-        RelFileMetaData<std::string> *begin_file_meta = static_cast<RelFileMetaData<std::string> *>(*(edit->EditFileList
-            .begin()));
-        idx_t level = begin_file_meta->level + 1;
+    RelCompaction<std::string> *RelVersion::GetCompaction(idx_t level) {
+        // the level which added a new file
+        if(level >= FileIndex.size())
+            return NULL;
         RelCompaction<std::string> *c = NULL;
-        // if (force_level)
-        // {
-        // 	c = new Compaction();
-        // 	c->vertex_id_b = src_b;
-        // 	c->label_id = label;
-        // 	c->target_level = level;
-        // 	auto iter = std::lower_bound(FileIndex[label][level].begin(),
-        // 		FileIndex[label][level].end(),
-        // 		std::make_pair(src_b + 1, (idx_t)0),
-        // 		FileCompareWithPair);
-        // 	if (iter == FileIndex[label][level].end() || (*iter)->vertex_id_b != src_b)
-        // 		return NULL;
-        // 	for (; iter != FileIndex[label][level].end() && (*iter)->vertex_id_b == src_b; --iter)
-        // 		if (!(*iter)->merging)
-        // 		{
-        // 			c->file_list.push_back(*iter);
-        // 			(*iter)->merging = true;
-        // 			if (iter == FileIndex[label][level].begin())
-        // 				break;
-        // 		}
-        // 		else
-        // 		{
-        // 			break;
-        // 		}
-        // 	if (c->file_list.size() <= 1)
-        // 	{
-        // 		for (auto i : c->file_list)
-        // 			i->merging = false;
-        // 		delete c;
-        // 		c = NULL;
-        // 	}
-        // }
-        if (level == db->options->MAX_LEVEL - 1) {
-            return c;
+        RelFileMetaData<std::string> *down_file_meta;
+        if (level == 0) {
+            if (FileIndex[level][0]->merging)
+                return c;
+            if (FileIndex[level].size() <= db->options->ZERO_LEVEL_FILES) {
+                return c;
+            }
+            down_file_meta = static_cast<RelFileMetaData<std::string> *>(FileIndex[level][0]);
+        } else {
+            if (level == db->options->MAX_LEVEL - 1) {
+                return c;
+            }
+            if (FileIndex[level].size() <= util::fast_pow(db->options->LEVEL_SIZE_RITIO, level - 1) * 4) {
+                return c;
+            }
+            // size_t edit_size = edit->EditFileList.size();
+            // if (edit_size & 1) {
+            //     std::cerr << "FUCK edit size" << std::endl;
+            //     return c;
+            // }
+            int down_fileid = 0;
+            do {
+                down_fileid = rand() % FileIndex[level].size();
+                down_file_meta = static_cast<RelFileMetaData<std::string> *>(FileIndex[level][down_fileid]);
+            } while (down_file_meta->merging);
         }
-        if (level == 1 && FileIndex[0].size() <= db->options->ZERO_LEVEL_FILES) {
-            return c;
-        }
-        if (level != 1 && FileIndex[level - 1].size() <= (1 << (level - 1))) {
-            return c;
-        }
-
-        size_t edit_size = edit->EditFileList.size();
-        if ((edit_size & 1) && FileIndex[level].size() && edit_size != 1) {
-            std::cerr << "FUCK edit size" << std::endl;
-            return c;
-        }
-
-        if (edit_size == 1) {
-            return c;
-        }
-
-        //the former half is to deleted, and the latter half is new Files. Here rand a new file to push down.
-        size_t half_edit_size = edit_size >> 1;
-
-        int down_fileid = 0;
-        RelFileMetaData<std::string> *down_file_meta = static_cast<RelFileMetaData<std::string> *>(edit->EditFileList[
-            down_fileid]);
-        do {
-            if (level == 1) {
-                down_fileid = rand() % db->options->ZERO_LEVEL_FILES;
-                level = 0;
-            } else down_fileid = rand() % half_edit_size + half_edit_size;
-            down_file_meta = static_cast<RelFileMetaData<std::string> *>(FileIndex[level][down_fileid]);
-        } while (down_file_meta->merging);
 
         std::string key_min = down_file_meta->key_min;
         std::string key_max = down_file_meta->key_max;
         //specialize the first down file
-        if (FileIndex[level + 1].size() == 0) {
+        if (FileIndex.size() == level + 1 || FileIndex[level + 1].size() == 0) {
             c = new RelCompaction<std::string>();
             c->file_list.push_back(down_file_meta);
             c->key_min = key_min;
             c->target_level = level + 1;
+            down_file_meta->merging = true;
             return c;
         }
 
@@ -153,10 +127,12 @@ namespace BACH {
                                       std::make_pair(key_max, (idx_t) 0),
                                       RelFileCompareWithPair);
         if (iter2 != FileIndex[level + 1].end()) iter2++;
+        for (auto i = iter1; i != iter2; ++i)
+            if ((*i)->merging)
+                return c;
         if (c == nullptr)
             c = new RelCompaction<std::string>();
         c->file_list.push_back(down_file_meta);
-        down_file_meta->merging = true;
         c->key_min = min(key_min, static_cast<RelFileMetaData<std::string> *>(*iter1)->key_min);
         c->target_level = level + 1;
         for (auto i = iter1; i != iter2; ++i)
@@ -164,6 +140,7 @@ namespace BACH {
                 c->file_list.push_back(*i);
                 (*i)->merging = true;
             }
+        down_file_meta->merging = true;
         return c;
     }
 
@@ -202,7 +179,10 @@ namespace BACH {
     void RelVersionIterator::next() {
         if (end)
             return;
-        if (level == 0) ++idx;
+        if (level == 0 && idx < version->FileIndex[level].size() - 1) {
+            ++idx;
+            return;
+        }
         if (idx == version->FileIndex[level].size() - 1 ||
             (static_cast<RelFileMetaData<std::string> *>(version->FileIndex[level][++idx])->key_min > key_max))
             nextlevel();
@@ -235,8 +215,23 @@ namespace BACH {
                                   std::make_pair(key_min, 0),
                                   RelFileCompareWithPair);
         if (x == version->FileIndex[level].begin())
-            return false;
-        idx = x - version->FileIndex[level].begin() - 1;
+        {
+            if(((RelFileMetaData<std::string> *)(*x))->key_min == key_min)
+                idx = 0;
+            else
+                return false;
+        }
+        else if (x == version->FileIndex[level].end())
+        {
+            idx = x - version->FileIndex[level].begin() - 1;
+        }
+        else
+        {
+            if(((RelFileMetaData<std::string> *)(*x))->key_min == key_min)
+                idx = x - version->FileIndex[level].begin();
+            else
+                idx = x - version->FileIndex[level].begin() - 1;
+        }
         if (static_cast<RelFileMetaData<std::string> *>(version->FileIndex[level][idx])->key_min > key_max
             || static_cast<RelFileMetaData<std::string> *>(version->FileIndex[level][idx])->key_max < key_min)
             return false;

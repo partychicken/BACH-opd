@@ -54,12 +54,17 @@ namespace BACH {
         Labels = nullptr;
         RowMemtable = std::make_unique<rowMemoryManager>(this, column_num);
         relFiles = std::make_unique<RelFileManager>(this);
-        for (idx_t i = 0; i < _options->NUM_OF_COMPACTION_THREAD; ++i) {
-            compact_thread.push_back(std::make_shared<std::thread>(
-                [&] { RelCompactLoop(); }));
-            compact_thread[i]->detach();
-        }
         read_rel_version = current_rel_version = new RelVersion(this);
+        for (idx_t i = 0; i < _options->NUM_OF_HIGH_COMPACTION_THREAD; ++i) {
+            high_compact_thread.push_back(std::make_shared<std::thread>(
+                [&] { HighCompactLoop(); }));
+            high_compact_thread[i]->detach();
+        }
+        for (idx_t i = 0; i < _options->NUM_OF_LOW_COMPACTION_THREAD; ++i) {
+            low_compact_thread.push_back(std::make_shared<std::thread>(
+                [&] { LowCompactLoop(); }));
+            low_compact_thread[i]->detach();
+        }
     }
 
     DB::~DB() {
@@ -73,8 +78,12 @@ namespace BACH {
             current_version->DecRef();
         }
         if (relFiles != nullptr) {
-            relFiles->CompactionCV.notify_all();
-            for (auto &i: compact_thread)
+            relFiles->HighCompactionCV.notify_all();
+            for (auto &i: high_compact_thread)
+                if (i->joinable())
+                    i->join();
+            relFiles->LowCompactionCV.notify_all();
+            for (auto &i: low_compact_thread)
                 if (i->joinable())
                     i->join();
             read_rel_version.load()->DecRef();
@@ -303,21 +312,21 @@ namespace BACH {
         }
     }
 
-    void DB::RelCompactLoop() {
+    void DB::HighCompactLoop() {
         while (true) {
             if (close)
                 return;
-            std::unique_lock<std::mutex> lock(relFiles->CompactionCVMutex);
-            if (!relFiles->CompactionList.empty()) {
-                Compacting.store(true, std::memory_order_release);
+            TryCompaction(0);
+            std::unique_lock<std::mutex> lock(relFiles->HighCompactionCVMutex);
+            if (!relFiles->HighCompactionList.empty()) {
+                // Compacting.store(true, std::memory_order_release);
                 working_compact_thread.fetch_add(1, std::memory_order_relaxed);
-                RelCompaction<std::string> x(relFiles->CompactionList.front());
-                relFiles->CompactionList.pop();
+                RelCompaction<std::string> x(relFiles->HighCompactionList.front());
+                relFiles->HighCompactionList.pop();
                 lock.unlock();
                 VersionEdit *edit;
                 time_t time = 0;
                 x.file_id = relFiles->GetFileID();
-                idx_t type = 1;
                 if (x.relPersistence != nullptr) {
                     //persistence
                     edit = RowMemtable->RowMemtablePersistence(x.file_id, x.relPersistence);
@@ -325,13 +334,39 @@ namespace BACH {
                 } else {
                     edit = relFiles->MergeRelFile(x);
                 }
-                ProgressRelVersion(edit, time, x.relPersistence, type == 1);
+                ProgressRelVersion(edit, time, x.relPersistence);
                 delete edit;
                 working_compact_thread.fetch_add(-1, std::memory_order_relaxed);
                 ProgressReadRelVersion();
-                Compacting.store(false, std::memory_order_release);
+                // Compacting.store(false, std::memory_order_release);
             } else {
-                relFiles->CompactionCV.wait_for(lock, std::chrono::milliseconds(200));
+                relFiles->HighCompactionCV.wait_for(lock, std::chrono::milliseconds(200));
+            }
+        }
+    }
+    
+    void DB::LowCompactLoop() {
+        while (true) {
+            if (close)
+                return;
+            TryCompaction(rand() % std::max(current_rel_version->FileIndex.size(), (size_t)1));
+            std::unique_lock<std::mutex> lock(relFiles->LowCompactionCVMutex);
+            if (!relFiles->LowCompactionList.empty()) {
+                // Compacting.store(true, std::memory_order_release);
+                working_compact_thread.fetch_add(1, std::memory_order_relaxed);
+                RelCompaction<std::string> x(relFiles->LowCompactionList.front());
+                relFiles->LowCompactionList.pop();
+                lock.unlock();
+                VersionEdit *edit;
+                x.file_id = relFiles->GetFileID();
+                edit = relFiles->MergeRelFile(x);
+                ProgressRelVersion(edit, 0, x.relPersistence);
+                delete edit;
+                working_compact_thread.fetch_add(-1, std::memory_order_relaxed);
+                ProgressReadRelVersion();
+                // Compacting.store(false, std::memory_order_release);
+            } else {
+                relFiles->LowCompactionCV.wait_for(lock, std::chrono::milliseconds(200));
                 //ProgressReadVersion();
             }
         }
@@ -351,15 +386,26 @@ namespace BACH {
         version_lock.unlock();
     }
 
+    void DB::TryCompaction(idx_t level) {
+        std::unique_lock<std::mutex> version_lock(version_mutex);
+        auto compact = current_rel_version->GetCompaction(
+            level);
+        if (compact != NULL) {
+            relFiles->AddCompaction(*compact);
+            delete compact;
+        }
+        version_lock.unlock();
+    }
+
     void DB::ProgressRelVersion(VersionEdit *edit, time_t time,
                                 std::shared_ptr<relMemTable> size, bool force_leveling) {
         std::unique_lock<std::mutex> version_lock(version_mutex);
         RelVersion *tmp = current_rel_version;
         tmp->AddSizeEntry(size);
         current_rel_version = new RelVersion(tmp, edit, time);
-        auto compact = current_rel_version->GetCompaction(edit, force_leveling);
+        auto compact = current_rel_version->GetCompaction(edit->EditFileList[0]->level);
         if (compact != NULL) {
-            relFiles->AddCompaction(*compact);
+            relFiles->AddCompaction(*compact, compact->target_level == 1);
             delete compact;
         }
         version_lock.unlock();

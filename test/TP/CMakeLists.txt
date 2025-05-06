@@ -1,12 +1,13 @@
 include_directories(../include)
 include_directories(../include/catch)
+include_directories(../include/folly)
 
-# Ìí¼Ó²âÊÔ¿ÉÖ´ÐÐÎÄ¼þ
+# ï¿½ï¿½ï¿½Ó²ï¿½ï¿½Ô¿ï¿½Ö´ï¿½ï¿½ï¿½Ä¼ï¿½
 add_executable(tp_tests
     test_tp.cpp
 )
 
-# °üº¬Â·¾¶£¬ÒªÄÜ·ÃÎÊÄãÊý¾Ý¿âµÄÍ·ÎÄ¼þ
+# ï¿½ï¿½ï¿½ï¿½Â·ï¿½ï¿½ï¿½ï¿½Òªï¿½Ü·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½ï¿½Í·ï¿½Ä¼ï¿½
 target_include_directories(tp_tests PRIVATE
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/src
@@ -14,6 +15,6 @@ target_include_directories(tp_tests PRIVATE
     ${PROJECT_SOURCE_DIR}/include/catch
 )
 
-# Á´½ÓÄãÒÑ¾­Éú³ÉµÄÊý¾Ý¿â¿â
-target_link_libraries(tp_tests PRIVATE bach)
+# ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ñ¾ï¿½ï¿½ï¿½ï¿½Éµï¿½ï¿½ï¿½ï¿½Ý¿ï¿½ï¿½
+target_link_libraries(tp_tests PRIVATE bach-opd folly)
 

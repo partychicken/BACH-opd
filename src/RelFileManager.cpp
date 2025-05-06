@@ -5,10 +5,18 @@ namespace BACH {
     RelFileManager::RelFileManager(DB *_db) : db(_db) {
     }
 
-    void RelFileManager::AddCompaction(RelCompaction<std::string> &compaction) {
-        std::unique_lock<std::mutex> lock(CompactionCVMutex);
-        CompactionList.push(compaction);
-        CompactionCV.notify_one();
+    void RelFileManager::AddCompaction(RelCompaction<std::string> &compaction, bool high) {
+        if (high) {
+            std::unique_lock<std::mutex> lock(HighCompactionCVMutex);
+            HighCompactionList.push(compaction);
+            HighCompactionCV.notify_one();
+            return;
+        }
+        else {
+            std::unique_lock<std::mutex> lock(LowCompactionCVMutex);
+            LowCompactionList.push(compaction);
+            LowCompactionCV.notify_one();
+        }
     }
 
     template<typename Key_t>
@@ -21,7 +29,7 @@ namespace BACH {
             return key == other.key ? file_idx < other.file_idx : key < other.key;
         }
 
-        bool operator == (const TupleMessage &other) const {
+        bool operator ==(const TupleMessage &other) const {
             return key == other.key && file_idx == other.file_idx;
         }
 
@@ -31,7 +39,7 @@ namespace BACH {
 
     template<typename Key_t>
     struct Compare {
-        bool operator()(const TupleMessage<Key_t>& a, const TupleMessage<Key_t>& b) {
+        bool operator()(const TupleMessage<Key_t> &a, const TupleMessage<Key_t> &b) {
             return b < a; // 当 b < a 时返回 true，使优先队列按小根堆排序
         }
     };
@@ -91,9 +99,9 @@ namespace BACH {
             q.push(TupleMessage<std::string>(keys[i][0], 0, i));
         }
 
-
         auto temp_file_metadata = new RelFileMetaData<std::string>(0, compaction.target_level, compaction.vertex_id_b,
-                                                             compaction.file_id, "rel", new_file_key_min, "", 0, 0);
+                                                                   compaction.file_id, "", new_file_key_min, "", 0,
+                                                                   0);
         std::string file_name = temp_file_metadata->file_name;
         auto fw = std::make_shared<FileWriter>(db->options->STORAGE_DIR + "/"
                                                + file_name);
@@ -101,11 +109,7 @@ namespace BACH {
 
         std::string *order_key_buf = new std::string[key_tot_num / file_num + 5];
         int key_buf_idx = 0;
-        std::pair<idx_t, idx_t> *val_buf[col_num];
-        for (idx_t i = 0; i < col_num; i++) {
-            val_buf[i] = static_cast<std::pair<idx_t, idx_t> *>(malloc(
-                sizeof(std::pair<idx_t, idx_t>) * (key_tot_num / file_num + 5)));
-        }
+        std::pair<idx_t, idx_t> val_buf[col_num][key_tot_num / file_num + 5];
 
         idx_t *real_val_buf[col_num];
         for (idx_t i = 0; i < col_num; i++) {
@@ -114,10 +118,6 @@ namespace BACH {
 
         VersionEdit *edit = new VersionEdit();
 
-        for (auto &file: compaction.file_list) {
-            edit->EditFileList.push_back(file);
-            edit->EditFileList.back()->deletion = true;
-        }
         //std::set<DictMappingEntry> s[col_num];
         std::map<std::string, std::vector<std::pair<int, idx_t> > > s[col_num]; //<file_id, origin_index>
         int remap[col_num][file_num][key_tot_num]; //third dimension is larger than the necessary's, needing optimized
@@ -172,6 +172,7 @@ namespace BACH {
                         for (auto p: entry.second) {
                             remap[i][p.first][p.second] = nowidx;
                         }
+                        nowidx++;
                     }
                     temp_file_metadata->dictionary.push_back(OrderedDictionary(dict));
                 }
@@ -186,7 +187,8 @@ namespace BACH {
                 //write current buffer to file
                 rel_builder->ArrangeRelFileInfo(order_key_buf, key_buf_idx, db->options->KEY_SIZE, col_num,
                                                 real_val_buf);
-                temp_file_metadata->key_max = last_key;
+                temp_file_metadata->key_min = std::string(order_key_buf[0].c_str());
+                temp_file_metadata->key_max = std::string(last_key);
                 temp_file_metadata->key_num = key_buf_idx;
                 temp_file_metadata->col_num = col_num;
                 edit->EditFileList.push_back(temp_file_metadata);
@@ -197,19 +199,30 @@ namespace BACH {
                 for (idx_t i = 0; i < col_num; i++) {
                     s[i].clear();
                 }
-
-                //open new file
-                temp_file_metadata = new RelFileMetaData<std::string>(0, compaction.target_level,
-                                                                      compaction.vertex_id_b,
-                                                                      ++now_file_id, "rel", q.top().key, "", 0, 0);
-                std::string file_name = temp_file_metadata->file_name;
-                fw = std::make_shared<FileWriter>(db->options->STORAGE_DIR + "/"
-                                                  + file_name);
-                delete rel_builder;
-                rel_builder = new RelFileBuilder<std::string>(fw, db->options);
+                if(!q.empty())
+                {
+                    //open new file
+                    temp_file_metadata = new RelFileMetaData<std::string>(0, compaction.target_level,
+                                                                        compaction.vertex_id_b,
+                                                                        ++now_file_id, "", q.top().key, "", 0, 0);
+                    std::string file_name = temp_file_metadata->file_name;
+                    fw = std::make_shared<FileWriter>(db->options->STORAGE_DIR + "/"
+                                                    + file_name);
+                    delete rel_builder;
+                    rel_builder = new RelFileBuilder<std::string>(fw, db->options);
+                }
             }
         }
+        if (key_buf_idx) {
+        }
+        if (rel_builder) delete rel_builder;
+        if (order_key_buf) delete[] order_key_buf;
+        //for (idx_t i = 0; i < col_num; i++) free(real_val_buf[i]);
 
+        for (auto &file: compaction.file_list) {
+            edit->EditFileList.push_back(file);
+            edit->EditFileList.back()->deletion = true;
+        }
         return edit;
     }
 }

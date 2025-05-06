@@ -54,7 +54,7 @@ namespace BACH
 		std::unique_ptr<RelFileManager> relFiles;
 		std::unique_ptr<rowMemoryManager> RowMemtable;
 
-		std::atomic<bool> Compacting{ false };
+		bool Compacting() const {return working_compact_thread.load() > 0; };
 
 	private:
 		std::atomic<time_t> epoch_id;
@@ -67,12 +67,16 @@ namespace BACH
 		RelVersion* current_rel_version = NULL;
 
 		std::vector<std::shared_ptr<std::thread>> compact_thread;
+		std::vector<std::shared_ptr<std::thread>> high_compact_thread;
+		std::vector<std::shared_ptr<std::thread>> low_compact_thread;
 		std::atomic<size_t> working_compact_thread = 0;
 		std::atomic<bool> progressing_read_version = false;
 		bool close = false;
 		//compaction loop for background thread
 		void CompactLoop();
-		void RelCompactLoop();
+		void HighCompactLoop();
+		void LowCompactLoop();
+		void TryCompaction(idx_t level);
 		void ProgressReadVersion();
 		void ProgressReadRelVersion();
 		time_t get_read_time();

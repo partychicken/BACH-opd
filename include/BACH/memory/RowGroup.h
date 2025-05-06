@@ -24,11 +24,13 @@ namespace BACH {
         }
 
         void GetKeyData() {
-            parser->GetKeyCol(keys, key_num);
+            idx_t tmp = 0;
+            parser->GetKeyCol(keys, tmp);
         }
 
         void GetColData(idx_t col_id) {
-            parser->GetValCol(cols[col_id], key_num, col_id);
+            idx_t tmp = 0;
+            parser->GetValCol(cols[col_id], tmp, col_id);
         }
 
         void GetAllColData() {

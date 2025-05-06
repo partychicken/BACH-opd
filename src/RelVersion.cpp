@@ -6,7 +6,7 @@ namespace BACH {
     }
 
     RelVersion::RelVersion(RelVersion *_prev, VersionEdit *edit, time_t time) : next(nullptr),
-        epoch(std::max(_prev->epoch, time)), next_epoch(-1),
+        epoch(std::max(_prev->epoch, time)), next_epoch(-1), size_entry(_prev->size_entry),
         db(_prev->db) {
         FileIndex = _prev->FileIndex;
         FileTotalSize = _prev->FileTotalSize;
@@ -52,8 +52,7 @@ namespace BACH {
     }
 
     RelVersion::~RelVersion() {
-        if (size_entry != nullptr)
-            size_entry->delete_entry();
+        size_entry = nullptr;
         for (auto &i: FileIndex)
             for (auto &j: i) {
                 auto r = j->ref.fetch_add(-1);
@@ -161,7 +160,8 @@ namespace BACH {
     }
 
     void RelVersion::AddSizeEntry(std::shared_ptr<relMemTable> x) {
-        size_entry = x;
+        if(x != nullptr)
+            size_entry = x;
     }
 
     RelVersionIterator::RelVersionIterator(RelVersion *_version, std::string _key_min, std::string _key_max)

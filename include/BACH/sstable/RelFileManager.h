@@ -51,7 +51,6 @@ namespace BACH {
             std::vector< //key-min
                 idx_t> > FileNumList;
         // std::vector<OrderedDictionary > **DictList;
-        std::vector<std::vector<OrderedDictionary >> DictList;
         int id = 0;
         friend class DB;
     };

@@ -61,13 +61,14 @@ namespace BACH {
     VersionEdit *RelFileManager::MergeRelFile(Compaction &compaction) {
         std::vector<RelFileParser<std::string> > parsers;
         std::vector<int16_t> file_ids;
+        std::vector<std::vector<OrderedDictionary >* > DictList;
         //DictList = new std::vector<OrderedDictionary> *[compaction.file_list.size()];
         DictList.resize(compaction.file_list.size());
         int file_num = 0;
         for (auto &file: compaction.file_list) {
             auto reader = db->ReaderCaches->find(file);
             parsers.emplace_back(reader, db->options, file->file_size);
-            DictList[file_num] = static_cast<RelFileMetaData<std::string> *>(file)->dictionary;
+            DictList[file_num] = &(static_cast<RelFileMetaData<std::string> *>(file)->dictionary);
             if (file->level == compaction.target_level)
                 file_ids.push_back(-db->options->FILE_MERGE_NUM - 10 + file->file_id);
             else
@@ -153,7 +154,7 @@ namespace BACH {
                 if (!remap[i][now_message.file_idx][tmp_val]) {
                     remap[i][now_message.file_idx][tmp_val] = 1;
                     //auto nowstr = (*DictList[now_message.file_idx])[i].getString(val_buf[i][key_buf_idx].second);
-                    auto nowstr = (DictList[now_message.file_idx])[i].getString(val_buf[i][key_buf_idx].second);
+                    auto nowstr = (DictList[now_message.file_idx])->at(i).getString(val_buf[i][key_buf_idx].second);
                     auto it = s[i].lower_bound(nowstr);
                     if (it != s[i].end() && it->first == nowstr) {
                         it->second.push_back(std::make_pair(now_message.file_idx, tmp_val));

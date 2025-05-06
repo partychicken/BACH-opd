@@ -61,17 +61,20 @@ namespace BACH {
     VersionEdit *RelFileManager::MergeRelFile(Compaction &compaction) {
         std::vector<RelFileParser<std::string> > parsers;
         std::vector<int16_t> file_ids;
+        //DictList = new std::vector<OrderedDictionary> *[compaction.file_list.size()];
+        DictList.resize(compaction.file_list.size());
+        int file_num = 0;
         for (auto &file: compaction.file_list) {
             auto reader = db->ReaderCaches->find(file);
             parsers.emplace_back(reader, db->options, file->file_size);
-            DictList = &static_cast<RelFileMetaData<std::string> *>(file)->dictionary;
+            DictList[file_num] = static_cast<RelFileMetaData<std::string> *>(file)->dictionary;
             if (file->level == compaction.target_level)
                 file_ids.push_back(-db->options->FILE_MERGE_NUM - 10 + file->file_id);
             else
                 file_ids.push_back(file->file_id + 1);
+            file_num++;
         }
 
-        int file_num = file_ids.size();
         idx_t col_num = parsers.begin()->GetColumnNum(); // not check the consistency among files
 
         std::priority_queue<TupleMessage<std::string>, std::vector<TupleMessage<std::string> >,
@@ -148,7 +151,8 @@ namespace BACH {
                                                          vals[now_message.file_idx][i][now_message.offset]);
                 if (!remap[i][now_message.file_idx][now_message.offset]) {
                     remap[i][now_message.file_idx][now_message.offset] = 1;
-                    auto nowstr = (*DictList)[i].getString(val_buf[i][key_buf_idx].second);
+                    //auto nowstr = (*DictList[now_message.file_idx])[i].getString(val_buf[i][key_buf_idx].second);
+                    auto nowstr = (DictList[now_message.file_idx])[i].getString(val_buf[i][key_buf_idx].second);
                     auto it = s[i].lower_bound(nowstr);
                     if (it != s[i].end() && it->first == nowstr) {
                         it->second.push_back(std::make_pair(now_message.file_idx, now_message.offset));
@@ -223,6 +227,9 @@ namespace BACH {
             edit->EditFileList.push_back(file);
             edit->EditFileList.back()->deletion = true;
         }
+
+        DictList.clear();
+
         return edit;
     }
 }

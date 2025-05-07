@@ -68,7 +68,8 @@ namespace BACH
 		std::shared_ptr<RelSkipList> tuple_index;
 		std::shared_mutex mutex;
 		ConcurrentArray<std::shared_ptr<TupleEntry>> tuple_pool;
-		std::shared_ptr<relMemTable> last = NULL, next = NULL;
+		std::shared_ptr<relMemTable> last = NULL;
+		std::weak_ptr<relMemTable> next;
 		std::atomic<bool> immutable;
 		std::counting_semaphore<1024> sema;
 		std::map <tp_key, time_t> del_table;
@@ -79,9 +80,9 @@ namespace BACH
 			total_tuple(_size), column_num(_column_num), next(_next), immutable(false), sema(0) {
 			tuple_index = RelSkipList::createInstance();
 		};
-		void delete_entry() {
-			last->next = NULL;
-		};
+		~relMemTable() {
+			last->next.reset();
+		}
 		void UpdateMinMax(tp_key key);
 
 		void PutTuple(Tuple tuple, tp_key key, time_t timestamp, tuple_property_t property);

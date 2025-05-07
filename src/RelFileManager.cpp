@@ -11,8 +11,7 @@ namespace BACH {
             HighCompactionList.push(compaction);
             HighCompactionCV.notify_one();
             return;
-        }
-        else {
+        } else {
             std::unique_lock<std::mutex> lock(LowCompactionCVMutex);
             LowCompactionList.push(compaction);
             LowCompactionCV.notify_one();
@@ -61,13 +60,14 @@ namespace BACH {
     VersionEdit *RelFileManager::MergeRelFile(Compaction &compaction) {
         std::vector<RelFileParser<std::string> > parsers;
         std::vector<int16_t> file_ids;
+        std::vector<std::vector<OrderedDictionary> *> DictList;
         //DictList = new std::vector<OrderedDictionary> *[compaction.file_list.size()];
         DictList.resize(compaction.file_list.size());
         int file_num = 0;
         for (auto &file: compaction.file_list) {
             auto reader = db->ReaderCaches->find(file);
             parsers.emplace_back(reader, db->options, file->file_size);
-            DictList[file_num] = static_cast<RelFileMetaData<std::string> *>(file)->dictionary;
+            DictList[file_num] = &(static_cast<RelFileMetaData<std::string> *>(file)->dictionary);
             if (file->level == compaction.target_level)
                 file_ids.push_back(-db->options->FILE_MERGE_NUM - 10 + file->file_id);
             else
@@ -76,6 +76,15 @@ namespace BACH {
         }
 
         idx_t col_num = parsers.begin()->GetColumnNum(); // not check the consistency among files
+
+        int max_val[file_num];
+        for (int i = 0; i < DictList.size(); i++) {
+            auto dict = DictList[i];
+            for (auto x: *dict) {
+                max_val[i] = std::max(max_val[i], x.getCount());
+            }
+        }
+
 
         std::priority_queue<TupleMessage<std::string>, std::vector<TupleMessage<std::string> >,
             Compare<std::string> > q;
@@ -95,9 +104,10 @@ namespace BACH {
             }
             key_tot_num += (key_num[i] = check_size);
 
+            idx_t tmp = 0;
             for (idx_t j = 0; j < col_num; j++) {
                 vals[i][j] = static_cast<idx_t *>(malloc(sizeof(idx_t) * check_size));
-                parsers[i].GetValCol(vals[i][j], check_size, j);
+                parsers[i].GetValCol(vals[i][j], tmp, j);
             }
             q.push(TupleMessage<std::string>(keys[i][0], 0, i));
         }
@@ -123,10 +133,14 @@ namespace BACH {
 
         //std::set<DictMappingEntry> s[col_num];
         std::map<std::string, std::vector<std::pair<int, idx_t> > > s[col_num]; //<file_id, origin_index>
-        int remap[col_num][file_num][key_tot_num]; //third dimension is larger than the necessary's, needing optimized
+        std::vector<int> remap[col_num][file_num]; //third dimension is larger than the necessary's, needing optimized
         // in the first stage, remap denotes whether the index exists in set;
         // in the second stage, remap denotes the new index that the old one should be mapped to
-        memset(remap, 0, sizeof(remap));
+        for (idx_t i = 0; i < col_num; i++) {
+            for (int j = 0; j < file_num; j++) {
+                remap[i][j].resize(max_val[i] + 5);
+            }
+        }
 
         std::string last_key = "";
         idx_t now_file_id = compaction.file_id;
@@ -147,18 +161,18 @@ namespace BACH {
 
             order_key_buf[key_buf_idx] = now_message.key;
             for (idx_t i = 0; i < col_num; i++) {
-                val_buf[i][key_buf_idx] = std::make_pair(now_message.file_idx,
-                                                         vals[now_message.file_idx][i][now_message.offset]);
-                if (!remap[i][now_message.file_idx][now_message.offset]) {
-                    remap[i][now_message.file_idx][now_message.offset] = 1;
+                idx_t tmp_val = vals[now_message.file_idx][i][now_message.offset];
+                val_buf[i][key_buf_idx] = std::make_pair(now_message.file_idx, tmp_val);
+                if (!remap[i][now_message.file_idx][tmp_val]) {
+                    remap[i][now_message.file_idx][tmp_val] = 1;
                     //auto nowstr = (*DictList[now_message.file_idx])[i].getString(val_buf[i][key_buf_idx].second);
-                    auto nowstr = (DictList[now_message.file_idx])[i].getString(val_buf[i][key_buf_idx].second);
+                    auto nowstr = (DictList[now_message.file_idx])->at(i).getString(val_buf[i][key_buf_idx].second);
                     auto it = s[i].lower_bound(nowstr);
                     if (it != s[i].end() && it->first == nowstr) {
-                        it->second.push_back(std::make_pair(now_message.file_idx, now_message.offset));
+                        it->second.push_back(std::make_pair(now_message.file_idx, tmp_val));
                     } else {
                         std::vector<std::pair<int, idx_t> > tmp;
-                        tmp.push_back(std::make_pair(now_message.file_idx, now_message.offset));
+                        tmp.push_back(std::make_pair(now_message.file_idx, tmp_val));
                         s[i].insert(std::make_pair(nowstr, tmp));
                     }
                 }
@@ -199,19 +213,23 @@ namespace BACH {
 
                 //reset buffer information
                 key_buf_idx = 0;
-                memset(remap, 0, sizeof(remap));
+                for (idx_t i = 0; i < col_num; i++) {
+                    for (int j = 0; j < file_num; j++) {
+                        remap[i][j].clear();
+                        remap[i][j].resize(max_val[i] + 5);
+                    }
+                }
                 for (idx_t i = 0; i < col_num; i++) {
                     s[i].clear();
                 }
-                if(!q.empty())
-                {
+                if (!q.empty()) {
                     //open new file
                     temp_file_metadata = new RelFileMetaData<std::string>(0, compaction.target_level,
-                                                                        compaction.vertex_id_b,
-                                                                        ++now_file_id, "", q.top().key, "", 0, 0);
+                                                                          compaction.vertex_id_b,
+                                                                          ++now_file_id, "", q.top().key, "", 0, 0);
                     std::string file_name = temp_file_metadata->file_name;
                     fw = std::make_shared<FileWriter>(db->options->STORAGE_DIR + "/"
-                                                    + file_name);
+                                                      + file_name);
                     delete rel_builder;
                     rel_builder = new RelFileBuilder<std::string>(fw, db->options);
                 }

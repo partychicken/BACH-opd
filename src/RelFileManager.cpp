@@ -209,6 +209,10 @@ namespace BACH {
                 temp_file_metadata->key_max = std::string(last_key);
                 temp_file_metadata->key_num = key_buf_idx;
                 temp_file_metadata->col_num = col_num;
+                temp_file_metadata->bloom_filter = BloomFilter(key_buf_idx, db->options->FALSE_POSITIVE);
+                for (int i = 0; i < key_buf_idx; i++) {
+                    temp_file_metadata->bloom_filter.insert(order_key_buf[i]);
+                }
                 edit->EditFileList.push_back(temp_file_metadata);
 
                 //reset buffer information

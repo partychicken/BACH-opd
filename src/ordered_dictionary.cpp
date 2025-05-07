@@ -12,6 +12,7 @@ namespace BACH
         std::set<std::string> uniqueStrings;
 
         uniqueStrings.insert(data.begin(), data.end());
+        uniqueStrings.erase("");
 
 		// 清空现有的映射
         stringToIndex.clear();

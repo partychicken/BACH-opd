@@ -3,6 +3,7 @@
 #include "BACH/memory/TupleEntry.h"
 #include "BACH/utils/ConcurrentArray.h"
 #include <string>
+#include <vector>
 
 namespace BACH {
 

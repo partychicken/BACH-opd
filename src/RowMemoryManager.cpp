@@ -96,7 +96,7 @@ namespace BACH {
 		std::string file_name = temp_file_metadata->file_name;
 		auto fw = std::make_shared<FileWriter>(db->options->STORAGE_DIR + "/" + file_name, false);
 		RelFileBuilder<std::string> rfb(fw, db->options);
-		// �Ƚ�����ת�У��ٽ����ֵ�ѹ����֮�����rfb��ArrangeRelFileInfo
+
 		TempColumn tmp(memtable.get(), memtable->total_tuple, memtable->column_num);
 		idx_t** data = new idx_t*[memtable->column_num];
 		std::vector<OrderedDictionary*> dicts(memtable->column_num - 1);

@@ -19,12 +19,16 @@ namespace BACH
 
 			auto tuple = std::get<2>(*it);
 			if (tuple.property == TOMBSTONE || tuple.property == NONEINDEX)
+			{
+				for (size_t i = 0; i < column_num; i++)data[i][count] = "";
+				count++;
+				last_key = std::get<0>(*it);
 				continue;
+			}
 			for (size_t i = 0; i < column_num; i++)
 			{
 				data[i][count] = tuple.tuple.GetRow(i);
 			}
-
 			count++;
 			last_key = std::get<0>(*it);
 		}

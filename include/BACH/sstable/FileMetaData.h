@@ -26,6 +26,7 @@ namespace BACH {
         bool merging = false;
         sul::dynamic_bitset<> *filter = NULL;
         std::atomic<FileReader *> reader = NULL;
+        BloomFilter bloom_filter;
         idx_t reader_pos = -1;
         size_t id = 0;
 

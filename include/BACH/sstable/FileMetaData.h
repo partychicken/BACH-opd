@@ -10,6 +10,7 @@
 #include "BACH/file/FileReader.h"
 #include "BACH/utils/types.h"
 #include "BACH/utils/utils.h"
+#include "BACH/sstable/BloomFilter.h"
 #include "BACH/common/dictionary.h"
 #include "BACH/compress/ordered_dictionary.h"
 

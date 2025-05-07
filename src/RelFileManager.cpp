@@ -32,7 +32,7 @@ namespace BACH {
             return key == other.key && file_idx == other.file_idx;
         }
 
-        TupleMessage(Key_t key, idx_t offset, int file_idx) : key(key), offset(offset), file_idx(file_idx) {
+        TupleMessage(const Key_t &_key, idx_t offset, int file_idx) : key(_key), offset(offset), file_idx(file_idx) {
         }
     };
 
@@ -93,7 +93,7 @@ namespace BACH {
         std::string *keys[file_num];
         idx_t *vals[file_num][col_num];
         int key_num[file_num], now_idx[file_num];
-        int key_tot_num = 0, key_done = 0;
+        int key_tot_num = 0;
         memset(now_idx, 0, sizeof(now_idx));
         for (int i = 0; i < file_num; i++) {
             keys[i] = new std::string[parsers[i].GetKeyNum()];
@@ -109,7 +109,7 @@ namespace BACH {
                 vals[i][j] = static_cast<idx_t *>(malloc(sizeof(idx_t) * check_size));
                 parsers[i].GetValCol(vals[i][j], tmp, j);
             }
-            q.push(TupleMessage<std::string>(keys[i][0], 0, i));
+            q.emplace(keys[i][0], 0, i);
         }
 
         auto temp_file_metadata = new RelFileMetaData<std::string>(0, compaction.target_level, compaction.vertex_id_b,
@@ -150,8 +150,8 @@ namespace BACH {
             q.pop();
 
             if (now_message.offset < key_num[now_message.file_idx] - 1) {
-                q.push(TupleMessage<std::string>(keys[now_message.file_idx][now_message.offset + 1],
-                                                 now_message.offset + 1, now_message.file_idx));
+                q.emplace(keys[now_message.file_idx][now_message.offset + 1],
+                                                 now_message.offset + 1, now_message.file_idx);
             }
 
             if (now_message.key == last_key) {
@@ -169,10 +169,10 @@ namespace BACH {
                     auto nowstr = (DictList[now_message.file_idx])->at(i).getString(val_buf[i][key_buf_idx].second);
                     auto it = s[i].lower_bound(nowstr);
                     if (it != s[i].end() && it->first == nowstr) {
-                        it->second.push_back(std::make_pair(now_message.file_idx, tmp_val));
+                        it->second.emplace_back(now_message.file_idx, tmp_val);
                     } else {
                         std::vector<std::pair<int, idx_t> > tmp;
-                        tmp.push_back(std::make_pair(now_message.file_idx, tmp_val));
+                        tmp.emplace_back(now_message.file_idx, tmp_val);
                         s[i].insert(std::make_pair(nowstr, tmp));
                     }
                 }
@@ -185,14 +185,14 @@ namespace BACH {
                 int nowidx = 0;
                 for (idx_t i = 0; i < col_num; i++) {
                     std::vector<std::string> dict;
-                    for (auto entry: s[i]) {
+                    for (auto &entry: s[i]) {
                         dict.emplace_back(entry.first);
                         for (auto p: entry.second) {
                             remap[i][p.first][p.second] = nowidx;
                         }
                         nowidx++;
                     }
-                    temp_file_metadata->dictionary.push_back(OrderedDictionary(dict));
+                    temp_file_metadata->dictionary.emplace_back(dict);
                 }
                 //map new index from new dictionary
                 for (idx_t i = 0; i < col_num; i++) {

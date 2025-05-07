@@ -11,8 +11,7 @@
 #include "BACH/memory/RowMemoryManager.h"
 #include "BACH/memory/RowGroup.h"
 #include "BACH/memory/AnswerMerger.h" 
-#include "BACH/profiler/profiler.h"
-#include "BACH/profiler/OperatorProfilerContext.h"
+
 
 namespace BACH
 {
@@ -59,10 +58,6 @@ namespace BACH
 
         // OLAP operation
 		void GetTuplesFromRange(idx_t col_id, std::string left_bound, std::string right_bound) {
-			OperatorProfiler op;
-			OperatorProfilerContext::SetCurrentProfiler(&op);
-			op.Start();
-
 			AnswerMerger am;
 			// add in-memory data into am here;
 			auto vf = CreateValueFilterFunction(col_id, left_bound, right_bound);
@@ -93,10 +88,6 @@ namespace BACH
 					cur_row_group.ApplyRangeFilter(col_id - 1, left_bound, right_bound, am);
 				}
 			}
-
-			op.End();
-			profiler.AddOperator("GetTuplesFromRange", op);
-			OperatorProfilerContext::SetCurrentProfiler(nullptr);
 		}
 
         void ScanTuples();
@@ -109,9 +100,7 @@ namespace BACH
 
 		Version* version;
 		RelVersion* rel_version;
-		ThreadProfiler profiler;
+
 		bool valid = true;
-
-
 	};
 }

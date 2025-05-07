@@ -111,7 +111,7 @@ namespace BACH {
             }
             q.emplace(keys[i][0], 0, i);
         }
-        //IO finish
+
         auto temp_file_metadata = new RelFileMetaData<std::string>(0, compaction.target_level, compaction.vertex_id_b,
                                                                    compaction.file_id, "", new_file_key_min, "", 0,
                                                                    0);

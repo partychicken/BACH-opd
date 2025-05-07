@@ -83,11 +83,7 @@ namespace BACH
 
 	void FileWriter::sync() {
 		flush();
-
-		OperatorProfiler* op = OperatorProfilerContext::GetCurrentProfiler();
-		op->StartWrite();
 		fsync(fd);
-		op->EndWrite();
 	}
 
 	void FileWriter::close() {
@@ -97,13 +93,10 @@ namespace BACH
 	}
 
 	bool FileWriter::buf_persist(const char* data, int32_t len) {
-		OperatorProfiler* op = OperatorProfilerContext::GetCurrentProfiler();
-		op->StartWrite();
 		auto ret = write(fd, data, len);
 		cnt += ret;
 		assert(ret == len);
 		buffer_offset = 0;
-		op->EndWrite();
 		return true;
 	}
 }

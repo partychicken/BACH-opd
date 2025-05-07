@@ -7,9 +7,6 @@ endif()
 
 SET(CMAKE_C_COMPILER "gcc-12")
 SET(CMAKE_CXX_COMPILER "g++-12")
-# seems bit_width need c++ 20?
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 project ("BACH-OPD" LANGUAGES CXX)
@@ -18,14 +15,14 @@ include_directories(${PROJECT_SOURCE_DIR})
 
 file(GLOB_RECURSE srcs CONFIGURE_DEPENDS src/*.cpp)
 
-add_library(bach-opd SHARED bind/BACH.cpp ${srcs})
-target_include_directories(bach-opd PUBLIC ${CMAKE_SOURCE_DIR}/include)
-target_include_directories(bach-opd PUBLIC ${CMAKE_SOURCE_DIR}/include/dynamic_bitset/include)
+add_library(bach-opd SHARED bind/BACH.cpp ${srcs} "src/TupleEntry.cpp")
+target_include_directories(bach-opd PUBLIC include)
+target_include_directories(bach-opd PUBLIC include/dynamic_bitset/include)
 target_compile_features(bach-opd PUBLIC cxx_std_20)
 
-add_subdirectory(${CMAKE_SOURCE_DIR}/include/dynamic_bitset)
+add_subdirectory(include/dynamic_bitset)
 target_link_libraries(bach-opd PRIVATE sul::dynamic_bitset)
-add_subdirectory(${CMAKE_SOURCE_DIR}/include/folly)
+add_subdirectory(include/folly)
 target_link_libraries(bach-opd PRIVATE folly)
 
 set(BUILD_TEST ON)
@@ -52,8 +49,5 @@ if(BUILD_TEST)
 endif()
 
 if(BUILD_UNITTEST)
-	include_directories(${PROJECT_SOURCE_DIR}/include)
-	include_directories(${PROJECT_SOURCE_DIR}/include/dynamic_bitset/include)
-
 	add_subdirectory(${PROJECT_SOURCE_DIR}/test)
 endif()

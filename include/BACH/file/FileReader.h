@@ -10,8 +10,6 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include "BACH/utils/utils.h"
-#include "BACH/profiler/OperatorProfilerContext.h"
-#include "BACH/profiler/profiler.h"
 
 namespace BACH {
 	class FileReader final {

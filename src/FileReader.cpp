@@ -52,15 +52,11 @@ namespace BACH {
 			return false;
 		}
 
-		OperatorProfiler* op = OperatorProfilerContext::GetCurrentProfiler();
-		op->StartRead();
 		size_t cnt = pread(fd, buf, count, offset);
 		if (cnt != count) {
 			cnt = pread(fd, buf, count, offset);
-			op->EndRead();
 			return false;
 		}
-		op->EndRead();
 		return true;
 	}
 

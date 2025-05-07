@@ -3,7 +3,8 @@
 #include <string>
 #include <cstddef>
 #include <cstdint>
-
+#include "BACH/profiler/OperatorProfilerContext.h"
+#include "BACH/profiler/profiler.h"
 namespace BACH
 {
 	class FileWriter final {

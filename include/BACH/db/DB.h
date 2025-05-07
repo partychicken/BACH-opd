@@ -10,6 +10,9 @@
 #include "BACH/sstable/Version.h"
 #include "BACH/sstable/RelVersion.h"
 #include "BACH/utils/ConcurrentList.h"
+#include "BACH/profiler/ThreadProfilerContext.h"
+#include "BACH/profiler/profiler.h"
+#include "BACH/profiler/OperatorProfilerContext.h"
 
 namespace BACH
 {
@@ -71,6 +74,13 @@ namespace BACH
 		std::vector<std::shared_ptr<std::thread>> low_compact_thread;
 		std::atomic<size_t> working_compact_thread = 0;
 		std::atomic<bool> progressing_read_version = false;
+		
+		// profiler for every compaction thread
+		std::vector<ThreadProfiler> compaction_profilers_;
+
+		// DB Profiler
+		DBProfiler db_profiler;
+
 		bool close = false;
 		//compaction loop for background thread
 		void CompactLoop();
@@ -82,7 +92,7 @@ namespace BACH
 		time_t get_read_time();
 		Version* get_read_version();
 		RelVersion* get_read_rel_version();
-
+		
 
 		friend class Transaction;
 	};

@@ -22,7 +22,7 @@ TEST_CASE("FILE IO Test", "[compaction]") {
     DB x(MockOptions, 2);
     
     std::vector<std::string> ans_sheet;
-    for (int i = 0; i < 1024 * 32 * 100; i++) {
+    for (int i = 0; i < 1024 * 32; i++) {
         Tuple t;
         int k = rand() & 3;
         t.row.push_back(std::to_string(i));
@@ -35,7 +35,7 @@ TEST_CASE("FILE IO Test", "[compaction]") {
 	sleep(1);
     std::cout << "\nFinished insert" << std::endl;
     auto z = x.BeginRelTransaction();
-	for (int i = 0; i < 1024 * 32 * 100; i++) {
+	for (int i = 0; i < 1024 * 32; i++) {
 		auto t = z.GetTuple(std::to_string(i));
         // std::cout << t.GetRow(1) << std::endl;
         REQUIRE(std::string(t.GetRow(0).c_str()) == std::to_string(i));

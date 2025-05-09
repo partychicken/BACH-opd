@@ -10,7 +10,7 @@ namespace BACH {
     class OrderedDictionary {
     public:
         
-        OrderedDictionary(){}
+        OrderedDictionary() = default;
         ~OrderedDictionary() = default;
         OrderedDictionary(const OrderedDictionary &other) = default;
 

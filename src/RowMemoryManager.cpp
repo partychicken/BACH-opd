@@ -115,6 +115,10 @@ namespace BACH {
 
 		}
 		rfb.ArrangeRelFileInfo(tmp.GetColumn(0), memtable->total_tuple, db->options->KEY_SIZE, memtable->column_num - 1, data);
+        temp_file_metadata->bloom_filter = BloomFilter(memtable->total_tuple, db->options->FALSE_POSITIVE);
+        for (int i = 0; i < memtable->total_tuple; i++) {
+            temp_file_metadata->bloom_filter.insert(tmp.GetColumn(0)[i]);
+        }
         /*delete data;*/
         for (size_t i = 0; i < memtable->column_num - 1; i++) {
             delete data[i];

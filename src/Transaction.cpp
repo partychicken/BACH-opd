@@ -153,12 +153,12 @@ namespace BACH {
             return;
         }
         OperatorProfiler op;
-		OperatorProfilerContext::SetCurrentProfiler(&op);
-		op.Start();
+        OperatorProfilerContext::SetCurrentProfiler(&op);
+        op.Start();
         db->RowMemtable->PutTuple(tuple, key, write_epoch, property);
-		op.End();
-		profiler.AddOperator("PutTuple", op);
-		OperatorProfilerContext::SetCurrentProfiler(nullptr);
+        op.End();
+        profiler.AddOperator("PutTuple", op);
+        OperatorProfilerContext::SetCurrentProfiler(nullptr);
     }
 
     void Transaction::DelTuple(Tuple tuple, tp_key key) {
@@ -170,16 +170,15 @@ namespace BACH {
         op.Start();
         db->RowMemtable->PutTuple(tuple, key, write_epoch, TOMBSTONE);
         op.End();
-		profiler.AddOperator("DelTuple", op);
+        profiler.AddOperator("DelTuple", op);
         OperatorProfilerContext::SetCurrentProfiler(nullptr);
     }
 
     Tuple Transaction::GetTuple(tp_key key) {
-        
         if (write_epoch == MAXTIME) {
             return Tuple();
         }
-		OperatorProfiler op;
+        OperatorProfiler op;
         OperatorProfilerContext::SetCurrentProfiler(&op);
         op.Start();
         Tuple x = db->RowMemtable->GetTuple(key, write_epoch);
@@ -195,6 +194,9 @@ namespace BACH {
             if (key >= reinterpret_cast<RelFileMetaData<std::string> *>(iter.GetFile())->key_min && key <=
                 reinterpret_cast<RelFileMetaData<std::string> *>(iter.GetFile())->key_max)
                 // ԭ���ж�����Ϊ(*iter.GetFile()->filter)[src - iter.GetFile()->vertex_id_b]
+                if (!iter.GetFile()->bloom_filter.exists(key)) {
+                    continue;
+                }
                 if (transferKeyToHash<std::string>(key)) {
                     RelFileParser<std::string> parser(db->ReaderCaches->find(iter.GetFile()), db->options,
                                                       iter.GetFile()->file_size);
@@ -214,8 +216,8 @@ namespace BACH {
                 }
             iter.next();
         }
-		op.End();
-		profiler.AddOperator("GetTuple", op);
+        op.End();
+        profiler.AddOperator("GetTuple", op);
         OperatorProfilerContext::SetCurrentProfiler(nullptr);
         return Tuple();
     }
@@ -245,7 +247,7 @@ namespace BACH {
         OperatorProfiler op;
         OperatorProfilerContext::SetCurrentProfiler(&op);
         op.Start();
-        
+
         AnswerMerger am;
 
         auto files = rel_version->FileIndex;
@@ -261,7 +263,7 @@ namespace BACH {
             }
         }
         op.End();
-		profiler.AddOperator("ScanTuples", op);
+        profiler.AddOperator("ScanTuples", op);
         OperatorProfilerContext::SetCurrentProfiler(nullptr);
     }
 }

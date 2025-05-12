@@ -14,15 +14,16 @@ namespace BACH
 		idx_t count = 0;
 		for (auto it = accessor.begin(); it != accessor.end(); ++it)
 		{
-			if (std::get<0>(*it) == last_key)
+			auto now_key = it->tuple.row[0];
+			if (now_key == last_key)
 				continue;
 
-			auto tuple = std::get<2>(*it);
+			auto tuple = *it;
 			if (tuple.property == TOMBSTONE || tuple.property == NONEINDEX)
 			{
 				for (size_t i = 0; i < column_num; i++)data[i][count] = "";
 				count++;
-				last_key = std::get<0>(*it);
+				last_key = now_key;
 				continue;
 			}
 			for (size_t i = 0; i < column_num; i++)
@@ -30,7 +31,7 @@ namespace BACH
 				data[i][count] = tuple.tuple.GetRow(i);
 			}
 			count++;
-			last_key = std::get<0>(*it);
+			last_key = now_key;
 		}
 
 	}

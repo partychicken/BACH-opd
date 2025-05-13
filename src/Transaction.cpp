@@ -161,14 +161,16 @@ namespace BACH {
         OperatorProfilerContext::SetCurrentProfiler(nullptr);
     }
 
-    void Transaction::DelTuple(Tuple tuple, tp_key key) {
+    void Transaction::DelTuple(tp_key key) {
         if (write_epoch == MAXTIME) {
             return;
         }
         OperatorProfiler op;
         OperatorProfilerContext::SetCurrentProfiler(&op);
         op.Start();
-        db->RowMemtable->PutTuple(tuple, key, write_epoch, TOMBSTONE);
+        Tuple x;
+        x.row.push_back(key);
+        db->RowMemtable->PutTuple(x, key, write_epoch, TOMBSTONE);
         op.End();
         profiler.AddOperator("DelTuple", op);
         OperatorProfilerContext::SetCurrentProfiler(nullptr);

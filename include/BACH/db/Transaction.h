@@ -53,7 +53,7 @@ namespace BACH
 			const std::function<void(vertex_t&, vertex_t&,edge_property_t&)>& func);
 		// OLTP operation
         void PutTuple(Tuple tuple, tp_key key, tuple_property_t property);
-        void DelTuple(Tuple tuple, tp_key key);
+        void DelTuple(tp_key key);
         Tuple GetTuple(tp_key key);
 
 
@@ -71,7 +71,7 @@ namespace BACH
 			auto files = rel_version->FileIndex;
 
 			//auto MakeLeftBoundFunc = [](const std::string& right_bound) {
-			//	// ·µ»ØÒ»¸ö²»²¶»ñ±äÁ¿µÄ lambda£¨ÒòÎª right_bound ÊÇÖµ²¶»ñ£¬±Õ°üÀàÐÍÈÔÈ»ÊÇº¯Êý¶ÔÏó£©
+			//	// ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ lambdaï¿½ï¿½ï¿½ï¿½Îª right_bound ï¿½ï¿½Öµï¿½ï¿½ï¿½ñ£¬±Õ°ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È»ï¿½Çºï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 			//	return [=](const std::string& s) {
 			//		return s < right_bound;
 			//		};

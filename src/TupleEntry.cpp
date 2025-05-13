@@ -65,6 +65,7 @@ namespace BACH {
         if (it != accessor.end()) {
             if (it->tuple.GetKey() == key && it->time < timestamp) {
                 BACH::TupleEntry entry = *it;
+                if (it->property == TOMBSTONE) return Tuple();
                 return entry.tuple;
             }
         }

@@ -11,16 +11,16 @@
 #include "BACH/utils/ConcurrentArray.h"
 #include "BACH/common/tuple.h"
 #include "BACH/memory/AnswerMerger.h"
+#include "folly/detail/tuple.h"
 
 namespace BACH {
     struct TupleEntry {
         TupleEntry(Tuple _tuple, time_t _time,
                    tuple_property_t _property, TupleEntry *_next = nullptr) : tuple(_tuple), time(_time),
                                                                               property(_property), next(_next) {
-        };
+        }
 
-        TupleEntry(): tuple(), time(MAXTIME), property(NONEINDEX), next(nullptr) {
-        };
+        TupleEntry(): time(MAXTIME), property(NONEINDEX), next(nullptr){}
 
         TupleEntry(std::string key, time_t time) : time(time) {
             tuple.row.push_back(key);
@@ -34,7 +34,7 @@ namespace BACH {
         TupleEntry *next;
 
         bool operator<(const TupleEntry &other) const {
-            return tuple.row[0] == other.tuple.row[0] ? time > other.time : tuple.row[0] < other.tuple.row[0];
+            return tuple.GetKey() == other.tuple.GetKey() ? time > other.time : tuple.GetKey() < other.tuple.GetKey();
         }
     };
 

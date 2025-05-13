@@ -63,7 +63,7 @@ namespace BACH {
         RelSkipList::Accessor accessor(tuple_index);
         auto it = accessor.lower_bound(TupleEntry(key, timestamp));
         if (it != accessor.end()) {
-            if (it->tuple.row[0] == key && it->time < timestamp) {
+            if (it->tuple.GetKey() == key && it->time < timestamp) {
                 BACH::TupleEntry entry = *it;
                 return entry.tuple;
             }
@@ -85,7 +85,7 @@ namespace BACH {
         tp_key last_key = "";
         auto it = accessor.lower_bound(TupleEntry(start_key, timestamp));
         for (; it != accessor.end(); ++it) {
-            auto now_key = it->tuple.row[0];
+            auto now_key = it->tuple.GetKey();
             if (now_key <= end_key) break;
             if (now_key == last_key || it->time > timestamp)
                 continue;
@@ -115,7 +115,7 @@ namespace BACH {
         RelSkipList::Accessor accessor(tuple_index);
         tp_key last_key = "";
         for (auto it = accessor.begin(); it != accessor.end(); ++it) {
-            auto now_key = it->tuple.row[0];
+            auto now_key = it->tuple.GetKey();
             if (it->time > timestamp || last_key == now_key)
                 continue;
             auto tuple_entry = *it;

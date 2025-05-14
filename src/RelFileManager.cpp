@@ -151,7 +151,7 @@ namespace BACH {
 
             if (now_message.offset < key_num[now_message.file_idx] - 1) {
                 q.emplace(keys[now_message.file_idx][now_message.offset + 1],
-                                                 now_message.offset + 1, now_message.file_idx);
+                          now_message.offset + 1, now_message.file_idx);
             }
 
             if (now_message.key == last_key) {
@@ -242,8 +242,42 @@ namespace BACH {
 
         if (key_buf_idx) {
             //if it has deletion, an extra flush is needed;
-            //no implement yet
+            //flush buf to a new file
+            //build new dict
+            int nowidx = 0;
+            for (idx_t i = 0; i < col_num; i++) {
+                std::vector<std::string> dict;
+                for (auto &entry: s[i]) {
+                    dict.emplace_back(entry.first);
+                    for (auto p: entry.second) {
+                        remap[i][p.first][p.second] = nowidx;
+                    }
+                    nowidx++;
+                }
+                temp_file_metadata->dictionary.emplace_back(dict);
+            }
+            //map new index from new dictionary
+            for (idx_t i = 0; i < col_num; i++) {
+                for (int j = 0; j < key_buf_idx; j++) {
+                    auto p = val_buf[i][j];
+                    real_val_buf[i][j] = remap[i][p.first][p.second];
+                }
+            }
+
+            //write current buffer to file
+            rel_builder->ArrangeRelFileInfo(order_key_buf, key_buf_idx, db->options->KEY_SIZE, col_num,
+                                            real_val_buf);
+            temp_file_metadata->key_min = std::string(order_key_buf[0].c_str());
+            temp_file_metadata->key_max = std::string(last_key);
+            temp_file_metadata->key_num = key_buf_idx;
+            temp_file_metadata->col_num = col_num;
+            temp_file_metadata->bloom_filter = BloomFilter(key_buf_idx, db->options->FALSE_POSITIVE);
+            for (int i = 0; i < key_buf_idx; i++) {
+                temp_file_metadata->bloom_filter.insert(order_key_buf[i]);
+            }
+            edit->EditFileList.push_back(temp_file_metadata);
         }
+
         for (auto &file: compaction.file_list) {
             edit->EditFileList.push_back(file);
             edit->EditFileList.back()->deletion = true;

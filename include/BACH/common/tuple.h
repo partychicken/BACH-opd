@@ -20,5 +20,13 @@ namespace BACH {
         std::string GetRow(const int &col) {
             return row[col];
         }
+
+        std::string GetKey() const {
+            if (row.empty()) {
+                return "";
+            } else {
+                return row[0];
+            }
+        }
     };
 }

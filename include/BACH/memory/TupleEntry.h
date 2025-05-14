@@ -81,7 +81,8 @@ namespace BACH
 			tuple_index = RelSkipList::createInstance();
 		};
 		~relMemTable() {
-			last->next.reset();
+			if(last)
+				last->next.reset();
 		}
 		void UpdateMinMax(tp_key key);
 

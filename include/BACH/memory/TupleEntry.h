@@ -11,7 +11,6 @@
 #include "BACH/utils/ConcurrentArray.h"
 #include "BACH/common/tuple.h"
 #include "BACH/memory/AnswerMerger.h"
-#include "folly/detail/tuple.h"
 
 namespace BACH {
     struct TupleEntry {

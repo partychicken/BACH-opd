@@ -14,15 +14,15 @@ using namespace BACH;
 
 TEST_CASE("FILE IO Test", "[compaction]") {
     std::shared_ptr<Options> MockOptions = std::make_shared<Options>();
-    MockOptions->MEM_TABLE_MAX_SIZE = 4 * 1024;
-    MockOptions->READ_BUFFER_SIZE = 64 * 1024;
-    MockOptions->WRITE_BUFFER_SIZE = 64 * 1024;
-    MockOptions->MAX_BLOCK_SIZE = 64 * 1024;
+    //MockOptions->MEM_TABLE_MAX_SIZE = 4 * 1024;
+    //MockOptions->READ_BUFFER_SIZE = 64 * 1024;
+    //MockOptions->WRITE_BUFFER_SIZE = 64 * 1024;
+    //MockOptions->MAX_BLOCK_SIZE = 64 * 1024;
 
     DB x(MockOptions, 2);
     
     std::vector<std::string> ans_sheet;
-    for (int i = 0; i < 1024 * 32; i++) {
+    for (int i = 0; i < 1024 * 1024 * 32; i++) {
         Tuple t;
         int k = rand() & 3;
         t.row.push_back(std::to_string(i));

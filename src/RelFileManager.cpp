@@ -122,7 +122,10 @@ namespace BACH {
 
         std::string *order_key_buf = new std::string[key_tot_num / file_num + 5];
         int key_buf_idx = 0;
-        std::pair<idx_t, idx_t> val_buf[col_num][key_tot_num / file_num + 5];
+        std::vector<std::pair<idx_t, idx_t>> val_buf[col_num];
+        for (int i = 0; i < col_num; i++) {
+            val_buf[i].resize(key_tot_num / file_num + 5);
+        }
 
         idx_t *real_val_buf[col_num];
         for (idx_t i = 0; i < col_num; i++) {

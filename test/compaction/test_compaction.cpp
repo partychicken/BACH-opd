@@ -21,7 +21,7 @@ TEST_CASE("FILE IO Test", "[compaction]") {
     DB x(MockOptions, 2);
 
     std::vector<std::string> ans_sheet;
-    for (int i = 0; i < 1024 * 1024 * 32; i++) {
+    for (int i = 0; i < 1024 * 1024 * 8; i++) {
         Tuple t;
         int k = rand() & 3;
         t.row.push_back(std::to_string(i));

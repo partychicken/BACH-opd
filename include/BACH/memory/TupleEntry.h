@@ -104,6 +104,8 @@ namespace BACH {
         std::vector<Tuple> ScanTuples(tp_key start_key, tp_key end_key, time_t timestamp);
 
         void FilterByValueRange(time_t timestamp, const std::function<bool(Tuple &)> &func, AnswerMerger &am);
+
+		void GetKTuple(idx_t k, tp_key key, time_t timestamp, std::map<std::string, Tuple> &am);
     };
 
 

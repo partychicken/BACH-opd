@@ -183,7 +183,7 @@ namespace BACH {
         OperatorProfiler op;
         OperatorProfilerContext::SetCurrentProfiler(&op);
         op.Start();
-        Tuple x = db->RowMemtable->GetTuple(key, write_epoch);
+        Tuple x = db->RowMemtable->GetTuple(key, read_epoch);
         // if (!std::isnan(x.property)) {
         //     return x;
         // }
@@ -202,23 +202,23 @@ namespace BACH {
                 if (!iter.GetFile()->bloom_filter.exists(key)) {
                     continue;
                 }
-                if (transferKeyToHash<std::string>(key)) {
-                    RelFileParser<std::string> parser(db->ReaderCaches->find(iter.GetFile()), db->options,
-                                                      iter.GetFile()->file_size);
-                    Tuple found = parser.GetTuple(key);
-                    if (!found.row.empty()) {
-                        for (int i = 1; i < found.row.size(); i++) {
-                            idx_t col_id = *((idx_t *) found.row[i].data());
-                            found.row[i] = static_cast<RelFileMetaData<std::string> *>(iter.GetFile())->dictionary[
-                                i - 1].
-                            getString(col_id);
-                        }
-                        op.End();
-                        profiler.AddOperator("GetTuple", op);
-                        OperatorProfilerContext::SetCurrentProfiler(nullptr);
-                        return found;
+            if (transferKeyToHash<std::string>(key)) {
+                RelFileParser<std::string> parser(db->ReaderCaches->find(iter.GetFile()), db->options,
+                                                  iter.GetFile()->file_size);
+                Tuple found = parser.GetTuple(key);
+                if (!found.row.empty()) {
+                    for (int i = 1; i < found.row.size(); i++) {
+                        idx_t col_id = *((idx_t *) found.row[i].data());
+                        found.row[i] = static_cast<RelFileMetaData<std::string> *>(iter.GetFile())->dictionary[
+                            i - 1].
+                        getString(col_id);
                     }
+                    op.End();
+                    profiler.AddOperator("GetTuple", op);
+                    OperatorProfilerContext::SetCurrentProfiler(nullptr);
+                    return found;
                 }
+            }
             iter.next();
         }
         op.End();
@@ -270,5 +270,45 @@ namespace BACH {
         op.End();
         profiler.AddOperator("ScanTuples", op);
         OperatorProfilerContext::SetCurrentProfiler(nullptr);
+    }
+
+    std::vector<Tuple> Transaction::ScanKTuples(idx_t k, std::string key) {
+        OperatorProfiler op;
+        OperatorProfilerContext::SetCurrentProfiler(&op);
+        op.Start();
+
+        std::map<std::string, Tuple> am;
+        db->RowMemtable->GetKTuple(k, key, read_epoch, am);
+
+        std::string KEY_MAX;
+        for (unsigned int i = 0; i < db->options->KEY_SIZE; i++) KEY_MAX += ((char) 127);
+        RelVersionIterator iter(rel_version, key, KEY_MAX);
+        while (!iter.End()) {
+            auto cur_file = iter.GetFile();
+            auto reader = db->ReaderCaches->find(cur_file);
+            auto parser = RelFileParser<std::string>(reader, db->options, cur_file->file_size);
+            std::vector<Tuple> res = parser.GetKTuple(k, key);
+            for (auto x: res) {
+                if (am.contains(x.GetKey())) continue;
+                if (!x.row.empty()) {
+                    for (int i = 1; i < x.row.size(); i++) {
+                        idx_t col_id = *((idx_t *) x.row[i].data());
+                        x.row[i] = static_cast<RelFileMetaData<std::string> *>(iter.GetFile())->dictionary[i - 1].
+                        getString(col_id);
+                    }
+                    am.emplace(x.GetKey(), std::move(x));
+                }
+            }
+            iter.next();
+        }
+        std::vector<Tuple> res;
+        for (auto &x : am) {
+            res.emplace_back(x.second);
+            if (res.size() >= k) break;
+        }
+        op.End();
+        profiler.AddOperator("ScanKTuples", op);
+        OperatorProfilerContext::SetCurrentProfiler(nullptr);
+        return res;
     }
 }

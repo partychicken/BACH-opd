@@ -66,7 +66,7 @@ namespace BACH
 			AnswerMerger am;
 			// add in-memory data into am here;
 			auto vf = CreateValueFilterFunction(col_id, left_bound, right_bound);
-			db->RowMemtable->FilterByValueRange(write_epoch, vf, am);
+			db->RowMemtable->FilterByValueRange(read_epoch, vf, am);
 
 			auto files = rel_version->FileIndex;
 
@@ -100,6 +100,8 @@ namespace BACH
 		}
 
         void ScanTuples();
+
+		std::vector<Tuple> ScanKTuples(idx_t k, std::string key);
 
 	private:
 		time_t write_epoch;

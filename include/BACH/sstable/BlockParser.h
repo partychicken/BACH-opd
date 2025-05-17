@@ -118,13 +118,13 @@ namespace BACH {
                 ++*(int *) NULL;
             }
             //if constexpr (std::is_same_v<Key_t, std::string>) {
-                std::string* res = new std::string[key_num];
-                for (idx_t i = 0; i < key_num; i++) {
-                    res[i] = std::string(buffer + key_size * i, key_size);
-                }
-                free(buffer);
+            std::string *res = new std::string[key_num];
+            for (idx_t i = 0; i < key_num; i++) {
+                res[i] = std::string(buffer + key_size * i, key_size);
+            }
+            free(buffer);
 
-                return res;
+            return res;
             // }
             // return reinterpret_cast<Key_t *>(buffer);
         }
@@ -145,6 +145,30 @@ namespace BACH {
                     ++*(int *) NULL;
                 }
                 return reinterpret_cast<idx_t *>(buffer);
+            }
+        }
+
+        void GetKTuple(idx_t &k, Key_t key, std::vector<Tuple> &res) {
+            idx_t single_read_num = this->options->READ_BUFFER_SIZE / key_size;
+            size_t single_read_size = single_read_num * key_size;
+            size_t offset = offset_in_file;
+            char buffer[single_read_size];
+            idx_t tmp_read_num = (key_data_endpos - offset) / key_size;
+            if (!reader->fread(buffer, key_data_endpos - offset, offset)) {
+                std::cout << "read fail dst" << std::endl;
+                ++*(int *) NULL;
+            }
+            size_t inner_off = 0;
+            for (idx_t j = 0; j < tmp_read_num; j++) {
+                Key_t nowkey = util::GetDecodeFixed<Key_t>(buffer + inner_off);
+                if (nowkey >= key) {
+                    res.emplace_back(GetTupleWithIdx(key, j));
+                    k--;
+                    if (!k) {
+                        return;
+                    }
+                }
+                inner_off += key_size;
             }
         }
 

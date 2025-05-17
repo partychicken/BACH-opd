@@ -92,7 +92,7 @@ namespace BACH {
 	VersionEdit* rowMemoryManager::RowMemtablePersistence(idx_t file_id, std::shared_ptr < relMemTable > memtable) {
 
 		auto temp_file_metadata = new RelFileMetaData(0, 0, 0, file_id,
-			"", memtable->min_key, memtable->max_key, memtable->total_tuple, memtable->column_num);
+			"", memtable->min_key, memtable->max_key, memtable->total_tuple, memtable->column_num - 1);
 		std::string file_name = temp_file_metadata->file_name;
 		auto fw = std::make_shared<FileWriter>(db->options->STORAGE_DIR + "/" + file_name, false);
 		RelFileBuilder<std::string> rfb(fw, db->options);

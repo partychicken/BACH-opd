@@ -188,6 +188,9 @@ namespace BACH {
         //     return x;
         // }
         if (!x.row.empty()) {
+            op.End();
+            profiler.AddOperator("GetTuple", op);
+            OperatorProfilerContext::SetCurrentProfiler(nullptr);
             return x;
         }
 

@@ -47,7 +47,7 @@ namespace BACH {
             Vector res;
             while (Scan(col_id, res)) {
                 RangeFilter(res, left_bound, right_bound);
-                Materialize(res, am);
+                //Materialize(res, am);
             }
         }
 

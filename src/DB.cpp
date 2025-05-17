@@ -64,7 +64,7 @@ namespace BACH {
                     HighCompactLoop(); 
 					ThreadProfilerContext::SetCurrent(nullptr);
                 }));
-            high_compact_thread[i]->detach();
+            //high_compact_thread[i]->detach();
         }
 
         for (idx_t i = 0; i < _options->NUM_OF_LOW_COMPACTION_THREAD; ++i) {
@@ -74,7 +74,7 @@ namespace BACH {
                     LowCompactLoop(); 
 					ThreadProfilerContext::SetCurrent(nullptr);
                 }));
-            low_compact_thread[i]->detach();
+            //low_compact_thread[i]->detach();
         }
     }
 

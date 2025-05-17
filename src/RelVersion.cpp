@@ -30,8 +30,8 @@ namespace BACH {
                 FileTotalSize[i->level] -= i->file_size;
             } else {
                 if (FileIndex.size() <= i->level)
-                    FileIndex.resize(i->level + 1),
-                    FileTotalSize.resize(i->level + 1);
+                    FileIndex.resize(i->level + 5),
+                    FileTotalSize.resize(i->level + 5);
                 auto f = new RelFileMetaData(*static_cast<RelFileMetaData<std::string> *>(i));
                 if (i->level == 0) {
                     FileIndex[i->level].push_back(f);
@@ -93,6 +93,14 @@ namespace BACH {
             //     std::cerr << "FUCK edit size" << std::endl;
             //     return c;
             // }
+            bool all_merging = true;
+            for (auto x : FileIndex[level]) {
+                if (!x->merging) {
+                    all_merging = false;
+                    break;
+                }
+            }
+            if (all_merging) return c;
             int down_fileid = 0;
             do {
                 down_fileid = rand() % FileIndex[level].size();

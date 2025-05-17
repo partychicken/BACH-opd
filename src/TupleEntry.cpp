@@ -99,6 +99,25 @@ namespace BACH {
         return result;
     }
 
+    void relMemTable::GetKTuple(idx_t k, tp_key start_key, time_t timestamp, std::map<std::string, Tuple> &am) {
+        RelSkipList::Accessor accessor(tuple_index);
+        tp_key last_key = "";
+        auto it = accessor.lower_bound(TupleEntry(start_key, timestamp));
+        for (; it != accessor.end(); ++it) {
+            auto now_key = it->tuple.GetKey();
+            if (now_key == last_key || it->time > timestamp)
+                continue;
+            auto tuple_entry = *it;
+            if (it->time <= timestamp && (tuple_entry.property != TOMBSTONE || tuple_entry.property != NONEINDEX)) {
+                if (!am.contains(tuple_entry.tuple.GetKey()))
+                    am.emplace(tuple_entry.tuple.GetKey(), std::move(tuple_entry.tuple));
+                last_key = now_key;
+                k--;
+                if (!k) return;
+            }
+        }
+    }
+
     void relMemTable::UpdateMinMax(tp_key key) {
         if (key > max_key) {
             max_key = key;

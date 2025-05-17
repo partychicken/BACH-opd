@@ -21,20 +21,21 @@
 #include "BACH/compress/ordered_dictionary.h"
 #include "BACH/memory/AnswerMerger.h"
 
-namespace BACH
-{
+namespace BACH {
+    typedef std::string tp_key;
 
-	typedef std::string tp_key;
+    class DB;
 
-	class DB;
-
-	class rowMemoryManager
-	{
+    class rowMemoryManager {
     public:
         rowMemoryManager() = delete;
-        rowMemoryManager(const rowMemoryManager&) = delete;
-        rowMemoryManager& operator=(const rowMemoryManager&) = delete;
-        rowMemoryManager(DB* _db, idx_t _column_num);
+
+        rowMemoryManager(const rowMemoryManager &) = delete;
+
+        rowMemoryManager &operator=(const rowMemoryManager &) = delete;
+
+        rowMemoryManager(DB *_db, idx_t _column_num);
+
         ~rowMemoryManager() = default;
 
         void PutTuple(Tuple tuple, tp_key key, time_t timestamp, tuple_property_t property);
@@ -42,27 +43,29 @@ namespace BACH
         //void AddTuple(Tuple tuple, tp_key key, time_t timestamp, tuple_property_t property);
         //void DeleteTuple(tp_key key, time_t timestamp, tuple_property_t property);
         Tuple GetTuple(tp_key key, time_t timestamp);
+
         //void UpdateTuple(Tuple tuple, tp_key key, time_t timestamp, tuple_property_t property);
         std::vector<Tuple> ScanTuples(tp_key start_key, tp_key end_key, time_t timestamp);
 
         void immute_memtable(std::shared_ptr<relMemTable> size_info);
-        VersionEdit* RowMemtablePersistence(idx_t file_id, std::shared_ptr < relMemTable > size_info);
-		
-        void FilterByValueRange(time_t timestamp, const std::function<bool(Tuple&)>& func, AnswerMerger& am);
+
+        VersionEdit *RowMemtablePersistence(idx_t file_id, std::shared_ptr<relMemTable> size_info);
+
+        void FilterByValueRange(time_t timestamp, const std::function<bool(Tuple &)> &func, AnswerMerger &am);
+
+        void GetKTuple(idx_t k, std::string key, time_t timestamp, std::map<std::string, Tuple> &am);
 
     private:
-        ConcurrentArray<std::shared_ptr<relMemTable>> memTable;
+        ConcurrentArray<std::shared_ptr<relMemTable> > memTable;
         std::shared_ptr<relMemTable> currentMemTable;
-        DB* db;
-        size_t data_count_threshold = 1024; // Êý¾ÝÁ¿ãÐÖµ
-        size_t current_data_count = 0; // µ±Ç°Êý¾ÝÁ¿¼ÆÊý
-		size_t column_num = 0; // ÁÐÊý
+        DB *db;
+        size_t data_count_threshold = 1024; // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Öµ
+        size_t current_data_count = 0; // ï¿½ï¿½Ç°ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+        size_t column_num = 0; // ï¿½ï¿½ï¿½ï¿½
         void CheckAndImmute();
-	};
+    };
 
     // value filter function factory
-    std::function<bool(Tuple&)> CreateValueFilterFunction(const idx_t column_idx, const std::string& value_min,
-        const std::string& value_max);
-
-
+    std::function<bool(Tuple &)> CreateValueFilterFunction(const idx_t column_idx, const std::string &value_min,
+                                                           const std::string &value_max);
 }

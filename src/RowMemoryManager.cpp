@@ -43,6 +43,15 @@ namespace BACH {
         return Tuple();
     }
 
+    void rowMemoryManager::GetKTuple(idx_t k, tp_key key, time_t timestamp, std::map<std::string, Tuple> &am) {
+        auto x = currentMemTable;
+        while (x) {
+            std::shared_lock<std::shared_mutex> lock(x->mutex);
+            x->GetKTuple(k, key, timestamp, am);
+            x = x->next.lock();
+        }
+    }
+
     //void rowMemoryManager::UpdateTuple(Tuple tuple, tp_key key, time_t timestamp, tuple_property_t property) {
     //	std::unique_lock<std::shared_mutex> lock(currentMemTable->mutex);
     //	currentMemTable->UpdateTuple(tuple, key, timestamp, property);
@@ -97,24 +106,24 @@ namespace BACH {
 		auto fw = std::make_shared<FileWriter>(db->options->STORAGE_DIR + "/" + file_name, false);
 		RelFileBuilder<std::string> rfb(fw, db->options);
 
-		TempColumn tmp(memtable.get(), memtable->total_tuple, memtable->column_num);
-		idx_t** data = new idx_t*[memtable->column_num];
-		std::vector<OrderedDictionary*> dicts(memtable->column_num - 1);
-		for (size_t i = 0; i < memtable->column_num - 1; i++) {
-			data[i] = new idx_t[memtable->total_tuple];
-			// dicts[i] = new OrderedDictionary();
-			// dicts[i]->importData(tmp.GetColumn(i + 1), memtable->total_tuple);
-			// dicts[i]->CompressData(data[i], tmp.GetColumn(i + 1), memtable->total_tuple);
-			// temp_file_metadata->dictionary.push_back(*dicts[i]);
-			// delete dicts[i];
-		    temp_file_metadata->dictionary.emplace_back(OrderedDictionary());
-		    auto nsiz = temp_file_metadata->dictionary.size();
-		    auto &now_dict = temp_file_metadata->dictionary[nsiz - 1];
-		    now_dict.importData(tmp.GetColumn(i + 1), memtable->total_tuple);
-		    now_dict.CompressData(data[i], tmp.GetColumn(i + 1), memtable->total_tuple);
-
-		}
-		rfb.ArrangeRelFileInfo(tmp.GetColumn(0), memtable->total_tuple, db->options->KEY_SIZE, memtable->column_num - 1, data);
+        TempColumn tmp(memtable.get(), memtable->total_tuple, memtable->column_num);
+        idx_t **data = new idx_t *[memtable->column_num];
+        std::vector<OrderedDictionary *> dicts(memtable->column_num - 1);
+        for (size_t i = 0; i < memtable->column_num - 1; i++) {
+            data[i] = new idx_t[memtable->total_tuple];
+            // dicts[i] = new OrderedDictionary();
+            // dicts[i]->importData(tmp.GetColumn(i + 1), memtable->total_tuple);
+            // dicts[i]->CompressData(data[i], tmp.GetColumn(i + 1), memtable->total_tuple);
+            // temp_file_metadata->dictionary.push_back(*dicts[i]);
+            // delete dicts[i];
+            temp_file_metadata->dictionary.emplace_back(OrderedDictionary());
+            auto nsiz = temp_file_metadata->dictionary.size();
+            auto &now_dict = temp_file_metadata->dictionary[nsiz - 1];
+            now_dict.importData(tmp.GetColumn(i + 1), memtable->total_tuple);
+            now_dict.CompressData(data[i], tmp.GetColumn(i + 1), memtable->total_tuple);
+        }
+        rfb.ArrangeRelFileInfo(tmp.GetColumn(0), memtable->total_tuple, db->options->KEY_SIZE, memtable->column_num - 1,
+                               data);
         temp_file_metadata->bloom_filter = BloomFilter(memtable->total_tuple, db->options->FALSE_POSITIVE);
         for (int i = 0; i < memtable->total_tuple; i++) {
             temp_file_metadata->bloom_filter.insert(tmp.GetColumn(0)[i]);

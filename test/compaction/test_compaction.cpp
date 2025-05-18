@@ -6,12 +6,15 @@
 #include "catch.hpp"
 #include <gperftools/profiler.h>
 
-std::string value_set[] = {"atarashi", "furui", "akai", "shiroi"};
+std::string value_set[] = {"atarashi", "furui", "ckai", "shiroi", "ccc", "ddd", "eee", "fff", "ggg", "hhh"};
 
 
 using namespace BACH;
 
 TEST_CASE("FILE IO Test", "[compaction]") {
+    for (auto& i : value_set) {
+        i.resize(128, ' '); 
+    }
     ProfilerStart("fileIOTest.prof");
 
     std::shared_ptr<Options> MockOptions = std::make_shared<Options>();
@@ -20,14 +23,28 @@ TEST_CASE("FILE IO Test", "[compaction]") {
     //MockOptions->WRITE_BUFFER_SIZE = 64 * 1024;
     //MockOptions->MAX_BLOCK_SIZE = 64 * 1024;
 
-    DB x(MockOptions, 2);
+    DB x(MockOptions, 11);
 
     std::vector<std::string> ans_sheet;
     for (int i = 0; i < 1024 * 1024 * 8; i++) {
         Tuple t;
-        int k = rand() & 3;
+        int k = rand() & 9;
         t.row.push_back(std::to_string(i));
         t.row.push_back(value_set[k]);
+        
+        {
+            t.row.push_back(value_set[k]);
+            t.row.push_back(value_set[k]);
+            t.row.push_back(value_set[k]);
+            t.row.push_back(value_set[k]);
+            t.row.push_back(value_set[k]);
+            t.row.push_back(value_set[k]);
+            t.row.push_back(value_set[k]);
+            t.row.push_back(value_set[k]);
+            t.row.push_back(value_set[k]);
+        }
+
+
         auto y = x.BeginRelTransaction();
         y.PutTuple(t, t.GetRow(0), 1.0);
     }
@@ -55,6 +72,8 @@ TEST_CASE("FILE IO Test", "[compaction]") {
     //    //REQUIRE(std::string(t.GetRow(1).c_str()) == ans_sheet[i]);
     //    REQUIRE(std::string(t.GetRow(1).c_str()) != "");
     //}
-    z.GetTuplesFromRange(1, "a", "b");
+    for (int i = 0; i < 64; i++) {
+        z.GetTuplesFromRange(1, "a", "b");
+    }
     ProfilerStop();
 }

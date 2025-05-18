@@ -141,7 +141,7 @@ namespace BACH {
         // in the second stage, remap denotes the new index that the old one should be mapped to
         for (idx_t i = 0; i < col_num; i++) {
             for (int j = 0; j < file_num; j++) {
-                remap[i][j].resize(max_val[i] + 5);
+                remap[i][j].resize(max_val[j] + 5);
             }
         }
 
@@ -223,7 +223,7 @@ namespace BACH {
                 for (idx_t i = 0; i < col_num; i++) {
                     for (int j = 0; j < file_num; j++) {
                         remap[i][j].clear();
-                        remap[i][j].resize(max_val[i] + 5);
+                        remap[i][j].resize(max_val[j] + 5);
                     }
                 }
                 for (idx_t i = 0; i < col_num; i++) {

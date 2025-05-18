@@ -39,7 +39,7 @@ struct Options
 	size_t NUM_OF_HIGH_COMPACTION_THREAD = 4;
 	size_t NUM_OF_LOW_COMPACTION_THREAD = 4;
 
-	inline static constexpr size_t KEY_SIZE = 64;
+	inline static constexpr size_t KEY_SIZE = 16;
 };
 
 

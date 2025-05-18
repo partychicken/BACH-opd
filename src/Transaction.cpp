@@ -152,6 +152,7 @@ namespace BACH {
         if (write_epoch == MAXTIME) {
             return;
         }
+        db->check_write_stall();
         OperatorProfiler op;
         OperatorProfilerContext::SetCurrentProfiler(&op);
         op.Start();
@@ -165,6 +166,7 @@ namespace BACH {
         if (write_epoch == MAXTIME) {
             return;
         }
+        db->check_write_stall();
         OperatorProfiler op;
         OperatorProfilerContext::SetCurrentProfiler(&op);
         op.Start();

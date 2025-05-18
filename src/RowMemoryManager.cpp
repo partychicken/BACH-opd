@@ -2,7 +2,7 @@
 #include "BACH/db/DB.h"
 
 namespace BACH {
-    rowMemoryManager::rowMemoryManager(DB *_db, idx_t _column_num) : db(_db), column_num(_column_num) {
+    rowMemoryManager::rowMemoryManager(DB *_db, idx_t _column_num) : db(_db), column_num(_column_num), memtable_cnt(1) {
         memTable.push_back(std::make_shared<relMemTable>(0, column_num));
         currentMemTable = memTable[0];
     }
@@ -77,6 +77,10 @@ namespace BACH {
             current_data_count = 0;
             // memTable.push_back(std::make_shared<relMemTable>(0, column_num));
             currentMemTable = memTable[memTable.size() - 1];
+            memtable_cnt.fetch_add(1, std::memory_order_relaxed);
+            if(memtable_cnt.load() > db->options->MAX_MEMTABLE_NUM) {
+                db->StallWrite();
+            }
         }
         return;
     }
@@ -134,6 +138,11 @@ namespace BACH {
         }
         delete[] data;
 
+        memtable_cnt.fetch_add(-1, std::memory_order_relaxed);
+        if(memtable_cnt.load() <= db->options->MAX_MEMTABLE_NUM) {
+            db->ResumeWrite();
+        }
+
         auto vedit = new VersionEdit();
         temp_file_metadata->file_size = fw->file_size();
         vedit->EditFileList.push_back(temp_file_metadata);
@@ -144,9 +153,10 @@ namespace BACH {
     void rowMemoryManager::FilterByValueRange(time_t timestamp, const std::function<bool(Tuple &)> &func,
                                               AnswerMerger &am) {
         auto x = currentMemTable;
-        while (x->total_tuple) {
+        while (x) {
             std::shared_lock<std::shared_mutex> lock(x->mutex);
             x->FilterByValueRange(timestamp, func, am);
+            x = x->next.lock();
         }
     }
 

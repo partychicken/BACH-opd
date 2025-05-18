@@ -45,6 +45,9 @@ namespace BACH
 		void ProgressRelVersion(VersionEdit* edit, time_t time,
 			std::shared_ptr<relMemTable> size = nullptr, bool force_level = false);
 
+		void StallWrite();
+		void ResumeWrite();
+
 		//void Persistence(std::string_view label, vertex_t merge_id);
 		//void TestMerge(Compaction& x, idx_t type);
 
@@ -74,6 +77,9 @@ namespace BACH
 		std::vector<std::shared_ptr<std::thread>> low_compact_thread;
 		std::atomic<size_t> working_compact_thread = 0;
 		std::atomic<bool> progressing_read_version = false;
+		std::atomic<bool> write_stall = false;
+		std::mutex write_stall_mutex;
+		std::condition_variable write_stall_cv;
 		
 		// profiler for every compaction thread
 		std::vector<ThreadProfiler> compaction_profilers_;
@@ -82,7 +88,7 @@ namespace BACH
 		DBProfiler db_profiler;
 
 		bool close = false;
-		//compaction loop for background thread
+		//compaction loop gfor background thread
 		void CompactLoop();
 		void HighCompactLoop();
 		void LowCompactLoop();
@@ -92,6 +98,7 @@ namespace BACH
 		time_t get_read_time();
 		Version* get_read_version();
 		RelVersion* get_read_rel_version();
+		void check_write_stall();
 		
 
 		friend class Transaction;

@@ -470,6 +470,15 @@ namespace BACH {
         }
     }
 
+    void DB::StallWrite() {
+        write_stall.store(true);
+    }
+	void DB::ResumeWrite() {
+        write_stall.store(false);
+        std::unique_lock<std::mutex> lock(write_stall_mutex);
+        write_stall_cv.notify_all();
+    }
+
     time_t DB::get_read_time() {
         //std::shared_lock<std::shared_mutex> wlock(write_epoch_table_mutex);
         if (write_epoch_table.empty())
@@ -496,6 +505,11 @@ namespace BACH {
                 return version;
         }
     }
-
-
+    
+    void DB::check_write_stall() {
+        if (write_stall.load()) {
+            std::unique_lock<std::mutex> lock(write_stall_mutex);
+            write_stall_cv.wait(lock, [&] { return !write_stall.load(); });
+        }
+    }
 }

@@ -44,6 +44,13 @@ namespace BACH {
                 }
             }
         }
+        if(FileIndex[0].size() > db->options->ZERO_LEVEL_FILES) {
+            db->StallWrite();
+        }
+        else {
+            db->ResumeWrite();
+        }
+        
         for (auto &i: FileIndex)
             for (auto &j: i)
                 j->ref.fetch_add(1, std::memory_order_relaxed);

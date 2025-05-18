@@ -44,7 +44,7 @@ namespace BACH {
         size_t ZERO_LEVEL_FILES = 2;
         size_t NUM_OF_HIGH_COMPACTION_THREAD = 4;
         size_t NUM_OF_LOW_COMPACTION_THREAD = 4;
-
+	    size_t MAX_MEMTABLE_NUM = 2;
         inline static constexpr size_t KEY_SIZE = 64;
     };
 #else

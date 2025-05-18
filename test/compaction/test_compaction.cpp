@@ -48,13 +48,13 @@ TEST_CASE("FILE IO Test", "[compaction]") {
 	//}
     std::cout << "\nFinished insert" << std::endl;
     auto z = x.BeginRelTransaction();
-    //for (int i = 0; i < 1024 * 32; i++) {
-    //    auto t = z.GetTuple(std::to_string(i));
-    //    // std::cout << t.GetRow(1) << std::endl;
-    //    REQUIRE(std::string(t.GetRow(0).c_str()) == std::to_string(i));
-    //    //REQUIRE(std::string(t.GetRow(1).c_str()) == ans_sheet[i]);
-    //    REQUIRE(std::string(t.GetRow(1).c_str()) != "");
-    //}
+    for (int i = 0; i < 1024 * 32; i++) {
+       auto t = z.GetTuple(std::to_string(i));
+       // std::cout << t.GetRow(1) << std::endl;
+       REQUIRE(std::string(t.GetRow(0).c_str()) == std::to_string(i));
+       //REQUIRE(std::string(t.GetRow(1).c_str()) == ans_sheet[i]);
+       REQUIRE(std::string(t.GetRow(1).c_str()) != "");
+    }
     z.GetTuplesFromRange(1, "a", "b");
     ProfilerStop();
 }

@@ -135,10 +135,10 @@ namespace BACH {
         RelSkipList::Accessor accessor(tuple_index);
         tp_key last_key = "";
         for (auto it = accessor.begin(); it != accessor.end(); ++it) {
-            auto now_key = it->tuple.GetKey();
+            auto& now_key = it->tuple.row[0];
             if (it->time > timestamp || last_key == now_key)
                 continue;
-            auto tuple_entry = *it;
+            auto& tuple_entry = *it;
             if (tuple_entry.property != TOMBSTONE && tuple_entry.property != NONEINDEX) {
                 if (func(tuple_entry.tuple)) {
                     /*result.push_back(*tuple_entry.tuple);*/

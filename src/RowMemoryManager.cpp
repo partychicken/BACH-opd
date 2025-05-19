@@ -1,4 +1,5 @@
 #include "BACH/memory/RowMemoryManager.h"
+#include "BACH/sstable/RelVersion.h"
 #include "BACH/db/DB.h"
 
 namespace BACH {
@@ -30,9 +31,9 @@ namespace BACH {
     //	CheckAndPersist();
     //}
 
-    Tuple rowMemoryManager::GetTuple(tp_key key, time_t timestamp) {
+    Tuple rowMemoryManager::GetTuple(tp_key key, time_t timestamp, RelVersion *version) {
         auto x = currentMemTable;
-        while (x) {
+        while (x && x != version->size_entry)  {
             std::shared_lock<std::shared_mutex> lock(x->mutex);
             auto now_res = x->GetTuple(key, timestamp);
             if (!now_res.row.empty()) {
@@ -43,9 +44,9 @@ namespace BACH {
         return Tuple();
     }
 
-    void rowMemoryManager::GetKTuple(idx_t k, tp_key key, time_t timestamp, std::map<std::string, Tuple> &am) {
+    void rowMemoryManager::GetKTuple(idx_t k, tp_key key, time_t timestamp, std::map<std::string, Tuple> &am, RelVersion *version) {
         auto x = currentMemTable;
-        while (x) {
+        while (x && x != version->size_entry)  {
             std::shared_lock<std::shared_mutex> lock(x->mutex);
             x->GetKTuple(k, key, timestamp, am);
             x = x->next.lock();
@@ -151,9 +152,9 @@ namespace BACH {
 
 
     void rowMemoryManager::FilterByValueRange(time_t timestamp, const std::function<bool(Tuple &)> &func,
-                                              AnswerMerger &am) {
+                                              AnswerMerger &am, RelVersion *version) {
         auto x = currentMemTable;
-        while (x) {
+        while (x && x != version->size_entry) {
             std::shared_lock<std::shared_mutex> lock(x->mutex);
             x->FilterByValueRange(timestamp, func, am);
             x = x->next.lock();
@@ -164,7 +165,7 @@ namespace BACH {
     std::function<bool(Tuple &)> CreateValueFilterFunction(const idx_t column_idx, const std::string &value_min,
                                                            const std::string &value_max) {
         return [value_min, value_max, column_idx](Tuple &tuple) {
-            if (tuple.GetRow(column_idx) >= value_min && tuple.GetRow(column_idx) <= value_max) {
+            if (tuple.row[column_idx] >= value_min && tuple.row[column_idx] <= value_max) {
                 return true;
             }
             return false;

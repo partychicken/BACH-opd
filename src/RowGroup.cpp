@@ -49,7 +49,7 @@ namespace BACH {
                     tmp.row.push_back(dict(j)->getString(cols[j][offset + i]));
                 }
                 am.insert_answer(keys[offset + i], std::move(tmp), 0);
-				std::cout << "\nMaterialize: " << keys[offset + i]  << std::endl;
+				//std::cout << "\nMaterialize: " << keys[offset + i]  << std::endl;
             }
         }
     }

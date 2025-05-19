@@ -2,12 +2,12 @@ include_directories(../include)
 include_directories(../include/catch)
 
 # ���Ӳ��Կ�ִ���ļ�
-add_executable(scanK_tests
-        scanK.cpp
+add_executable(scanK
+    scanK.cpp
 )
 
 # ����·����Ҫ�ܷ��������ݿ��ͷ�ļ�
-target_include_directories(scanK_tests PRIVATE
+target_include_directories(scanK PRIVATE
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/src
     ${PROJECT_SOURCE_DIR}/bind
@@ -15,5 +15,5 @@ target_include_directories(scanK_tests PRIVATE
 )
 
 # �������Ѿ����ɵ����ݿ��
-target_link_libraries(scanK_tests PRIVATE bach-opd folly)
+target_link_libraries(scanK PRIVATE bach-opd folly profiler tcmalloc)
 

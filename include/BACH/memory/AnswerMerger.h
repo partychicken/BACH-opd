@@ -2,6 +2,7 @@
 #include<unordered_map>
 #include<string>
 #include "BACH/common/tuple.h"
+#include "folly/container/F14Map.h"
 
 namespace BACH {
     struct AnswerMerger {
@@ -18,6 +19,6 @@ namespace BACH {
             answers[key] = x;
         }
 
-        std::unordered_map<std::string, Tuple> answers;
+        folly::F14NodeMap<std::string, Tuple> answers;
     };
 }

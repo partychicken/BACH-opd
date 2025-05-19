@@ -61,12 +61,16 @@ namespace BACH {
 
     Tuple relMemTable::GetTuple(tp_key key, time_t timestamp) {
         RelSkipList::Accessor accessor(tuple_index);
-        auto it = accessor.lower_bound(TupleEntry(key, timestamp));
+        auto it = accessor.lower_bound(std::make_pair(key, 0));
         if (it != accessor.end()) {
-            if (it->tuple.GetKey() == key && it->time < timestamp) {
-                BACH::TupleEntry entry = *it;
-                if (it->property == TOMBSTONE) return Tuple();
-                return entry.tuple;
+            //if (it->tuple.GetKey() == key && it->time <= timestamp) {
+            //    BACH::TupleEntry entry = *it;
+            //    if (it->property == TOMBSTONE) return Tuple();
+            //    return entry.tuple;
+            //}
+            auto prop = tuple_pool[it->second]->property;
+            if (prop != NONEINDEX || prop != TOMBSTONE) {
+                return tuple_pool[it->second]->tuple;
             }
         }
         return Tuple(); // ���ؿյ� Tuple ��ʾδ�ҵ�
@@ -74,8 +78,26 @@ namespace BACH {
 
     void relMemTable::PutTuple(Tuple tuple, tp_key key, time_t timestamp, tuple_property_t property) {
         RelSkipList::Accessor accessor(tuple_index);
-        accessor.insert(TupleEntry(tuple, timestamp, property));
+        
+        //accessor.insert(TupleEntry(tuple, timestamp, property));
+        
+        idx_t found;
+		auto it = accessor.find(std::make_pair(key, 0));
+        if (it != accessor.end()) {
+			found = it->second;
+        }
+        else
+			found = NONEINDEX;
+        auto pos = tuple_pool.push_back(std::make_shared<TupleEntry>(tuple, timestamp, property, found));
+		if (found == NONEINDEX) {
+			accessor.insert(std::make_pair(key, pos));
+		}
+		else {
+			it->second = pos;
+		}
+		this->max_time = std::max(timestamp, this->max_time);
         total_tuple.fetch_add(1);
+        size += Options::KEY_SIZE;
         UpdateMinMax(key);
     }
 
@@ -84,34 +106,23 @@ namespace BACH {
         std::vector<Tuple> result;
         RelSkipList::Accessor accessor(tuple_index);
         tp_key last_key = "";
-        auto it = accessor.lower_bound(TupleEntry(start_key, timestamp));
-        for (; it != accessor.end(); ++it) {
-            auto now_key = it->tuple.GetKey();
-            if (now_key <= end_key) break;
-            if (now_key == last_key || it->time > timestamp)
-                continue;
-            auto tuple_entry = *it;
-            if (it->time <= timestamp && (tuple_entry.property != TOMBSTONE || tuple_entry.property != NONEINDEX)) {
-                result.push_back(tuple_entry.tuple);
-                last_key = now_key;
-            }
+        auto it = accessor.lower_bound(std::make_pair(start_key, 0));
+        for (; it != accessor.end() && tuple_pool[it->second]->tuple.row[0] <= end_key; ++it) {
+            if (tuple_pool[it->second]->property != TOMBSTONE && tuple_pool[it->second]->property != NONEINDEX) {
+				result.push_back(tuple_pool[it->second]->tuple);
+            }        
         }
         return result;
     }
 
     void relMemTable::GetKTuple(idx_t k, tp_key start_key, time_t timestamp, std::map<std::string, Tuple> &am) {
         RelSkipList::Accessor accessor(tuple_index);
-        tp_key last_key = "";
-        auto it = accessor.lower_bound(TupleEntry(start_key, timestamp));
+        auto it = accessor.lower_bound(std::make_pair(start_key, 0));
         for (; it != accessor.end(); ++it) {
-            auto now_key = it->tuple.GetKey();
-            if (now_key == last_key || it->time > timestamp)
-                continue;
-            auto tuple_entry = *it;
-            if (it->time <= timestamp && (tuple_entry.property != TOMBSTONE || tuple_entry.property != NONEINDEX)) {
-                if (!am.contains(tuple_entry.tuple.GetKey()))
-                    am.emplace(tuple_entry.tuple.GetKey(), std::move(tuple_entry.tuple));
-                last_key = now_key;
+            auto now_te = tuple_pool[it->second];
+            if (now_te->time <= timestamp && (now_te->property != TOMBSTONE || now_te->property != NONEINDEX)) {
+                if (!am.contains(now_te->tuple.GetKey()))
+                    am.emplace(now_te->tuple.GetKey(), std::move(now_te->tuple));
                 k--;
                 if (!k) return;
             }
@@ -133,17 +144,14 @@ namespace BACH {
     void relMemTable::FilterByValueRange(time_t timestamp, const std::function<bool(Tuple &)> &func, AnswerMerger &am) {
         /*std::vector<Tuple> result;*/
         RelSkipList::Accessor accessor(tuple_index);
-        tp_key last_key = "";
         for (auto it = accessor.begin(); it != accessor.end(); ++it) {
-            auto now_key = it->tuple.GetKey();
-            if (it->time > timestamp || last_key == now_key)
+            auto now_te = tuple_pool[it->second];
+            if (now_te->time > timestamp)
                 continue;
-            auto tuple_entry = *it;
-            if (tuple_entry.property != TOMBSTONE && tuple_entry.property != NONEINDEX) {
-                if (func(tuple_entry.tuple)) {
+            if (now_te->property != TOMBSTONE && now_te->property != NONEINDEX) {
+                if (func(now_te->tuple)) {
                     /*result.push_back(*tuple_entry.tuple);*/
-                    am.insert_answer(now_key, std::move(tuple_entry.tuple), false);
-                    last_key = now_key;
+                    am.insert_answer(now_te->tuple.row[0], std::move(now_te->tuple), false);
                 }
             }
         }

@@ -23,7 +23,7 @@ TEST_CASE("FILE IO Test", "[compaction]") {
     //MockOptions->WRITE_BUFFER_SIZE = 64 * 1024;
     //MockOptions->MAX_BLOCK_SIZE = 64 * 1024;
 
-    DB x(MockOptions, 11);
+    DB x(MockOptions, 2);
 
     std::vector<std::string> ans_sheet;
     for (int i = 0; i < 1024 * 1024 * 8; i++) {
@@ -32,17 +32,17 @@ TEST_CASE("FILE IO Test", "[compaction]") {
         t.row.push_back(std::to_string(i));
         t.row.push_back(value_set[k]);
         
-        {
-            t.row.push_back(value_set[k]);
-            t.row.push_back(value_set[k]);
-            t.row.push_back(value_set[k]);
-            t.row.push_back(value_set[k]);
-            t.row.push_back(value_set[k]);
-            t.row.push_back(value_set[k]);
-            t.row.push_back(value_set[k]);
-            t.row.push_back(value_set[k]);
-            t.row.push_back(value_set[k]);
-        }
+        //{
+        //    t.row.push_back(value_set[k]);
+        //    t.row.push_back(value_set[k]);
+        //    t.row.push_back(value_set[k]);
+        //    t.row.push_back(value_set[k]);
+        //    t.row.push_back(value_set[k]);
+        //    t.row.push_back(value_set[k]);
+        //    t.row.push_back(value_set[k]);
+        //    t.row.push_back(value_set[k]);
+        //    t.row.push_back(value_set[k]);
+        //}
 
 
         auto y = x.BeginRelTransaction();

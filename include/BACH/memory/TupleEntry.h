@@ -15,11 +15,11 @@
 namespace BACH {
     struct TupleEntry {
         TupleEntry(Tuple _tuple, time_t _time,
-                   tuple_property_t _property, TupleEntry *_next = nullptr) : tuple(_tuple), time(_time),
+                   tuple_property_t _property, idx_t _next = NONEINDEX) : tuple(_tuple), time(_time),
                                                                               property(_property), next(_next) {
         }
 
-        TupleEntry(): time(MAXTIME), property(NONEINDEX), next(nullptr){}
+        TupleEntry(): time(MAXTIME), property(NONEINDEX), next(NONEINDEX){}
 
         TupleEntry(std::string key, time_t time) : time(time) {
             tuple.row.push_back(key);
@@ -30,7 +30,7 @@ namespace BACH {
         // function as a signal whether this record has been deleted
         // don't know the reason to use double but not bool
         tuple_property_t property;
-        TupleEntry *next;
+        idx_t next;
 
         bool operator<(const TupleEntry &other) const {
             return tuple.GetKey() == other.tuple.GetKey() ? time > other.time : tuple.GetKey() < other.tuple.GetKey();
@@ -54,15 +54,14 @@ namespace BACH {
 
     // compare key first, then time
     struct ReverseCompare {
-        bool operator()(const std::tuple<tp_key, time_t, TupleEntry> &a,
-                        const std::tuple<tp_key, time_t, TupleEntry> &b) const {
-            return (std::get<0>(a) < std::get<0>(b)) ||
-                   (std::get<0>(a) == std::get<0>(b) && std::get<1>(a) > std::get<1>(b));
+        bool operator()(const std::pair<tp_key, idx_t>&a,
+                        const std::pair<tp_key, idx_t>&b) const {
+            return a.first < b.first;
         }
     };
 
 
-    typedef folly::ConcurrentSkipList<TupleEntry> RelSkipList;
+    typedef folly::ConcurrentSkipList<std::pair<tp_key, idx_t>, ReverseCompare> RelSkipList;
 
 	struct relMemTable
 	{
@@ -81,7 +80,7 @@ namespace BACH {
 		std::atomic<bool> immutable;
 		std::counting_semaphore<1024> sema;
 		std::map <tp_key, time_t> del_table;
-		/*size_t size = 0;*/
+		size_t size = 0;
 		time_t max_time = 0;
 		relMemTable(size_t _size, idx_t _column_num,
 			std::shared_ptr<relMemTable> _next = NULL) :

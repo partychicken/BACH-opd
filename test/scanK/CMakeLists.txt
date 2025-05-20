@@ -16,4 +16,3 @@ target_include_directories(scanK PRIVATE
 
 # �������Ѿ����ɵ����ݿ��
 target_link_libraries(scanK PRIVATE bach-opd folly profiler tcmalloc)
-

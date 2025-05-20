@@ -206,7 +206,7 @@ namespace BACH {
                 }
             if (transferKeyToHash<std::string>(key)) {
                 RelFileParser<std::string> parser(db->ReaderCaches->find(iter.GetFile()), db->options,
-                                                  iter.GetFile()->file_size);
+                                                  iter.GetFile()->file_size, static_cast<RelFileMetaData<std::string> *>(iter.GetFile()));
                 Tuple found = parser.GetTuple(key);
                 if (!found.row.empty()) {
                     for (int i = 1; i < found.row.size(); i++) {
@@ -261,7 +261,7 @@ namespace BACH {
         for (auto cur_level: files) {
             for (auto cur_file: cur_level) {
                 auto reader = db->ReaderCaches->find(cur_file);
-                auto parser = RelFileParser<std::string>(reader, db->options, cur_file->file_size);
+                auto parser = RelFileParser<std::string>(reader, db->options, cur_file->file_size, static_cast<RelFileMetaData<std::string> *>(cur_file));
                 auto DictList = reinterpret_cast<RelFileMetaData<std::string> *>(cur_file)->dictionary;
                 RowGroup cur_row_group(db, reinterpret_cast<RelFileMetaData<std::string> *>(cur_file));
                 cur_row_group.GetKeyData();
@@ -288,7 +288,7 @@ namespace BACH {
         while (!iter.End()) {
             auto cur_file = iter.GetFile();
             auto reader = db->ReaderCaches->find(cur_file);
-            auto parser = RelFileParser<std::string>(reader, db->options, cur_file->file_size);
+            auto parser = RelFileParser<std::string>(reader, db->options, cur_file->file_size, static_cast<RelFileMetaData<std::string> *>(cur_file));
             std::vector<Tuple> res = parser.GetKTuple(k, key);
             for (auto x: res) {
                 if (am.contains(x.GetKey())) continue;

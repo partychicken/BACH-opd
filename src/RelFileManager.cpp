@@ -66,7 +66,8 @@ namespace BACH {
         int file_num = 0;
         for (auto &file: compaction.file_list) {
             auto reader = db->ReaderCaches->find(file);
-            parsers.emplace_back(reader, db->options, file->file_size);
+            parsers.emplace_back(reader, db->options, file->file_size,
+                                 static_cast<RelFileMetaData<std::string> *>(file));
             DictList[file_num] = &(static_cast<RelFileMetaData<std::string> *>(file)->dictionary);
             if (file->level == compaction.target_level)
                 file_ids.push_back(-db->options->FILE_MERGE_NUM - 10 + file->file_id);
@@ -122,7 +123,7 @@ namespace BACH {
 
         std::string *order_key_buf = new std::string[key_tot_num / file_num + 5];
         int key_buf_idx = 0;
-        std::vector<std::pair<idx_t, idx_t>> val_buf[col_num];
+        std::vector<std::pair<idx_t, idx_t> > val_buf[col_num];
         for (int i = 0; i < col_num; i++) {
             val_buf[i].resize(key_tot_num / file_num + 5);
         }
@@ -212,6 +213,10 @@ namespace BACH {
                 temp_file_metadata->key_max = std::string(last_key);
                 temp_file_metadata->key_num = key_buf_idx;
                 temp_file_metadata->col_num = col_num;
+                temp_file_metadata->block_count = rel_builder->GetBlockCount();
+                temp_file_metadata->block_filter_size = rel_builder->GetBlockFilterSize();
+                temp_file_metadata->block_meta_begin_pos = rel_builder->GetBlockMetaBeginPos();
+                temp_file_metadata->block_func_num = rel_builder->GetBlockFuncNum();
                 temp_file_metadata->bloom_filter = BloomFilter(key_buf_idx, db->options->FALSE_POSITIVE);
                 for (int i = 0; i < key_buf_idx; i++) {
                     temp_file_metadata->bloom_filter.insert(order_key_buf[i]);
@@ -274,6 +279,10 @@ namespace BACH {
             temp_file_metadata->key_max = std::string(last_key);
             temp_file_metadata->key_num = key_buf_idx;
             temp_file_metadata->col_num = col_num;
+            temp_file_metadata->block_count = rel_builder->GetBlockCount();
+            temp_file_metadata->block_filter_size = rel_builder->GetBlockFilterSize();
+            temp_file_metadata->block_meta_begin_pos = rel_builder->GetBlockMetaBeginPos();
+            temp_file_metadata->block_func_num = rel_builder->GetBlockFuncNum();
             temp_file_metadata->bloom_filter = BloomFilter(key_buf_idx, db->options->FALSE_POSITIVE);
             for (int i = 0; i < key_buf_idx; i++) {
                 temp_file_metadata->bloom_filter.insert(order_key_buf[i]);

@@ -16,7 +16,7 @@ namespace BACH {
             cols[i] = static_cast<idx_t *>(malloc(key_num * sizeof(idx_t)));
         }
         auto reader = db->ReaderCaches->find(file);
-        parser = new RelFileParser<std::string>(reader, db->options, file->file_size);
+        parser = new RelFileParser<std::string>(reader, db->options, file->file_size, file);
     }
 
 

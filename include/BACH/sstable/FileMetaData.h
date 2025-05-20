@@ -35,14 +35,14 @@ namespace BACH {
 
         FileMetaData(FileMetaData &&x) : file_name(x.file_name), label(x.label), level(x.level),
                                          vertex_id_b(x.vertex_id_b), file_id(x.file_id), ref(x.ref.load()),
-                                         file_size(x.file_size), deletion(x.deletion), filter(x.filter),
-                                         reader(x.reader.load()), id(x.id) {
+                                         file_size(x.file_size), deletion(x.deletion), reader(x.reader.load()),
+                                         bloom_filter(std::move(x.bloom_filter)), id(x.id) {
         }
 
         FileMetaData(const FileMetaData &x) : file_name(x.file_name), label(x.label), level(x.level),
                                          vertex_id_b(x.vertex_id_b), file_id(x.file_id), ref(x.ref.load()),
-                                         file_size(x.file_size), deletion(x.deletion), filter(x.filter),
-                                         reader(x.reader.load()), id(x.id) {
+                                         file_size(x.file_size), deletion(x.deletion), reader(x.reader.load()),
+                                         bloom_filter(x.bloom_filter), id(x.id) {
         }
 
         FileMetaData(label_t _label, idx_t _level, vertex_t _vertex_id_b,

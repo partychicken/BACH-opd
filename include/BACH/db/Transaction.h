@@ -66,7 +66,7 @@ namespace BACH
 			AnswerMerger am;
 			// add in-memory data into am here;
 			auto vf = CreateValueFilterFunction(col_id, left_bound, right_bound);
-			db->RowMemtable->FilterByValueRange(read_epoch, vf, am);
+			db->RowMemtable->FilterByValueRange(read_epoch, vf, am, rel_version);
 
 			auto files = rel_version->FileIndex;
 

@@ -153,13 +153,13 @@ namespace BACH {
             return;
         }
         db->check_write_stall();
-        OperatorProfiler op;
-        OperatorProfilerContext::SetCurrentProfiler(&op);
-        op.Start();
+        //OperatorProfiler op;
+        //OperatorProfilerContext::SetCurrentProfiler(&op);
+        //op.Start();
         db->RowMemtable->PutTuple(tuple, key, write_epoch, property);
-        op.End();
-        profiler.AddOperator("PutTuple", op);
-        OperatorProfilerContext::SetCurrentProfiler(nullptr);
+        //op.End();
+        //profiler.AddOperator("PutTuple", op);
+        //OperatorProfilerContext::SetCurrentProfiler(nullptr);
     }
 
     void Transaction::DelTuple(tp_key key) {
@@ -167,65 +167,62 @@ namespace BACH {
             return;
         }
         db->check_write_stall();
-        OperatorProfiler op;
-        OperatorProfilerContext::SetCurrentProfiler(&op);
-        op.Start();
+        //OperatorProfiler op;
+        //OperatorProfilerContext::SetCurrentProfiler(&op);
+        //op.Start();
         Tuple x;
         x.row.push_back(key);
         db->RowMemtable->PutTuple(x, key, write_epoch, TOMBSTONE);
-        op.End();
-        profiler.AddOperator("DelTuple", op);
-        OperatorProfilerContext::SetCurrentProfiler(nullptr);
+        //op.End();
+        //profiler.AddOperator("DelTuple", op);
+        //OperatorProfilerContext::SetCurrentProfiler(nullptr);
     }
 
     Tuple Transaction::GetTuple(tp_key key) {
         if (write_epoch == MAXTIME) {
             return Tuple();
         }
-        OperatorProfiler op;
-        OperatorProfilerContext::SetCurrentProfiler(&op);
-        op.Start();
-        Tuple x = db->RowMemtable->GetTuple(key, read_epoch);
+        //OperatorProfiler op;
+        //OperatorProfilerContext::SetCurrentProfiler(&op);
+        //op.Start();
+        Tuple x = db->RowMemtable->GetTuple(key, read_epoch, rel_version);
         // if (!std::isnan(x.property)) {
         //     return x;
         // }
         if (!x.row.empty()) {
-            op.End();
-            profiler.AddOperator("GetTuple", op);
-            OperatorProfilerContext::SetCurrentProfiler(nullptr);
+            //op.End();
+            //profiler.AddOperator("GetTuple", op);
+            //OperatorProfilerContext::SetCurrentProfiler(nullptr);
             return x;
         }
-
         RelVersionIterator iter(rel_version, key, key);
         while (!iter.End()) {
             if (key >= reinterpret_cast<RelFileMetaData<std::string> *>(iter.GetFile())->key_min && key <=
-                reinterpret_cast<RelFileMetaData<std::string> *>(iter.GetFile())->key_max)
+                reinterpret_cast<RelFileMetaData<std::string> *>(iter.GetFile())->key_max) {
                 // ԭ���ж�����Ϊ(*iter.GetFile()->filter)[src - iter.GetFile()->vertex_id_b]
-                if (!iter.GetFile()->bloom_filter.exists(key)) {
-                    continue;
-                }
-            if (transferKeyToHash<std::string>(key)) {
-                RelFileParser<std::string> parser(db->ReaderCaches->find(iter.GetFile()), db->options,
-                                                  iter.GetFile()->file_size);
-                Tuple found = parser.GetTuple(key);
-                if (!found.row.empty()) {
-                    for (int i = 1; i < found.row.size(); i++) {
-                        idx_t col_id = *((idx_t *) found.row[i].data());
-                        found.row[i] = static_cast<RelFileMetaData<std::string> *>(iter.GetFile())->dictionary[
-                            i - 1].
-                        getString(col_id);
+                if (iter.GetFile()->bloom_filter.exists(key)) {
+                    RelFileParser<std::string> parser(db->ReaderCaches->find(iter.GetFile()), db->options,
+                                                    iter.GetFile()->file_size);
+                    Tuple found = parser.GetTuple(key);
+                    if (!found.row.empty()) {
+                        for (int i = 1; i < found.row.size(); i++) {
+                            idx_t col_id = *((idx_t *) found.row[i].data());
+                            found.row[i] = static_cast<RelFileMetaData<std::string> *>(iter.GetFile())->dictionary[
+                                i - 1].
+                            getString(col_id);
+                        }
+                        // op.End();
+                        // profiler.AddOperator("GetTuple", op);
+                        // OperatorProfilerContext::SetCurrentProfiler(nullptr);
+                        return found;
                     }
-                    op.End();
-                    profiler.AddOperator("GetTuple", op);
-                    OperatorProfilerContext::SetCurrentProfiler(nullptr);
-                    return found;
                 }
             }
             iter.next();
         }
-        op.End();
-        profiler.AddOperator("GetTuple", op);
-        OperatorProfilerContext::SetCurrentProfiler(nullptr);
+        // op.End();
+        // profiler.AddOperator("GetTuple", op);
+        // OperatorProfilerContext::SetCurrentProfiler(nullptr);
         return Tuple();
     }
 
@@ -275,12 +272,12 @@ namespace BACH {
     }
 
     std::vector<Tuple> Transaction::ScanKTuples(idx_t k, std::string key) {
-        OperatorProfiler op;
-        OperatorProfilerContext::SetCurrentProfiler(&op);
-        op.Start();
+        // OperatorProfiler op;
+        // OperatorProfilerContext::SetCurrentProfiler(&op);
+        // op.Start();
 
         std::map<std::string, Tuple> am;
-        db->RowMemtable->GetKTuple(k, key, read_epoch, am);
+        db->RowMemtable->GetKTuple(k, key, read_epoch, am, rel_version);
 
         std::string KEY_MAX;
         for (unsigned int i = 0; i < db->options->KEY_SIZE; i++) KEY_MAX += ((char) 127);
@@ -308,9 +305,9 @@ namespace BACH {
             res.emplace_back(x.second);
             if (res.size() >= k) break;
         }
-        op.End();
-        profiler.AddOperator("ScanKTuples", op);
-        OperatorProfilerContext::SetCurrentProfiler(nullptr);
+        // op.End();
+        // profiler.AddOperator("ScanKTuples", op);
+        // OperatorProfilerContext::SetCurrentProfiler(nullptr);
         return res;
     }
 }

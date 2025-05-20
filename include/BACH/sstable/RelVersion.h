@@ -36,6 +36,7 @@ namespace BACH
         DB* db;
 
         friend class RelVersionIterator;
+        friend class rowMemoryManager;
     };
 
     class RelVersionIterator

@@ -74,7 +74,7 @@ namespace BACH {
 		
 		std::shared_ptr<RelSkipList> tuple_index;
 		std::shared_mutex mutex;
-		ConcurrentArray<std::shared_ptr<TupleEntry>> tuple_pool;
+		ConcurrentArray<TupleEntry *> tuple_pool;
 		std::shared_ptr<relMemTable> last = NULL;
 		std::weak_ptr<relMemTable> next;
 		std::atomic<bool> immutable;

@@ -27,7 +27,7 @@ namespace BACH {
                               size_t key_size = 0, size_t *col_size = nullptr) {
             Key_t key_max = key[0], key_min = key[0];
             for (idx_t i = 0; i < key_num; i++) {
-                filter->insert(key[i]);
+                //filter->insert(key[i]);
                 key_max = max(key_max, key[i]);
                 key_min = min(key_min, key[i]);
             }

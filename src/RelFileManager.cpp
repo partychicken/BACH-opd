@@ -240,10 +240,10 @@ namespace BACH {
                 temp_file_metadata->key_num = key_buf_idx;
                 temp_file_metadata->col_num = col_num;
                 temp_file_metadata->block_count = rel_builder->GetBlockCount();
-                temp_file_metadata->block_filter_size = rel_builder->GetBlockFilterSize();
-                temp_file_metadata->last_block_filter_size = rel_builder->GetLastBlockFilterSize();
+                // temp_file_metadata->block_filter_size = rel_builder->GetBlockFilterSize();
+                // temp_file_metadata->last_block_filter_size = rel_builder->GetLastBlockFilterSize();
                 temp_file_metadata->block_meta_begin_pos = rel_builder->GetBlockMetaBeginPos();
-                temp_file_metadata->block_func_num = rel_builder->GetBlockFuncNum();
+                // temp_file_metadata->block_func_num = rel_builder->GetBlockFuncNum();
                 temp_file_metadata->bloom_filter = BloomFilter(key_buf_idx, db->options->FALSE_POSITIVE);
                 for (int i = 0; i < key_buf_idx; i++) {
                     temp_file_metadata->bloom_filter.insert(order_key_buf[i]);
@@ -306,10 +306,10 @@ namespace BACH {
             temp_file_metadata->key_num = key_buf_idx;
             temp_file_metadata->col_num = col_num;
             temp_file_metadata->block_count = rel_builder->GetBlockCount();
-            temp_file_metadata->block_filter_size = rel_builder->GetBlockFilterSize();
-            temp_file_metadata->last_block_filter_size = rel_builder->GetLastBlockFilterSize();
+            // temp_file_metadata->block_filter_size = rel_builder->GetBlockFilterSize();
+            // temp_file_metadata->last_block_filter_size = rel_builder->GetLastBlockFilterSize();
             temp_file_metadata->block_meta_begin_pos = rel_builder->GetBlockMetaBeginPos();
-            temp_file_metadata->block_func_num = rel_builder->GetBlockFuncNum();
+            // temp_file_metadata->block_func_num = rel_builder->GetBlockFuncNum();
             temp_file_metadata->bloom_filter = BloomFilter(key_buf_idx, db->options->FALSE_POSITIVE);
             for (int i = 0; i < key_buf_idx; i++) {
                 temp_file_metadata->bloom_filter.insert(order_key_buf[i]);

@@ -82,11 +82,13 @@ namespace BACH {
         RelCompaction<std::string> *c = NULL;
         RelFileMetaData<std::string> *down_file_meta;
         if (level == 0) {
+            if (FileIndex[level].size() == 0)
+                return c;
             if (FileIndex[level][0]->merging)
                 return c;
-            if (FileIndex[level].size() <= db->options->ZERO_LEVEL_FILES) {
-                return c;
-            }
+            // if (FileIndex[level].size() <= db->options->ZERO_LEVEL_FILES) {
+            //     return c;
+            // }
             down_file_meta = static_cast<RelFileMetaData<std::string> *>(FileIndex[level][0]);
         } else {
             if (level == db->options->MAX_LEVEL - 1) {

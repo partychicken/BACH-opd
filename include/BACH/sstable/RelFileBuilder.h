@@ -57,16 +57,16 @@ namespace BACH {
                     }
                 }
                 BlockMetaT<Key_t> meta{
-                    std::make_shared<BloomFilter>(block_key_num, options->FALSE_POSITIVE), "", "", 0, 0
+                    /*std::make_shared<BloomFilter>(block_key_num, options->FALSE_POSITIVE),*/ "", 0, 0
                 };
                 BlockBuilder<Key_t> *builder = new BlockBuilder<Key_t>(writer, options);
-                size_t block_size = this->SetBlock(builder, meta.filter, keys + key_offset,
+                size_t block_size = this->SetBlock(builder, /*meta.filter*/nullptr, keys + key_offset,
                                                    block_key_num, key_size, col_num,
                                                    vals, block_val_num, val_offset);
                 meta.offset_in_file = now_offset_in_file;
                 meta.block_size = block_size;
                 meta.key_min = builder->key_min;
-                meta.key_max = builder->key_max;
+                //meta.key_max = builder->key_max;
                 block_meta.push_back(meta);
 
                 now_offset_in_file += block_size;
@@ -115,17 +115,17 @@ namespace BACH {
             return block_meta_begin_pos;
         }
 
-        size_t GetBlockFilterSize() {
-            return block_meta[0].filter->data().size();
-        }
+        // size_t GetBlockFilterSize() {
+        //     return block_meta[0].filter->data().size();
+        // }
 
-        size_t GetLastBlockFilterSize() {
-            return block_meta[block_count - 1].filter->data().size();
-        }
+        // size_t GetLastBlockFilterSize() {
+        //     return block_meta[block_count - 1].filter->data().size();
+        // }
 
-        idx_t GetBlockFuncNum() {
-            return block_meta[0].filter->get_func_num();
-        }
+        // idx_t GetBlockFuncNum() {
+        //     return block_meta[0].filter->get_func_num();
+        // }
 
     private:
         std::shared_ptr<FileWriter> writer;
@@ -159,12 +159,12 @@ namespace BACH {
             std::string metadata;
             for (idx_t i = 0; i < block_count; i++) {
                 util::PutFixed(metadata, block_meta[i].key_min);
-                util::PutFixed(metadata, block_meta[i].key_max);
+                //util::PutFixed(metadata, block_meta[i].key_min);
                 util::PutFixed(metadata, block_meta[i].offset_in_file);
                 util::PutFixed(metadata, block_meta[i].block_size);
-                std::string filter_data = block_meta[i].filter->data();
-                util::PutFixed(metadata, static_cast<size_t>(filter_data.size()));
-                metadata += filter_data;
+                // std::string filter_data = block_meta[i].filter->data();
+                // util::PutFixed(metadata, static_cast<size_t>(filter_data.size()));
+                // metadata += filter_data;
             }
             writer->append(metadata.data(), metadata.size());
 

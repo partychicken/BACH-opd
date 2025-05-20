@@ -137,10 +137,10 @@ namespace BACH {
             temp_file_metadata->bloom_filter.insert(tmp.GetColumn(0)[i]);
         }
         temp_file_metadata->block_count = rfb.GetBlockCount();
-        temp_file_metadata->block_filter_size = rfb.GetBlockFilterSize();
-        temp_file_metadata->last_block_filter_size = rfb.GetLastBlockFilterSize();
+        // temp_file_metadata->block_filter_size = rfb.GetBlockFilterSize();
+        // temp_file_metadata->last_block_filter_size = rfb.GetLastBlockFilterSize();
         temp_file_metadata->block_meta_begin_pos = rfb.GetBlockMetaBeginPos();
-        temp_file_metadata->block_func_num = rfb.GetBlockFuncNum();
+        // temp_file_metadata->block_func_num = rfb.GetBlockFuncNum();
         /*delete data;*/
         for (size_t i = 0; i < memtable->column_num - 1; i++) {
             delete data[i];

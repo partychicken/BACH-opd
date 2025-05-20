@@ -17,8 +17,8 @@
 namespace BACH {
     template<typename Key_t>
     struct BlockMetaT {
-        std::shared_ptr<BloomFilter> filter;
-        Key_t key_min, key_max;
+        //std::shared_ptr<BloomFilter> filter;
+        Key_t key_min;// key_max;
         size_t offset_in_file;
         size_t block_size;
     };
@@ -31,52 +31,60 @@ namespace BACH {
                                                       file_size(_file_size) {
             auto key_size = Options::KEY_SIZE;
             //
-            size_t header_size = 2 * key_size + sizeof(size_t) + 3 * sizeof(idx_t);
-            char infobuf[header_size + 10];
-            if (!reader->rread(infobuf, header_size, header_size)) {
-                std::cout << "read fail begin" << std::endl;
-                ++*(int *) NULL;
-            }
+            // size_t header_size = 2 * key_size + sizeof(size_t) + 3 * sizeof(idx_t);
+            // char infobuf[header_size + 10];
+            // if (!reader->rread(infobuf, header_size, header_size)) {
+            //     std::cout << "read fail begin" << std::endl;
+            //     ++*(int *) NULL;
+            // }
             key_min = _meta->key_min;
             key_max = _meta->key_max;
             key_num = _meta->key_num;
             col_num = _meta->col_num;
             block_count = _meta->block_count;
             block_meta_begin_pos = _meta->block_meta_begin_pos;
-            block_filter_size = _meta->block_filter_size;
-            block_func_num = _meta->block_func_num;
-            last_block_filter_size = _meta->last_block_filter_size;
+            // block_filter_size = _meta->block_filter_size;
+            // block_func_num = _meta->block_func_num;
+            // last_block_filter_size = _meta->last_block_filter_size;
 
-            size_t meta_size = 2 * key_size + 3 * sizeof(size_t);
+            // size_t meta_size = 2 * key_size + 3 * sizeof(size_t);
+            size_t meta_size = key_size + 2 * sizeof(size_t);
             size_t now_meta_offset = block_meta_begin_pos;
-            size_t tot_meta_size = (meta_size + block_filter_size) * (block_count - 1) + meta_size +
-                                   last_block_filter_size;
+            // size_t tot_meta_size = (meta_size + block_filter_size) * (block_count - 1) + meta_size +
+            //                        last_block_filter_size;
+            size_t tot_meta_size = (meta_size ) * (block_count - 1) + meta_size;
             char blockinfobuf[tot_meta_size];
             if (!reader->fread(blockinfobuf, tot_meta_size, now_meta_offset)) {
                 std::cout << "read fail begin" << std::endl;
                 ++*(int *) NULL;
             }
+            block_meta.resize(block_count);
             now_meta_offset = 0;
-            for (idx_t i = 0; i < block_count - 1; i++) {
-                BlockMetaT<Key_t> meta{std::make_shared<BloomFilter>(), "", "", 0, 0};
+            for (idx_t i = 0; i < block_count ; i++) {
+                BlockMetaT<Key_t> meta{/*std::make_shared<BloomFilter>(),*/ "", 0, 0};
                 util::DecodeFixed(blockinfobuf + now_meta_offset, meta.key_min);
-                util::DecodeFixed(blockinfobuf + now_meta_offset + key_size, meta.key_max);
-                util::DecodeFixed(blockinfobuf + now_meta_offset + key_size * 2, meta.offset_in_file);
-                util::DecodeFixed(blockinfobuf + now_meta_offset + key_size * 2 + sizeof(size_t), meta.block_size);
-                std::string filters(blockinfobuf + now_meta_offset + meta_size, block_filter_size);
-                meta.filter->create_from_data(block_func_num, filters);
-                block_meta.push_back(meta);
+                // util::DecodeFixed(blockinfobuf + now_meta_offset + key_size, meta.key_max);
+                // util::DecodeFixed(blockinfobuf + now_meta_offset + key_size * 2, meta.offset_in_file);
+                // util::DecodeFixed(blockinfobuf + now_meta_offset + key_size * 2 + sizeof(size_t), meta.block_size);
+                // std::string filters(blockinfobuf + now_meta_offset + meta_size, block_filter_size);
+                // meta.filter->create_from_data(block_func_num, filters);
+                util::DecodeFixed(blockinfobuf + now_meta_offset + key_size, meta.offset_in_file);
+                util::DecodeFixed(blockinfobuf + now_meta_offset + key_size + sizeof(size_t), meta.block_size);
+                block_meta[i]=std::move(meta);
 
-                now_meta_offset += meta_size + block_filter_size;
+                // now_meta_offset += meta_size + block_filter_size;
+                now_meta_offset += meta_size;
             }
-            BlockMetaT<Key_t> meta{std::make_shared<BloomFilter>(), "", "", 0, 0};
-            util::DecodeFixed(blockinfobuf + now_meta_offset, meta.key_min);
-            util::DecodeFixed(blockinfobuf + now_meta_offset + key_size, meta.key_max);
-            util::DecodeFixed(blockinfobuf + now_meta_offset + key_size * 2, meta.offset_in_file);
-            util::DecodeFixed(blockinfobuf + now_meta_offset + key_size * 2 + sizeof(size_t), meta.block_size);
-            std::string filters(blockinfobuf + now_meta_offset + meta_size, last_block_filter_size);
-            meta.filter->create_from_data(block_func_num, filters);
-            block_meta.push_back(meta);
+            // BlockMetaT<Key_t> meta{/*std::make_shared<BloomFilter>(),*/ "", 0, 0};
+            // util::DecodeFixed(blockinfobuf + now_meta_offset, meta.key_min);
+            // //util::DecodeFixed(blockinfobuf + now_meta_offset + key_size, meta.key_max);
+            // util::DecodeFixed(blockinfobuf + now_meta_offset + key_size * 2, meta.offset_in_file);
+            // util::DecodeFixed(blockinfobuf + now_meta_offset + key_size * 2 + sizeof(size_t), meta.block_size);
+            // std::string filters(blockinfobuf + now_meta_offset + meta_size, last_block_filter_size);
+            // meta.filter->create_from_data(block_func_num, filters);
+            // util::DecodeFixed(blockinfobuf + now_meta_offset + key_size, meta.offset_in_file);
+            // util::DecodeFixed(blockinfobuf + now_meta_offset + key_size + sizeof(size_t), meta.block_size);
+            // block_meta[block_count - 1]=std::move(meta);
         }
 
         RelFileParser(RelFileParser &&x) : reader(x.reader), options(x.options), file_size(x.file_size),
@@ -98,7 +106,10 @@ namespace BACH {
             }
             for (idx_t i = 0; i < block_count; i++) {
                 BlockMetaT<Key_t> &meta = block_meta[i];
-                if (key < meta.key_min || key > meta.key_max) {
+                if (key < meta.key_min) {
+                    continue;
+                }
+                if (i != block_count - 1 && key >= block_meta[i + 1].key_min) {
                     continue;
                 }
                 //if(meta.filter->exists(key)) {
@@ -158,7 +169,7 @@ namespace BACH {
             if (iter != block_meta.begin()) --iter;
             for (; iter != block_meta.end(); ++iter) {
                 BlockMetaT<Key_t> &meta = *iter;
-                if (meta.key_max < key) continue;
+                if (iter != block_meta.end() - 1 && key >= (iter + 1)->key_min) continue;
                 BlockParser<Key_t> block_parser(reader, options,
                                                 meta.offset_in_file, meta.block_size, col_num);
                 block_parser.GetKTuple(now_k, key, res);

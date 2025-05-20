@@ -195,6 +195,7 @@ namespace BACH {
             //OperatorProfilerContext::SetCurrentProfiler(nullptr);
             return x;
         }
+        // key.resize(db->options->KEY_SIZE);
         RelVersionIterator iter(rel_version, key, key);
         while (!iter.End()) {
             if (key >= reinterpret_cast<RelFileMetaData<std::string> *>(iter.GetFile())->key_min && key <=
@@ -202,7 +203,7 @@ namespace BACH {
                 // ԭ���ж�����Ϊ(*iter.GetFile()->filter)[src - iter.GetFile()->vertex_id_b]
                 if (iter.GetFile()->bloom_filter.exists(key)) {
                     RelFileParser<std::string> parser(db->ReaderCaches->find(iter.GetFile()), db->options,
-                                                    iter.GetFile()->file_size);
+                                                    iter.GetFile()->file_size, static_cast<RelFileMetaData<std::string> *>(iter.GetFile()));
                     Tuple found = parser.GetTuple(key);
                     if (!found.row.empty()) {
                         for (int i = 1; i < found.row.size(); i++) {

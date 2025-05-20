@@ -104,8 +104,11 @@ namespace BACH {
 
 
     VersionEdit *rowMemoryManager::RowMemtablePersistence(idx_t file_id, std::shared_ptr<relMemTable> memtable) {
+        std::string key_min = memtable->min_key, key_max = memtable->max_key;
+        // key_min.resize(db->options->KEY_SIZE);
+        // key_max.resize(db->options->KEY_SIZE);
         auto temp_file_metadata = new RelFileMetaData(0, 0, 0, file_id,
-                                                      "", memtable->min_key, memtable->max_key, memtable->total_tuple,
+                                                      "", key_min, key_max, memtable->total_tuple,
                                                       memtable->column_num - 1);
         std::string file_name = temp_file_metadata->file_name;
         auto fw = std::make_shared<FileWriter>(db->options->STORAGE_DIR + "/" + file_name, false);
@@ -135,6 +138,7 @@ namespace BACH {
         }
         temp_file_metadata->block_count = rfb.GetBlockCount();
         temp_file_metadata->block_filter_size = rfb.GetBlockFilterSize();
+        temp_file_metadata->last_block_filter_size = rfb.GetLastBlockFilterSize();
         temp_file_metadata->block_meta_begin_pos = rfb.GetBlockMetaBeginPos();
         temp_file_metadata->block_func_num = rfb.GetBlockFuncNum();
         /*delete data;*/

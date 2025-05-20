@@ -67,7 +67,7 @@ namespace BACH {
         int file_num = 0;
         for (auto &file: compaction.file_list) {
             auto reader = db->ReaderCaches->find(file);
-            new (&parsers[file_num]) RelFileParser<std::string>(reader, db->options, file->file_size);
+            new (&parsers[file_num]) RelFileParser<std::string>(reader, db->options, file->file_size, static_cast<RelFileMetaData<std::string> *>(file));
             DictList[file_num] = &(static_cast<RelFileMetaData<std::string> *>(file)->dictionary);
             if (file->level == compaction.target_level)
                 file_ids[file_num] = -db->options->FILE_MERGE_NUM - 10 + file->file_id;
@@ -241,6 +241,7 @@ namespace BACH {
                 temp_file_metadata->col_num = col_num;
                 temp_file_metadata->block_count = rel_builder->GetBlockCount();
                 temp_file_metadata->block_filter_size = rel_builder->GetBlockFilterSize();
+                temp_file_metadata->last_block_filter_size = rel_builder->GetLastBlockFilterSize();
                 temp_file_metadata->block_meta_begin_pos = rel_builder->GetBlockMetaBeginPos();
                 temp_file_metadata->block_func_num = rel_builder->GetBlockFuncNum();
                 temp_file_metadata->bloom_filter = BloomFilter(key_buf_idx, db->options->FALSE_POSITIVE);
@@ -306,6 +307,7 @@ namespace BACH {
             temp_file_metadata->col_num = col_num;
             temp_file_metadata->block_count = rel_builder->GetBlockCount();
             temp_file_metadata->block_filter_size = rel_builder->GetBlockFilterSize();
+            temp_file_metadata->last_block_filter_size = rel_builder->GetLastBlockFilterSize();
             temp_file_metadata->block_meta_begin_pos = rel_builder->GetBlockMetaBeginPos();
             temp_file_metadata->block_func_num = rel_builder->GetBlockFuncNum();
             temp_file_metadata->bloom_filter = BloomFilter(key_buf_idx, db->options->FALSE_POSITIVE);

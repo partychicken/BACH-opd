@@ -25,7 +25,8 @@ namespace BACH {
                     size_t _block_size, idx_t _col_num): reader(_fileReader), options(_options),
                                          offset_in_file(_offset_in_file), block_size(_block_size), col_num(_col_num) {
             size_t block_end = offset_in_file + block_size;
-            size_t offset = 2 * sizeof(idx_t) + sizeof(size_t) + col_num * sizeof(size_t);
+            //size_t offset = 2 * sizeof(idx_t) + sizeof(size_t) + col_num * sizeof(size_t);
+            size_t offset = 2 * sizeof(idx_t) + sizeof(size_t);
             char infobuf[offset];
             if (!reader->fread(infobuf, offset, block_end - offset)) {
                 std::cout << "read fail begin" << std::endl;

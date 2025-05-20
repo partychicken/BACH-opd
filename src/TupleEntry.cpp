@@ -69,7 +69,7 @@ namespace BACH {
             //    return entry.tuple;
             //}
             auto prop = tuple_pool[it->second]->property;
-            if (prop != NONEINDEX || prop != TOMBSTONE) {
+            if (it->first == key && prop != NONEINDEX && prop != TOMBSTONE && tuple_pool[it->second]->time <= timestamp) {
                 return tuple_pool[it->second]->tuple;
             }
         }

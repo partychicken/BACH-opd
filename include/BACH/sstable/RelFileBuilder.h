@@ -119,6 +119,10 @@ namespace BACH {
             return block_meta[0].filter->data().size();
         }
 
+        size_t GetLastBlockFilterSize() {
+            return block_meta[block_count - 1].filter->data().size();
+        }
+
         idx_t GetBlockFuncNum() {
             return block_meta[0].filter->get_func_num();
         }

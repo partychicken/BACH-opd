@@ -63,11 +63,11 @@ namespace BACH {
         RelFileParser<std::string> *parsers = (RelFileParser<std::string> *)malloc(sizeof(RelFileParser<std::string>) * file_size);
         int16_t *file_ids = (int16_t *)malloc(sizeof(int16_t) * file_size);
         std::vector<OrderedDictionary> **DictList = (std::vector<OrderedDictionary> **)malloc(sizeof(std::vector<OrderedDictionary> *) * file_size);
-        
+
         int file_num = 0;
         for (auto &file: compaction.file_list) {
             auto reader = db->ReaderCaches->find(file);
-            new (&parsers[file_num]) RelFileParser<std::string>(reader, db->options, file->file_size);
+            new (&parsers[file_num]) RelFileParser<std::string>(reader, db->options, file->file_size, static_cast<RelFileMetaData<std::string> *>(file));
             DictList[file_num] = &(static_cast<RelFileMetaData<std::string> *>(file)->dictionary);
             if (file->level == compaction.target_level)
                 file_ids[file_num] = -db->options->FILE_MERGE_NUM - 10 + file->file_id;
@@ -98,12 +98,12 @@ namespace BACH {
         for (int i = 0; i < file_num; i++) {
             vals[i] = (idx_t **)malloc(sizeof(idx_t *) * col_num);
         }
-        
+
         int *key_num = (int *)malloc(sizeof(int) * file_num);
         int *now_idx = (int *)malloc(sizeof(int) * file_num);
         int key_tot_num = 0;
         memset(now_idx, 0, sizeof(int) * file_num);
-        
+
         for (int i = 0; i < file_num; i++) {
             keys[i] = new std::string[parsers[i].GetKeyNum()];
             idx_t check_size = 0;
@@ -144,7 +144,7 @@ namespace BACH {
 
         std::string *order_key_buf = new std::string[key_tot_num / file_num + 5];
         int key_buf_idx = 0;
-        
+
         // Replace val_buf vector with C-style array
         std::pair<idx_t, idx_t> **val_buf = (std::pair<idx_t, idx_t> **)malloc(sizeof(std::pair<idx_t, idx_t> *) * col_num);
         for (int i = 0; i < col_num; i++) {
@@ -160,7 +160,7 @@ namespace BACH {
 
         // Keep using std::map since reimplementing it would be complex
         std::map<std::string, std::vector<std::pair<int, idx_t>>> s[col_num];
-        
+
         // Replace remap with C-style array
         int ***remap = (int ***)malloc(sizeof(int **) * col_num);
         for (idx_t i = 0; i < col_num; i++) {
@@ -223,7 +223,7 @@ namespace BACH {
                     }
                     temp_file_metadata->dictionary.emplace_back(dict);
                 }
-                
+
                 // map new index from new dictionary
                 for (idx_t i = 0; i < col_num; i++) {
                     for (int j = 0; j < key_buf_idx; j++) {
@@ -239,6 +239,11 @@ namespace BACH {
                 temp_file_metadata->key_max = std::string(last_key);
                 temp_file_metadata->key_num = key_buf_idx;
                 temp_file_metadata->col_num = col_num;
+                temp_file_metadata->block_count = rel_builder->GetBlockCount();
+                // temp_file_metadata->block_filter_size = rel_builder->GetBlockFilterSize();
+                // temp_file_metadata->last_block_filter_size = rel_builder->GetLastBlockFilterSize();
+                temp_file_metadata->block_meta_begin_pos = rel_builder->GetBlockMetaBeginPos();
+                // temp_file_metadata->block_func_num = rel_builder->GetBlockFuncNum();
                 temp_file_metadata->bloom_filter = BloomFilter(key_buf_idx, db->options->FALSE_POSITIVE);
                 for (int i = 0; i < key_buf_idx; i++) {
                     temp_file_metadata->bloom_filter.insert(order_key_buf[i]);
@@ -300,6 +305,11 @@ namespace BACH {
             temp_file_metadata->key_max = std::string(last_key);
             temp_file_metadata->key_num = key_buf_idx;
             temp_file_metadata->col_num = col_num;
+            temp_file_metadata->block_count = rel_builder->GetBlockCount();
+            // temp_file_metadata->block_filter_size = rel_builder->GetBlockFilterSize();
+            // temp_file_metadata->last_block_filter_size = rel_builder->GetLastBlockFilterSize();
+            temp_file_metadata->block_meta_begin_pos = rel_builder->GetBlockMetaBeginPos();
+            // temp_file_metadata->block_func_num = rel_builder->GetBlockFuncNum();
             temp_file_metadata->bloom_filter = BloomFilter(key_buf_idx, db->options->FALSE_POSITIVE);
             for (int i = 0; i < key_buf_idx; i++) {
                 temp_file_metadata->bloom_filter.insert(order_key_buf[i]);
@@ -320,7 +330,7 @@ namespace BACH {
             }
             free(vals[i]);
         }
-        
+
         // Clean up other allocations
         for (idx_t i = 0; i < col_num; i++) {
             free(real_val_buf[i]);
@@ -330,7 +340,7 @@ namespace BACH {
             }
             free(remap[i]);
         }
-        
+
         free(real_val_buf);
         free(val_buf);
         free(remap);
@@ -341,16 +351,16 @@ namespace BACH {
         free(keys);
         free(DictList);
         free(file_ids);
-        
+
         // Call destructors for placement new objects
         for (int i = 0; i < file_num; i++) {
             parsers[i].~RelFileParser<std::string>();
         }
         free(parsers);
-        
+
         if (rel_builder) delete rel_builder;
         if (order_key_buf) delete[] order_key_buf;
-        
+
         return edit;
     }
 }

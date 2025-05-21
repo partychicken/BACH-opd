@@ -69,7 +69,7 @@ namespace BACH {
             //    return entry.tuple;
             //}
             auto prop = tuple_pool[it->second]->property;
-            if (prop != NONEINDEX || prop != TOMBSTONE) {
+            if (it->first == key && prop != NONEINDEX && prop != TOMBSTONE && tuple_pool[it->second]->time <= timestamp) {
                 return tuple_pool[it->second]->tuple;
             }
         }
@@ -88,7 +88,7 @@ namespace BACH {
         }
         else
 			found = NONEINDEX;
-        auto pos = tuple_pool.push_back(std::make_shared<TupleEntry>(tuple, timestamp, property, found));
+        auto pos = tuple_pool.push_back(new TupleEntry(tuple, timestamp, property, found));
 		if (found == NONEINDEX) {
 			accessor.insert(std::make_pair(key, pos));
 		}
@@ -119,7 +119,7 @@ namespace BACH {
         RelSkipList::Accessor accessor(tuple_index);
         auto it = accessor.lower_bound(std::make_pair(start_key, 0));
         for (; it != accessor.end(); ++it) {
-            auto now_te = tuple_pool[it->second];
+            auto &now_te = tuple_pool[it->second];
             if (now_te->time <= timestamp && (now_te->property != TOMBSTONE || now_te->property != NONEINDEX)) {
                 if (!am.contains(now_te->tuple.GetKey()))
                     am.emplace(now_te->tuple.GetKey(), std::move(now_te->tuple));
@@ -145,7 +145,7 @@ namespace BACH {
         /*std::vector<Tuple> result;*/
         RelSkipList::Accessor accessor(tuple_index);
         for (auto it = accessor.begin(); it != accessor.end(); ++it) {
-            auto now_te = tuple_pool[it->second];
+            auto &now_te = tuple_pool[it->second];
             if (now_te->time > timestamp)
                 continue;
             if (now_te->property != TOMBSTONE && now_te->property != NONEINDEX) {

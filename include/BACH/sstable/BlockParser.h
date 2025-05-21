@@ -22,9 +22,10 @@ namespace BACH {
     public:
         BlockParser(FileReader *_fileReader,
                     std::shared_ptr<Options> _options, size_t _offset_in_file,
-                    size_t _block_size): reader(_fileReader), options(_options),
-                                         offset_in_file(_offset_in_file), block_size(_block_size) {
+                    size_t _block_size, idx_t _col_num): reader(_fileReader), options(_options),
+                                         offset_in_file(_offset_in_file), block_size(_block_size), col_num(_col_num) {
             size_t block_end = offset_in_file + block_size;
+            //size_t offset = 2 * sizeof(idx_t) + sizeof(size_t) + col_num * sizeof(size_t);
             size_t offset = 2 * sizeof(idx_t) + sizeof(size_t);
             char infobuf[offset];
             if (!reader->fread(infobuf, offset, block_end - offset)) {
@@ -110,21 +111,18 @@ namespace BACH {
         }
 
         //output raw pointers, needing free outside after copy
-        Key_t *GetKeyCol() {
-            //needs seperately buffering ?
+        void GetKeyCol(Key_t* res) {
             char *buffer = static_cast<char *>(malloc(key_num * key_size));
             if (!reader->fread(buffer, key_num * key_size, offset_in_file)) {
                 std::cout << "read fail dst" << std::endl;
                 ++*(int *) NULL;
             }
             //if constexpr (std::is_same_v<Key_t, std::string>) {
-            std::string *res = new std::string[key_num];
             for (idx_t i = 0; i < key_num; i++) {
                 res[i] = std::string(buffer + key_size * i, key_size);
             }
             free(buffer);
 
-            return res;
             // }
             // return reinterpret_cast<Key_t *>(buffer);
         }

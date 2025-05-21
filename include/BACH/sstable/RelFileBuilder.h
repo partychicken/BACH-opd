@@ -13,23 +13,22 @@
 #include "BACH/utils/utils.h"
 #include "RelFileManager.h"
 
-namespace BACH
-{
-
+namespace BACH {
     template<typename Key_t>
-    class RelFileBuilder
-    {
+    class RelFileBuilder {
     public:
         explicit RelFileBuilder(std::shared_ptr<FileWriter> _fileWriter,
-                                std::shared_ptr<Options> _options):
-            writer(_fileWriter),
-            options(_options){}
+                                std::shared_ptr<Options> _options): writer(_fileWriter),
+                                                                    options(_options) {
+        }
+
         ~RelFileBuilder() = default;
+
         //void AddFilter(idx_t keys_num, double false_positive);
 
         void ArrangeRelFileInfo(Key_t *keys, idx_t key_num, size_t key_size,
-                                idx_t col_num, idx_t**vals) {
-            if(!key_size) key_size = sizeof(Key_t);
+                                idx_t col_num, idx_t **vals) {
+            if (!key_size) key_size = sizeof(Key_t);
             size_t tot_val_size = sizeof(idx_t) * col_num; //can be optimized
             idx_t single_block_num = options->MAX_BLOCK_SIZE / (key_size + tot_val_size);
             int block_cnt = (key_num - 1) / single_block_num + 1;
@@ -41,32 +40,33 @@ namespace BACH
             idx_t block_val_num[col_num];
             size_t now_offset_in_file = 0;
 
-            for(int i = 0; i < block_cnt; i++) {
-                if(i < block_cnt - 1) {
+            for (int i = 0; i < block_cnt; i++) {
+                if (i < block_cnt - 1) {
                     block_key_num = single_block_num;
                     key_offset = now_ptr;
-                    for(idx_t j = 0; j < col_num; j++) {
+                    for (idx_t j = 0; j < col_num; j++) {
                         val_offset[j] = now_ptr;
                         block_val_num[j] = single_block_num;
                     }
-
                 } else {
                     block_key_num = key_num - single_block_num * (block_cnt - 1);
                     key_offset = now_ptr;
-                    for(idx_t j = 0; j < col_num; j++) {
+                    for (idx_t j = 0; j < col_num; j++) {
                         val_offset[j] = now_ptr;
                         block_val_num[j] = key_num - single_block_num * (block_cnt - 1);
                     }
                 }
-                BlockMetaT<Key_t> meta{std::make_shared<BloomFilter>(block_key_num, options->FALSE_POSITIVE), "", "", 0, 0};
-                BlockBuilder<Key_t>* builder = new BlockBuilder<Key_t>(writer, options);
-                size_t block_size = this->SetBlock(builder, meta.filter, keys + key_offset,
-                                             block_key_num, key_size, col_num,
-                                             vals, block_val_num, val_offset);
+                BlockMetaT<Key_t> meta{
+                    /*std::make_shared<BloomFilter>(block_key_num, options->FALSE_POSITIVE),*/ "", 0, 0
+                };
+                BlockBuilder<Key_t> *builder = new BlockBuilder<Key_t>(writer, options);
+                size_t block_size = this->SetBlock(builder, /*meta.filter*/nullptr, keys + key_offset,
+                                                   block_key_num, key_size, col_num,
+                                                   vals, block_val_num, val_offset);
                 meta.offset_in_file = now_offset_in_file;
                 meta.block_size = block_size;
                 meta.key_min = builder->key_min;
-                meta.key_max = builder->key_max;
+                //meta.key_max = builder->key_max;
                 block_meta.push_back(meta);
 
                 now_offset_in_file += block_size;
@@ -79,7 +79,7 @@ namespace BACH
 
             now_offset_in_file += this->SetBlockMeta(now_offset_in_file);
 
-            if(global_filter != nullptr) {
+            if (global_filter != nullptr) {
                 //put global filter here
                 //temporarily not put it in
             }
@@ -95,58 +95,80 @@ namespace BACH
             writer->append(meta_data.data(), meta_data.size());
             file_size = now_offset_in_file + header_size;
 
-        
 
             writer->flush();
         }
-        void SetDict();//optional
+
+        void SetDict(); //optional
         void SetBloomFilter();
+
         void SetKeyRange(Key_t _key_min, Key_t _key_max) {
             key_min = _key_min;
             key_max = _key_max;
         }
+
+        idx_t GetBlockCount() {
+            return block_count;
+        }
+
+        size_t GetBlockMetaBeginPos() {
+            return block_meta_begin_pos;
+        }
+
+        // size_t GetBlockFilterSize() {
+        //     return block_meta[0].filter->data().size();
+        // }
+
+        // size_t GetLastBlockFilterSize() {
+        //     return block_meta[block_count - 1].filter->data().size();
+        // }
+
+        // idx_t GetBlockFuncNum() {
+        //     return block_meta[0].filter->get_func_num();
+        // }
+
     private:
-        std::shared_ptr <FileWriter> writer;
+        std::shared_ptr<FileWriter> writer;
         std::shared_ptr<Options> options;
         std::vector<BlockMetaT<Key_t> > block_meta;
         size_t file_size;
         size_t block_meta_begin_pos;
         Key_t key_min, key_max;
         idx_t block_count;
-        std::shared_ptr<BloomFilter>global_filter = nullptr;
+        std::shared_ptr<BloomFilter> global_filter = nullptr;
 
-        size_t SetBlock(BlockBuilder<Key_t>*block_builder, std::shared_ptr<BloomFilter> filter,
-                              Key_t* keys, idx_t key_num, size_t key_size, idx_t col_num,
-                              idx_t** vals, idx_t* val_nums, idx_t *val_offset) {
+        size_t SetBlock(BlockBuilder<Key_t> *block_builder, std::shared_ptr<BloomFilter> filter,
+                        Key_t *keys, idx_t key_num, size_t key_size, idx_t col_num,
+                        idx_t **vals, idx_t *val_nums, idx_t *val_offset) {
             size_t tot_size = 0;
             block_builder->SetKey(keys, key_num, key_size);
             tot_size += key_num * key_size;
-            size_t* col_size = static_cast<size_t*>(malloc(col_num * sizeof(size_t)));
-            for(idx_t i = 0; i < col_num; i++) {
+            size_t *col_size = static_cast<size_t *>(malloc(col_num * sizeof(size_t)));
+            for (idx_t i = 0; i < col_num; i++) {
                 col_size[i] = block_builder->SetValueIdx(vals[i] + val_offset[i], val_nums[i]);
                 tot_size += col_size[i] * val_nums[i];
             }
             block_builder->ArrangeBlockInfo(filter, keys, key_num, col_num, key_size,
-                                             col_size);
+                                            col_size);
             tot_size += sizeof(size_t) * (1 + col_num) + sizeof(idx_t) * 2;
             free(col_size);
             return tot_size;
         }
 
-        size_t SetBlockMeta(size_t offset){
+        size_t SetBlockMeta(size_t offset) {
             std::string metadata;
-            for(idx_t i = 0; i < block_count; i++) {
+            for (idx_t i = 0; i < block_count; i++) {
                 util::PutFixed(metadata, block_meta[i].key_min);
-                util::PutFixed(metadata, block_meta[i].key_max);
+                //util::PutFixed(metadata, block_meta[i].key_min);
                 util::PutFixed(metadata, block_meta[i].offset_in_file);
                 util::PutFixed(metadata, block_meta[i].block_size);
-                std::string filter_data = block_meta[i].filter->data();
-                util::PutFixed(metadata, static_cast<size_t>(filter_data.size()));
-                metadata += filter_data;
+                // std::string filter_data = block_meta[i].filter->data();
+                // util::PutFixed(metadata, static_cast<size_t>(filter_data.size()));
+                // metadata += filter_data;
             }
             writer->append(metadata.data(), metadata.size());
-            
+
             return metadata.size();
-            }
+        }
     };
 }

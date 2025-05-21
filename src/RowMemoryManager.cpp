@@ -33,12 +33,13 @@ namespace BACH {
 
     Tuple rowMemoryManager::GetTuple(tp_key key, time_t timestamp, RelVersion *version) {
         auto x = currentMemTable;
-        while (x && x != version->size_entry)  {
+        while (x)  {
             std::shared_lock<std::shared_mutex> lock(x->mutex);
             auto now_res = x->GetTuple(key, timestamp);
             if (!now_res.row.empty()) {
                 return now_res;
             }
+            if (x == version->size_entry) break;
             x = x->next.lock();
         }
         return Tuple();
@@ -46,9 +47,10 @@ namespace BACH {
 
     void rowMemoryManager::GetKTuple(idx_t k, tp_key key, time_t timestamp, std::map<std::string, Tuple> &am, RelVersion *version) {
         auto x = currentMemTable;
-        while (x && x != version->size_entry)  {
+        while (x)  {
             std::shared_lock<std::shared_mutex> lock(x->mutex);
             x->GetKTuple(k, key, timestamp, am);
+            if (x == version->size_entry) break;
             x = x->next.lock();
         }
     }
@@ -162,9 +164,10 @@ namespace BACH {
     void rowMemoryManager::FilterByValueRange(time_t timestamp, const std::function<bool(Tuple &)> &func,
                                               AnswerMerger &am, RelVersion *version) {
         auto x = currentMemTable;
-        while (x && x != version->size_entry) {
+        while (x) {
             std::shared_lock<std::shared_mutex> lock(x->mutex);
             x->FilterByValueRange(timestamp, func, am);
+            if (x == version->size_entry) break;
             x = x->next.lock();
         }
     }

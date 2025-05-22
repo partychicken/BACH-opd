@@ -151,7 +151,6 @@ namespace BACH {
                     vals[idx++] = block_vals[j];
                 }
                 val_num += block_key_num;
-                free(block_vals);
             }
         }
 

@@ -43,7 +43,7 @@ namespace BACH {
         //}
 
 
-        std::vector<std::string> strvec = dict->getAllStrings();
+        const std::vector<std::string>& strvec = dict->getAllStrings();
         auto l_it = std::lower_bound(strvec.begin(), strvec.end(), left_bound);
 		auto r_it = std::upper_bound(strvec.begin(), strvec.end(), right_bound);
 

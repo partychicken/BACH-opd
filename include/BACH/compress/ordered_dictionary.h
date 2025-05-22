@@ -36,7 +36,7 @@ namespace BACH {
 			return stringToIndex;
 		}
 
-		std::vector<std::string> getAllStrings() const {
+		const std::vector<std::string>& getAllStrings() const {
 			return indexToString;
 		}
 

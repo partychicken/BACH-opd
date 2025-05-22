@@ -23,7 +23,9 @@ namespace BACH {
     bool RowGroup::Scan(idx_t col_id, Vector &result) {
         idx_t scan_num = key_num - scan_pos[col_id];
         if (!scan_num) return false;
-        result = Vector( std::make_shared<OrderedDictionary>(file->dictionary[col_id]));
+        result = Vector(&file->dictionary[col_id]);
+        //result.SetDict(&file->dictionary[col_id]);
+        
         if (scan_num >= STANDARD_VECTOR_SIZE) {
             result.SetData(cols[col_id] + scan_pos[col_id], STANDARD_VECTOR_SIZE, scan_pos[col_id]);
             scan_pos[col_id] += STANDARD_VECTOR_SIZE;

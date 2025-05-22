@@ -103,7 +103,7 @@ namespace BACH {
             for (idx_t j = 0; j < key_num; j++) {
                 Key_t nowkey = util::GetDecodeFixed<Key_t>(buffer + inner_off);
                 if (nowkey >= key) {
-                    res.emplace_back(GetTupleWithIdx(key, j));
+                    res.emplace_back(GetTupleWithIdx(nowkey, j));
                     k--;
                     if (!k) {
                         return;

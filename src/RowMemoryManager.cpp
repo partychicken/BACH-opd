@@ -4,8 +4,7 @@
 
 namespace BACH {
     rowMemoryManager::rowMemoryManager(DB *_db, idx_t _column_num) : db(_db), column_num(_column_num), memtable_cnt(1) {
-        memTable.push_back(std::make_shared<relMemTable>(0, column_num));
-        currentMemTable = memTable[0];
+        currentMemTable = std::make_shared<relMemTable>(0, column_num);
     }
 
     void rowMemoryManager::PutTuple(Tuple tuple, tp_key key, time_t timestamp, tuple_property_t property) {
@@ -78,8 +77,6 @@ namespace BACH {
         if (current_data_count >= db->options->MEM_TABLE_MAX_SIZE) {
             immute_memtable(currentMemTable);
             current_data_count = 0;
-            // memTable.push_back(std::make_shared<relMemTable>(0, column_num));
-            currentMemTable = memTable[memTable.size() - 1];
             memtable_cnt.fetch_add(1, std::memory_order_relaxed);
             if (memtable_cnt.load() > db->options->MAX_MEMTABLE_NUM) {
                 db->StallWrite();
@@ -92,9 +89,6 @@ namespace BACH {
     // ����Ҳ��Ҫ����һ���µ�memtable
     void rowMemoryManager::immute_memtable(std::shared_ptr<relMemTable> memtable) {
         auto new_memtable = std::make_shared<relMemTable>(0, memtable->column_num, memtable);
-        memtable->last = new_memtable;
-        memTable.push_back(new_memtable);
-        memtable->sema.release(1024);
         RelCompaction<std::string> x;
         x.label_id = 0;
         x.target_level = 0;
@@ -102,6 +96,7 @@ namespace BACH {
         x.relPersistence = memtable;
         x.key_min = memtable->min_key;
         db->relFiles->AddCompaction(x);
+        currentMemTable = new_memtable;
     }
 
 

@@ -21,12 +21,12 @@ TEST_CASE("FILE IO Test", "[compaction]") {
     MockOptions->MEM_TABLE_MAX_SIZE = 4 * 1024;
     MockOptions->READ_BUFFER_SIZE = 64 * 1024;
     MockOptions->WRITE_BUFFER_SIZE = 64 * 1024;
-    MockOptions->MAX_BLOCK_SIZE = 64 * 1024;
+    MockOptions->MAX_BLOCK_SIZE = 4 * 1024;
 
     DB x(MockOptions, 2);
 
     std::vector<std::string> ans_sheet;
-    for (int i = 0; i < 1024 * 32; i++) {
+    for (int i = 0; i < 1024 * 32 - 5; i++) {
         Tuple t;
         int k = rand() % 9;
         std::string tmp = std::to_string(i);
@@ -61,14 +61,14 @@ TEST_CASE("FILE IO Test", "[compaction]") {
     //    y.PutTuple(t, t.GetRow(0), 1.0);
     //    ans_sheet.push_back(value_set[k]);
     //}
-    sleep(5);
+    //sleep(5);
     //while (x.Compacting()) {
     //	std::cout << "Compacting..." << std::endl;
     //	std::this_thread::sleep_for(std::chrono::milliseconds(100));
     //}
     std::cout << "\nFinished insert" << std::endl;
     auto z = x.BeginRelTransaction();
-    for (int i = 0; i < 1024 * 32; i++) {
+    for (int i = 0; i < 1024 * 32 - 5; i++) {
         std::string tmp = std::to_string(i);
         tmp.resize(16);
         auto t = z.GetTuple(tmp);

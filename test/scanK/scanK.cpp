@@ -24,7 +24,9 @@ TEST_CASE("SCANK Test", "[scanK]") {
     for (int i = 0; i < 1024 * 32; i++) {
         Tuple t;
         int k = rand() & 3;
-        t.row.push_back(std::to_string(i));
+        std::string tmp = std::to_string(i);
+        tmp.resize(16);
+        t.row.push_back(tmp);
         t.row.push_back(value_set[k]);
         auto y = x.BeginRelTransaction();
         y.PutTuple(t, t.GetRow(0), 1.0);

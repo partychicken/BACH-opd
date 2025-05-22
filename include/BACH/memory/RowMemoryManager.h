@@ -57,7 +57,6 @@ namespace BACH {
         void GetKTuple(idx_t k, std::string key, time_t timestamp, std::map<std::string, Tuple> &am, RelVersion *version);
 
     private:
-        ConcurrentArray<std::shared_ptr<relMemTable> > memTable;
         std::shared_ptr<relMemTable> currentMemTable;
         DB *db;
         size_t data_count_threshold = 1024; // ��������ֵ

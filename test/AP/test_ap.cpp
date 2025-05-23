@@ -30,7 +30,7 @@ TEST_CASE("FILE VALUE SCAN TEST", "[AP]") {
             t.row.push_back(std::to_string(i));
             t.row.push_back(std::to_string(i));
             auto y = x.BeginRelTransaction();
-            y.PutTuple(t, t.GetRow(0), 1.0);
+            y.PutTuple(t, t.GetRow(0));
             //ans_sheet[i] = std::to_string(i);
         }
 

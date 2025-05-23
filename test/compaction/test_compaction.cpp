@@ -28,7 +28,7 @@ TEST_CASE("FILE IO Test", "[compaction]") {
     std::vector<std::string> ans_sheet;
     for (int i = 0; i < 1024 * 32 - 5; i++) {
         Tuple t;
-        int k = rand() % 9;
+        int k = i % 9;
         std::string tmp = std::to_string(i);
         tmp.resize(16);
         t.row.push_back(tmp);
@@ -47,8 +47,12 @@ TEST_CASE("FILE IO Test", "[compaction]") {
         //}
 
 
-        auto y = x.BeginRelTransaction();
-        y.PutTuple(t, t.GetRow(0), 1.0);
+        {auto y = x.BeginRelTransaction();
+        y.PutTuple(t, t.GetRow(0));
+        }
+        {auto y = x.BeginRelTransaction();
+        y.PutTuple(t, t.GetRow(0));
+        }
         ans_sheet.push_back(value_set[k]);
     }
 
@@ -67,7 +71,8 @@ TEST_CASE("FILE IO Test", "[compaction]") {
     //	std::this_thread::sleep_for(std::chrono::milliseconds(100));
     //}
     std::cout << "\nFinished insert" << std::endl;
-    auto z = x.BeginRelTransaction();
+    auto k = x.BeginRelTransaction();
+    auto z = x.BeginReadOnlyRelTransaction();
     for (int i = 0; i < 1024 * 32 - 5; i++) {
         std::string tmp = std::to_string(i);
         tmp.resize(16);
@@ -77,6 +82,7 @@ TEST_CASE("FILE IO Test", "[compaction]") {
         REQUIRE(std::string(t.GetRow(1).c_str()) == ans_sheet[i]);
         // REQUIRE(std::string(t.GetRow(1).c_str()) != "");
     }
+    std::cout<<k.GetTuple("0").col_num<<std::endl;
     // for (int i = 0; i < 64; i++) {
     //     z.GetTuplesFromRange(1, "a", "b");
     // }

@@ -24,7 +24,7 @@ namespace BACH
 
         std::vector<      //level
             std::vector<
-            FileMetaData*>> FileIndex;
+            RelFileMetaData<std::string>*>> FileIndex;
         RelVersion* next;
         time_t epoch;
         time_t next_epoch;

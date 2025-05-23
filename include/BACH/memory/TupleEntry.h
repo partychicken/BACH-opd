@@ -14,23 +14,18 @@
 
 namespace BACH {
     struct TupleEntry {
-        TupleEntry(Tuple _tuple, time_t _time,
-                   tuple_property_t _property, idx_t _next = NONEINDEX) : tuple(_tuple), time(_time),
-                                                                              property(_property), next(_next) {
+        TupleEntry(Tuple _tuple, time_t _time, bool tombstone = false, idx_t _next = NONEINDEX) : 
+            tuple(_tuple), time(_time), tombstone(tombstone), next(_next) {
         }
-
-        TupleEntry(): time(MAXTIME), property(NONEINDEX), next(NONEINDEX){}
 
         TupleEntry(std::string key, time_t time) : time(time) {
             tuple.row.push_back(key);
         }
 
         Tuple tuple;
-        time_t time;
-        // function as a signal whether this record has been deleted
-        // don't know the reason to use double but not bool
-        tuple_property_t property;
-        idx_t next;
+        time_t time = MAXTIME; 
+        bool tombstone = false;
+        idx_t next = NONEINDEX;
 
         bool operator<(const TupleEntry &other) const {
             return tuple.GetKey() == other.tuple.GetKey() ? time > other.time : tuple.GetKey() < other.tuple.GetKey();
@@ -90,10 +85,13 @@ namespace BACH {
 		~relMemTable() {
             if(last)
 			    last->next.reset();
+            for (size_t i = 0; i < tuple_pool.size(); ++i) {
+                delete tuple_pool[i];
+            }
 		}
 		void UpdateMinMax(tp_key key);
 
-        void PutTuple(Tuple tuple, tp_key key, time_t timestamp, tuple_property_t property);
+        void PutTuple(Tuple tuple, tp_key key, time_t timestamp, bool tombstone = false);
 
         //void AddTuple(Tuple tuple, tp_key key, time_t timestamp, tuple_property_t property);
         //void DeleteTuple(tp_key key, time_t timestamp, tuple_property_t property);

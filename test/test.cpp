@@ -13,7 +13,7 @@ int main() {
         Tuple t;
         t.row.push_back(std::to_string(i));
         t.row.push_back(value_set[rand() & 3]);
-        y.PutTuple(t, std::to_string(i), 1.0);
+        y.PutTuple(t, std::to_string(i));
     }
 
     std :: cout << "Finished insert" << std::endl;

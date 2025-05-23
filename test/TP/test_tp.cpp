@@ -19,7 +19,7 @@ TEST_CASE("update test", "[TP]") {
         t.row.push_back(std::to_string(i % 200));
         t.row.push_back(std::to_string(i));
         auto y = x.BeginRelTransaction();
-        y.PutTuple(t, std::to_string(i % 200), 1.0);
+        y.PutTuple(t, std::to_string(i % 200));
 		ans_sheet[i % 200] = std::to_string(i);
     }
 

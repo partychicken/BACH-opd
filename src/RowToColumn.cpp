@@ -14,7 +14,7 @@ namespace BACH
 		for (auto it = accessor.begin(); it != accessor.end(); ++it)
 		{
 			auto now_te = row->tuple_pool[it->second];
-			if (now_te->property == TOMBSTONE || now_te->property == NONEINDEX)
+			if (now_te->tombstone)
 			{
 				for (size_t i = 0; i < column_num; i++)data[i][count] = "";
 				count++;

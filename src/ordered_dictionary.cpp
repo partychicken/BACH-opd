@@ -107,6 +107,7 @@ namespace BACH
 		for (size_t i = 0; i < size; ++i) {
 			data[i] = getMapping(original[i]);
 		}
+        stringToIndex.clear();
     }
 
 

@@ -9,6 +9,9 @@ namespace BACH {
         AnswerMerger() = default;
         ~AnswerMerger() = default;
         // if update = 0, the current Tuple will be eliminated, otherwise, it will replace the answer
+        bool has_answer(const std::string &key) const {
+            return answers.contains(key);
+        }
         void insert_answer(const std::string &key, Tuple &&x, bool update = false) {
             if(answers.contains(key)) {
                 if(update) {

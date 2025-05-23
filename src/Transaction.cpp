@@ -148,7 +148,7 @@ namespace BACH {
     }
 
 
-    void Transaction::PutTuple(Tuple tuple, tp_key key, tuple_property_t property = 1) {
+    void Transaction::PutTuple(Tuple tuple, tp_key key) {
         if (write_epoch == MAXTIME) {
             return;
         }
@@ -156,7 +156,7 @@ namespace BACH {
         //OperatorProfiler op;
         //OperatorProfilerContext::SetCurrentProfiler(&op);
         //op.Start();
-        db->RowMemtable->PutTuple(tuple, key, write_epoch, property);
+        db->RowMemtable->PutTuple(tuple, key, write_epoch);
         //op.End();
         //profiler.AddOperator("PutTuple", op);
         //OperatorProfilerContext::SetCurrentProfiler(nullptr);
@@ -172,16 +172,13 @@ namespace BACH {
         //op.Start();
         Tuple x;
         x.row.push_back(key);
-        db->RowMemtable->PutTuple(x, key, write_epoch, TOMBSTONE);
+        db->RowMemtable->PutTuple(x, key, write_epoch, true);
         //op.End();
         //profiler.AddOperator("DelTuple", op);
         //OperatorProfilerContext::SetCurrentProfiler(nullptr);
     }
 
     Tuple Transaction::GetTuple(tp_key key) {
-        if (write_epoch == MAXTIME) {
-            return Tuple();
-        }
         //OperatorProfiler op;
         //OperatorProfilerContext::SetCurrentProfiler(&op);
         //op.Start();

@@ -39,7 +39,7 @@ namespace BACH {
 
         ~rowMemoryManager() = default;
 
-        void PutTuple(Tuple tuple, tp_key key, time_t timestamp, tuple_property_t property);
+        void PutTuple(Tuple tuple, tp_key key, time_t timestamp, bool tombstone = false);
 
         //void AddTuple(Tuple tuple, tp_key key, time_t timestamp, tuple_property_t property);
         //void DeleteTuple(tp_key key, time_t timestamp, tuple_property_t property);

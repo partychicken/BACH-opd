@@ -68,15 +68,25 @@ namespace BACH {
             //    if (it->property == TOMBSTONE) return Tuple();
             //    return entry.tuple;
             //}
-            auto prop = tuple_pool[it->second]->property;
-            if (it->first == key && prop != NONEINDEX && prop != TOMBSTONE && tuple_pool[it->second]->time <= timestamp) {
-                return tuple_pool[it->second]->tuple;
+            if (it->first != key) {
+                return Tuple();
+            }
+            auto found = it->second;
+            while(found != NONEINDEX) {
+                if (tuple_pool[found]->time <= timestamp)
+                {
+                    if (tuple_pool[found]->tombstone)
+                        return Tuple();
+                    else
+                        return tuple_pool[found]->tuple;
+                }
+                found = tuple_pool[found]->next;
             }
         }
         return Tuple(); // ���ؿյ� Tuple ��ʾδ�ҵ�
     }
 
-    void relMemTable::PutTuple(Tuple tuple, tp_key key, time_t timestamp, tuple_property_t property) {
+    void relMemTable::PutTuple(Tuple tuple, tp_key key, time_t timestamp, bool tombstone) {
         RelSkipList::Accessor accessor(tuple_index);
         
         //accessor.insert(TupleEntry(tuple, timestamp, property));
@@ -88,7 +98,7 @@ namespace BACH {
         }
         else
 			found = NONEINDEX;
-        auto pos = tuple_pool.push_back(new TupleEntry(tuple, timestamp, property, found));
+        auto pos = tuple_pool.push_back(new TupleEntry(tuple, timestamp, tombstone, found));
 		if (found == NONEINDEX) {
 			accessor.insert(std::make_pair(key, pos));
 		}
@@ -108,7 +118,7 @@ namespace BACH {
         tp_key last_key = "";
         auto it = accessor.lower_bound(std::make_pair(start_key, 0));
         for (; it != accessor.end() && tuple_pool[it->second]->tuple.row[0] <= end_key; ++it) {
-            if (tuple_pool[it->second]->property != TOMBSTONE && tuple_pool[it->second]->property != NONEINDEX) {
+            if (!tuple_pool[it->second]->tombstone) {
 				result.push_back(tuple_pool[it->second]->tuple);
             }        
         }
@@ -119,12 +129,21 @@ namespace BACH {
         RelSkipList::Accessor accessor(tuple_index);
         auto it = accessor.lower_bound(std::make_pair(start_key, 0));
         for (; it != accessor.end(); ++it) {
-            auto &now_te = tuple_pool[it->second];
-            if (now_te->time <= timestamp && (now_te->property != TOMBSTONE || now_te->property != NONEINDEX)) {
-                if (!am.contains(now_te->tuple.GetKey()))
-                    am.emplace(now_te->tuple.GetKey(), std::move(now_te->tuple));
-                k--;
-                if (!k) return;
+            if (am.contains(it->first)) {
+                continue;
+            }
+            auto found = it->second;
+            while(found != NONEINDEX) {
+                if (tuple_pool[found]->time <= timestamp) {
+                    if (!tuple_pool[found]->tombstone) {
+                        Tuple tmp (tuple_pool[found]->tuple);
+                        am.emplace(tuple_pool[found]->tuple.GetKey(), std::move(tmp));
+                        k--;
+                        if (!k) return;
+                    }
+                    break;
+                }
+                found = tuple_pool[found]->next;
             }
         }
     }
@@ -145,14 +164,21 @@ namespace BACH {
         /*std::vector<Tuple> result;*/
         RelSkipList::Accessor accessor(tuple_index);
         for (auto it = accessor.begin(); it != accessor.end(); ++it) {
-            auto &now_te = tuple_pool[it->second];
-            if (now_te->time > timestamp)
+            if (am.has_answer(it->first)) {
                 continue;
-            if (now_te->property != TOMBSTONE && now_te->property != NONEINDEX) {
-                if (func(now_te->tuple)) {
-                    /*result.push_back(*tuple_entry.tuple);*/
-                    am.insert_answer(now_te->tuple.row[0], std::move(now_te->tuple), false);
+            }
+            auto found = it->second;
+            while(found != NONEINDEX) {
+                if (tuple_pool[found]->time <= timestamp) {
+                    if (!tuple_pool[found]->tombstone) {
+                        if (func(tuple_pool[found]->tuple)) {
+                            Tuple tmp (tuple_pool[found]->tuple);
+                            am.insert_answer(tuple_pool[found]->tuple.row[0], std::move(tmp), false);
+                        }
+                    }
+                    break;
                 }
+                found = tuple_pool[found]->next;
             }
         }
     }

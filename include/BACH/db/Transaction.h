@@ -52,7 +52,7 @@ namespace BACH
 		void EdgeLabelScan(label_t label,
 			const std::function<void(vertex_t&, vertex_t&,edge_property_t&)>& func);
 		// OLTP operation
-        void PutTuple(Tuple tuple, tp_key key, tuple_property_t property);
+        void PutTuple(Tuple tuple, tp_key key);
         void DelTuple(tp_key key);
         Tuple GetTuple(tp_key key);
 

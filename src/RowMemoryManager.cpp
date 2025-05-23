@@ -7,9 +7,9 @@ namespace BACH {
         currentMemTable = std::make_shared<relMemTable>(0, column_num);
     }
 
-    void rowMemoryManager::PutTuple(Tuple tuple, tp_key key, time_t timestamp, tuple_property_t property) {
+    void rowMemoryManager::PutTuple(Tuple tuple, tp_key key, time_t timestamp, bool tombstone) {
         std::unique_lock<std::shared_mutex> lock(currentMemTable->mutex);
-        currentMemTable->PutTuple(tuple, key, timestamp, property);
+        currentMemTable->PutTuple(tuple, key, timestamp, tombstone);
         current_data_count++;
         CheckAndImmute();
     }

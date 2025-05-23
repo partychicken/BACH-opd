@@ -29,7 +29,7 @@ TEST_CASE("SCANK Test", "[scanK]") {
         t.row.push_back(tmp);
         t.row.push_back(value_set[k]);
         auto y = x.BeginRelTransaction();
-        y.PutTuple(t, t.GetRow(0), 1.0);
+        y.PutTuple(t, t.GetRow(0));
     }
 
     sleep(5);

@@ -101,12 +101,12 @@ namespace BACH {
         auto pos = tuple_pool.push_back(new TupleEntry(tuple, timestamp, tombstone, found));
 		if (found == NONEINDEX) {
 			accessor.insert(std::make_pair(key, pos));
-            total_tuple.fetch_add(1);
 		}
 		else {
 			it->second = pos;
 		}
 		this->max_time = std::max(timestamp, this->max_time);
+        total_tuple.fetch_add(1);
         size += Options::KEY_SIZE;
         UpdateMinMax(key);
     }

@@ -69,13 +69,22 @@ namespace BACH {
             char* buffer = data_buffer;
             idx_t tmp_read_num = key_num;
             size_t inner_off = 0;
-            for (idx_t j = 0; j < tmp_read_num; j++) {
-                Key_t nowkey = util::GetDecodeFixed<Key_t>(buffer + inner_off);
-                if (nowkey == key) {
-                    return GetTupleWithIdx(key, j);
-                }
-                inner_off += key_size;
+            // for (idx_t j = 0; j < tmp_read_num; j++) {
+            //     Key_t nowkey = util::GetDecodeFixed<Key_t>(buffer + inner_off);
+            //     if (nowkey == key) {
+            //         return GetTupleWithIdx(key, j);
+            //     }
+            //     inner_off += key_size;
+            // }
+            idx_t l = 0, r = key_num - 1;
+            while (l < r) {
+                idx_t mid = (l + r) >> 1;
+                Key_t midkey = util::GetDecodeFixed<Key_t>(buffer + mid * key_size);
+                if (midkey < key) l = mid + 1;
+                else r = mid;
             }
+            Key_t nowkey = util::GetDecodeFixed<Key_t>(buffer + l * key_size);
+            if (nowkey == key) return GetTupleWithIdx(key, l);
             return Tuple();
         }
 

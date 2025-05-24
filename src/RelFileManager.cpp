@@ -80,7 +80,7 @@ namespace BACH {
 
         int *max_val = (int *)malloc(sizeof(int) * col_num);
         memset(max_val, 0, sizeof(int) * col_num);
-        for(int j = 0; j < col_num; j++) {
+        for(idx_t j = 0; j < col_num; j++) {
             for (int i = 0; i < file_num; i++) {
                 auto dict = DictList[i];
                 for (auto x: *dict) {
@@ -142,18 +142,18 @@ namespace BACH {
                                                + file_name);
         auto rel_builder = new RelFileBuilder<std::string>(fw, db->options);
 
-        std::string *order_key_buf = new std::string[key_tot_num / file_num + 5];
+        std::string *order_key_buf = new std::string[db->options->MEM_TABLE_MAX_SIZE + 5];
         int key_buf_idx = 0;
 
         // Replace val_buf vector with C-style array
         std::pair<idx_t, idx_t> **val_buf = (std::pair<idx_t, idx_t> **)malloc(sizeof(std::pair<idx_t, idx_t> *) * col_num);
-        for (int i = 0; i < col_num; i++) {
-            val_buf[i] = (std::pair<idx_t, idx_t> *)malloc(sizeof(std::pair<idx_t, idx_t>) * (key_tot_num / file_num + 5));
+        for (idx_t i = 0; i < col_num; i++) {
+            val_buf[i] = (std::pair<idx_t, idx_t> *)malloc(sizeof(std::pair<idx_t, idx_t>) * (db->options->MEM_TABLE_MAX_SIZE + 5));
         }
 
         idx_t **real_val_buf = (idx_t **)malloc(sizeof(idx_t *) * col_num);
         for (idx_t i = 0; i < col_num; i++) {
-            real_val_buf[i] = (idx_t *)malloc(sizeof(idx_t) * (key_tot_num / file_num + 5));
+            real_val_buf[i] = (idx_t *)malloc(sizeof(idx_t) * (db->options->MEM_TABLE_MAX_SIZE + 5));
         }
 
         VersionEdit *edit = new VersionEdit();
@@ -178,7 +178,7 @@ namespace BACH {
             TupleMessage<std::string> now_message = q.top();
             q.pop();
 
-            if (now_message.offset < key_num[now_message.file_idx] - 1) {
+            if ((int)now_message.offset < key_num[now_message.file_idx] - 1) {
                 q.emplace(keys[now_message.file_idx][now_message.offset + 1],
                           now_message.offset + 1, now_message.file_idx);
             }
@@ -207,7 +207,7 @@ namespace BACH {
             }
             key_buf_idx++;
 
-            if (key_buf_idx * file_num >= key_tot_num) {
+            if ((size_t)key_buf_idx >= db->options->MEM_TABLE_MAX_SIZE) {
                 // flush buf to a new file
                 // build new dict
                 int nowidx = 0;

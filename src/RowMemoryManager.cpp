@@ -8,9 +8,8 @@ namespace BACH {
     }
 
     void rowMemoryManager::PutTuple(Tuple tuple, tp_key key, time_t timestamp, bool tombstone) {
-        std::unique_lock<std::shared_mutex> lock(currentMemTable->mutex);
-        currentMemTable->PutTuple(tuple, key, timestamp, tombstone);
-        current_data_count++;
+        std::shared_lock<std::shared_mutex> lock(currentMemTable->mutex);
+        while(!currentMemTable->PutTuple(tuple, key, timestamp, tombstone));
         CheckAndImmute();
     }
 
@@ -33,7 +32,7 @@ namespace BACH {
     Tuple rowMemoryManager::GetTuple(tp_key key, time_t timestamp, RelVersion *version) {
         auto x = currentMemTable;
         while (x)  {
-            std::shared_lock<std::shared_mutex> lock(x->mutex);
+            //std::shared_lock<std::shared_mutex> lock(x->mutex);
             auto now_res = x->GetTuple(key, timestamp);
             if (!now_res.row.empty()) {
                 return now_res;
@@ -47,7 +46,7 @@ namespace BACH {
     void rowMemoryManager::GetKTuple(idx_t k, tp_key key, time_t timestamp, std::map<std::string, Tuple> &am, RelVersion *version) {
         auto x = currentMemTable;
         while (x)  {
-            std::shared_lock<std::shared_mutex> lock(x->mutex);
+            //std::shared_lock<std::shared_mutex> lock(x->mutex);
             x->GetKTuple(k, key, timestamp, am);
             if (x == version->size_entry) break;
             x = x->next.lock();
@@ -65,7 +64,7 @@ namespace BACH {
 
         auto x = currentMemTable;
         while (x) {
-            std::shared_lock<std::shared_mutex> lock(x->mutex);
+            //std::shared_lock<std::shared_mutex> lock(x->mutex);
             auto now_res = x->ScanTuples(start_key, end_key, timestamp);
             x = x->next.lock();
         }
@@ -74,14 +73,14 @@ namespace BACH {
 
 
     void rowMemoryManager::CheckAndImmute() {
-        if (current_data_count >= db->options->MEM_TABLE_MAX_SIZE) {
-            immute_memtable(currentMemTable);
-            current_data_count = 0;
-            memtable_cnt.fetch_add(1, std::memory_order_relaxed);
-            if (memtable_cnt.load() > db->options->MAX_MEMTABLE_NUM) {
-                db->StallWrite();
+        if (currentMemTable->current_data_count >= db->options->MEM_TABLE_MAX_SIZE) 
+            if (!currentMemTable->immutable.exchange(true)) {
+                immute_memtable(currentMemTable);
+                memtable_cnt.fetch_add(1, std::memory_order_relaxed);
+                if (memtable_cnt.load() > db->options->MAX_MEMTABLE_NUM) {
+                    db->StallWrite(0);
+                }
             }
-        }
         return;
     }
 
@@ -89,6 +88,8 @@ namespace BACH {
     // ����Ҳ��Ҫ����һ���µ�memtable
     void rowMemoryManager::immute_memtable(std::shared_ptr<relMemTable> memtable) {
         auto new_memtable = std::make_shared<relMemTable>(0, memtable->column_num, memtable);
+        currentMemTable = new_memtable;
+        memtable->sema.release(1024);
         RelCompaction<std::string> x;
         x.label_id = 0;
         x.target_level = 0;
@@ -96,7 +97,6 @@ namespace BACH {
         x.relPersistence = memtable;
         x.key_min = memtable->min_key;
         db->relFiles->AddCompaction(x);
-        currentMemTable = new_memtable;
     }
 
 
@@ -114,6 +114,7 @@ namespace BACH {
         TempColumn tmp(memtable.get(), memtable->total_tuple, memtable->column_num);
         idx_t **data = new idx_t *[memtable->column_num];
         std::vector<OrderedDictionary *> dicts(memtable->column_num - 1);
+        std::unique_lock<std::shared_mutex> lock(memtable->mutex);
         for (size_t i = 0; i < memtable->column_num - 1; i++) {
             data[i] = new idx_t[memtable->total_tuple];
             // dicts[i] = new OrderedDictionary();
@@ -146,7 +147,7 @@ namespace BACH {
 
         memtable_cnt.fetch_add(-1, std::memory_order_relaxed);
         if (memtable_cnt.load() <= db->options->MAX_MEMTABLE_NUM) {
-            db->ResumeWrite();
+            db->ResumeWrite(0);
         }
 
         auto vedit = new VersionEdit();
@@ -160,7 +161,7 @@ namespace BACH {
                                               AnswerMerger &am, RelVersion *version) {
         auto x = currentMemTable;
         while (x) {
-            std::shared_lock<std::shared_mutex> lock(x->mutex);
+            //std::shared_lock<std::shared_mutex> lock(x->mutex);
             x->FilterByValueRange(timestamp, func, am);
             if (x == version->size_entry) break;
             x = x->next.lock();

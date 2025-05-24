@@ -86,7 +86,13 @@ namespace BACH {
         return Tuple(); // ���ؿյ� Tuple ��ʾδ�ҵ�
     }
 
-    void relMemTable::PutTuple(Tuple tuple, tp_key key, time_t timestamp, bool tombstone) {
+    bool relMemTable::PutTuple(Tuple tuple, tp_key key, time_t timestamp, bool tombstone) {
+        
+        if(immutable) {
+            sema.try_acquire();
+			return false;
+        }
+
         RelSkipList::Accessor accessor(tuple_index);
         
         //accessor.insert(TupleEntry(tuple, timestamp, property));
@@ -109,6 +115,8 @@ namespace BACH {
 		this->max_time = std::max(timestamp, this->max_time);
         size += Options::KEY_SIZE;
         UpdateMinMax(key);
+        ++current_data_count;
+        return true;
     }
 
 

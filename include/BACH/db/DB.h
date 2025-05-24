@@ -45,8 +45,8 @@ namespace BACH
 		void ProgressRelVersion(VersionEdit* edit, time_t time,
 			std::shared_ptr<relMemTable> size = nullptr, bool force_level = false);
 
-		void StallWrite();
-		void ResumeWrite();
+		void StallWrite(int memtable);
+		void ResumeWrite(int memtable);
 
 		//void Persistence(std::string_view label, vertex_t merge_id);
 		//void TestMerge(Compaction& x, idx_t type);
@@ -77,7 +77,7 @@ namespace BACH
 		std::vector<std::shared_ptr<std::thread>> low_compact_thread;
 		std::atomic<size_t> working_compact_thread = 0;
 		std::atomic<bool> progressing_read_version = false;
-		std::atomic<bool> write_stall = false;
+		std::atomic<bool> write_stall[2] = {false, false};
 		std::mutex write_stall_mutex;
 		std::condition_variable write_stall_cv;
 		

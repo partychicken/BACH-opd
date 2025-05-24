@@ -45,10 +45,10 @@ namespace BACH {
             }
         }
         if(FileIndex[0].size() > db->options->ZERO_LEVEL_FILES) {
-            db->StallWrite();
+            db->StallWrite(1);
         }
         else {
-            db->ResumeWrite();
+            db->ResumeWrite(1);
         }
         
         for (auto &i: FileIndex)

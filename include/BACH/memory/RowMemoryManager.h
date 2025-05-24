@@ -60,7 +60,6 @@ namespace BACH {
         std::shared_ptr<relMemTable> currentMemTable;
         DB *db;
         size_t data_count_threshold = 1024; // ��������ֵ
-        size_t current_data_count = 0; // ��ǰ����������
         size_t column_num = 0; // ����
         std::atomic<size_t> memtable_cnt;
         void CheckAndImmute();

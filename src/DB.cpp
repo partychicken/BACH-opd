@@ -470,11 +470,11 @@ namespace BACH {
         }
     }
 
-    void DB::StallWrite() {
-        write_stall.store(true);
+    void DB::StallWrite(int memtable) {
+        write_stall[memtable].store(true);
     }
-	void DB::ResumeWrite() {
-        write_stall.store(false);
+	void DB::ResumeWrite(int memtable) {
+        write_stall[memtable].store(false);
         std::unique_lock<std::mutex> lock(write_stall_mutex);
         write_stall_cv.notify_all();
     }
@@ -507,9 +507,9 @@ namespace BACH {
     }
     
     void DB::check_write_stall() {
-        if (write_stall.load()) {
+        if (write_stall[0].load() && write_stall[1].load()) {
             std::unique_lock<std::mutex> lock(write_stall_mutex);
-            write_stall_cv.wait(lock, [&] { return !write_stall.load(); });
+            write_stall_cv.wait(lock, [&] { return !write_stall[0].load() || !write_stall[1].load(); });
         }
     }
 }

@@ -65,6 +65,7 @@ namespace BACH {
 		tp_key min_key;
 		std::atomic<size_t> total_tuple;
 		idx_t column_num;
+        size_t current_data_count = 0; // ��ǰ����������
 		
 		
 		std::shared_ptr<RelSkipList> tuple_index;
@@ -83,15 +84,13 @@ namespace BACH {
 			tuple_index = RelSkipList::createInstance();
 		};
 		~relMemTable() {
-            if(last)
-			    last->next.reset();
             for (size_t i = 0; i < tuple_pool.size(); ++i) {
                 delete tuple_pool[i];
             }
 		}
 		void UpdateMinMax(tp_key key);
 
-        void PutTuple(Tuple tuple, tp_key key, time_t timestamp, bool tombstone = false);
+        bool PutTuple(Tuple tuple, tp_key key, time_t timestamp, bool tombstone = false);
 
         //void AddTuple(Tuple tuple, tp_key key, time_t timestamp, tuple_property_t property);
         //void DeleteTuple(tp_key key, time_t timestamp, tuple_property_t property);

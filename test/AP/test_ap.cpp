@@ -17,7 +17,7 @@ using namespace BACH;
 TEST_CASE("FILE VALUE SCAN TEST", "[AP]") {
     {
         std::shared_ptr<Options> MockOptions = std::make_shared<Options>();
-        // MockOptions->MEM_TABLE_MAX_SIZE = 4 * 1024;
+         MockOptions->MEM_TABLE_MAX_SIZE = 1024 * 1024 + 1;
         // MockOptions->READ_BUFFER_SIZE = 64 * 1024;
         // MockOptions->WRITE_BUFFER_SIZE = 64 * 1024;
         // MockOptions->MAX_BLOCK_SIZE = 64 * 1024;

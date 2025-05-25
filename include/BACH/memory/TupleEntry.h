@@ -80,7 +80,8 @@ namespace BACH {
 		time_t max_time = 0;
 		relMemTable(size_t _size, idx_t _column_num,
 			std::shared_ptr<relMemTable> _next = NULL) :
-			total_tuple(_size), column_num(_column_num), next(_next), immutable(false), sema(0) {
+			total_tuple(_size), column_num(_column_num), tuple_pool(20), 
+            next(_next), immutable(false), sema(0) {
 			tuple_index = RelSkipList::createInstance();
 		};
 		~relMemTable() {

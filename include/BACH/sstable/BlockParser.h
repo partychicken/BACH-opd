@@ -67,8 +67,8 @@ namespace BACH {
 
         Tuple GetTuple(Key_t key) {
             char* buffer = data_buffer;
-            idx_t tmp_read_num = key_num;
-            size_t inner_off = 0;
+            // idx_t tmp_read_num = key_num;
+            // size_t inner_off = 0;
             // for (idx_t j = 0; j < tmp_read_num; j++) {
             //     Key_t nowkey = util::GetDecodeFixed<Key_t>(buffer + inner_off);
             //     if (nowkey == key) {

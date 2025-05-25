@@ -47,14 +47,14 @@ namespace BACH {
         auto l_it = std::lower_bound(strvec.begin(), strvec.end(), left_bound);
 		auto r_it = std::upper_bound(strvec.begin(), strvec.end(), right_bound);
 
-		int LeftBound = l_it - strvec.begin();
-		int RightBound = r_it - strvec.begin() - 1;
+		idx_t LeftBound = l_it - strvec.begin();
+		idx_t RightBound = r_it - strvec.begin() - 1;
 
         //std::cout << "LEFT_BOUND: " << dict->getString(LeftBound);
         //std::cout << "\nRIGHT_BOUND: " << dict->getString(RightBound);
         //std::cout << std::endl;
 
-        if (RightBound < 0 || LeftBound >= dict->getCount()) {
+        if (RightBound < 0 || LeftBound >= (idx_t)dict->getCount()) {
             for (int i = 0; i < count; i++) {
 				result[i] = false;
             }
@@ -69,7 +69,7 @@ namespace BACH {
     template<typename Func>
     void RangeFilter(Vector &res, Func left_bound, Func right_bound) {
         idx_t cnt = res.GetCount();
-        sul::dynamic_bitset<>res_bitmap(cnt);
+        sul::dynamic_bitset<>res_bitmap(2048);
         rangefilter(res.GetDict(), res.GetData(), cnt, left_bound, right_bound, res_bitmap);
         res.Slice(res_bitmap);
     }

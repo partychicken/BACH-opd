@@ -59,7 +59,7 @@ namespace BACH {
         read_rel_version = current_rel_version = new RelVersion(this);
         for (idx_t i = 0; i < _options->NUM_OF_HIGH_COMPACTION_THREAD; ++i) {
             high_compact_thread.push_back(std::make_shared<std::thread>(
-                [=] { 
+                [&] { 
 					ThreadProfilerContext::SetCurrent(&compaction_profilers_[i]);
                     HighCompactLoop(); 
 					ThreadProfilerContext::SetCurrent(nullptr);
@@ -69,7 +69,7 @@ namespace BACH {
 
         for (idx_t i = 0; i < _options->NUM_OF_LOW_COMPACTION_THREAD; ++i) {
             low_compact_thread.push_back(std::make_shared<std::thread>(
-                [=] { 
+                [&] { 
 					ThreadProfilerContext::SetCurrent(&compaction_profilers_[_options->NUM_OF_HIGH_COMPACTION_THREAD + i]);
                     LowCompactLoop(); 
 					ThreadProfilerContext::SetCurrent(nullptr);

@@ -3,6 +3,7 @@
 #include <atomic>
 #include <iostream>
 #include <algorithm>
+#include <thread>
 #include <vector>
 #include <memory>
 #include <mutex>
@@ -20,6 +21,14 @@ namespace BACH
 		ConcurrentArray(const ConcurrentArray&) = delete;
 		ConcurrentArray& operator=(const ConcurrentArray&) = delete;
 		ConcurrentArray() = default;
+		ConcurrentArray(int k)
+		{
+			for (int i = 0; i < k; ++i)
+			{
+				array[i] = new T[1 << i];
+				empty[i].store(true);
+			}
+		}
 		~ConcurrentArray()
 		{
 			for (int i = 0; i < 30; ++i)
@@ -60,6 +69,8 @@ namespace BACH
 					array[num] = new T[1 << num];
 					array_size++;
 				}
+				else
+					std::this_thread::yield();
 				tmp = array[num];
 			}
 			//std::cout << pos << " " << num << " " << pos + 1 - (1 << num) << std::endl;

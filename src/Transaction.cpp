@@ -203,7 +203,7 @@ namespace BACH {
                                                     iter.GetFile()->file_size, static_cast<RelFileMetaData<std::string> *>(iter.GetFile()));
                     Tuple found = parser.GetTuple(key);
                     if (!found.row.empty()) {
-                        for (int i = 1; i < found.row.size(); i++) {
+                        for (size_t i = 1; i < found.row.size(); i++) {
                             idx_t col_id = *((idx_t *) found.row[i].data());
                             found.row[i] = static_cast<RelFileMetaData<std::string> *>(iter.GetFile())->dictionary[
                                 i - 1].
@@ -288,7 +288,7 @@ namespace BACH {
             for (auto x: res) {
                 if (am.contains(x.GetKey())) continue;
                 if (!x.row.empty()) {
-                    for (int i = 1; i < x.row.size(); i++) {
+                    for (size_t i = 1; i < x.row.size(); i++) {
                         idx_t col_id = *((idx_t *) x.row[i].data());
                         x.row[i] = static_cast<RelFileMetaData<std::string> *>(iter.GetFile())->dictionary[i - 1].
                         getString(col_id);

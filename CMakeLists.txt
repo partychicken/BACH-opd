@@ -27,11 +27,16 @@ target_link_libraries(bach-opd PRIVATE folly)
 
 set(BUILD_TEST ON)
 set(DEBUG ON)
+set(RUN_PROFILER OFF)
 
 set(CMAKE_CXX_FLAGS "-O3 -march=native -Wno-array-bounds ${CMAKE_CXX_FLAGS}")
 
 option(BUILD_UNITTEST "Build unit tests" OFF)
 set(BUILD_UNITTEST ON)
+
+if (RUN_PROFILER)
+	add_definitions(-DRUN_PROFILER)
+endif()
 
 if(DEBUG)
 	set(CMAKE_CXX_FLAGS " -g -Wall ${CMAKE_CXX_FLAGS}")

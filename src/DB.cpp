@@ -35,8 +35,11 @@ namespace BACH {
 
     DB::DB(std::shared_ptr<Options> _options, idx_t column_num) : options(_options),
                                                                   epoch_id(1),
-                                                                  write_epoch_table(_options->MAX_WORKER_THREAD),
-                                                                  compaction_profilers_(_options->NUM_OF_HIGH_COMPACTION_THREAD + _options->NUM_OF_LOW_COMPACTION_THREAD){
+                                                                  write_epoch_table(_options->MAX_WORKER_THREAD)
+#ifdef RUN_PROFILER
+                                                                  ,compaction_profilers_(_options->NUM_OF_HIGH_COMPACTION_THREAD + _options->NUM_OF_LOW_COMPACTION_THREAD)
+#endif
+                                                                  {
         if (options->MAX_FILE_READER_CACHE_SIZE != 0) {
             ReaderCaches = std::make_unique<FileReaderCache>(
                 options->MAX_FILE_READER_CACHE_SIZE, options->STORAGE_DIR + "/");
@@ -60,9 +63,7 @@ namespace BACH {
         for (idx_t i = 0; i < _options->NUM_OF_HIGH_COMPACTION_THREAD; ++i) {
             high_compact_thread.push_back(std::make_shared<std::thread>(
                 [&] { 
-					ThreadProfilerContext::SetCurrent(&compaction_profilers_[i]);
-                    HighCompactLoop(); 
-					ThreadProfilerContext::SetCurrent(nullptr);
+                    PROFILER_CONTEXT_THREAD(compaction_profilers_[i], HighCompactLoop);
                 }));
             //high_compact_thread[i]->detach();
         }
@@ -70,9 +71,7 @@ namespace BACH {
         for (idx_t i = 0; i < _options->NUM_OF_LOW_COMPACTION_THREAD; ++i) {
             low_compact_thread.push_back(std::make_shared<std::thread>(
                 [&] { 
-					ThreadProfilerContext::SetCurrent(&compaction_profilers_[_options->NUM_OF_HIGH_COMPACTION_THREAD + i]);
-                    LowCompactLoop(); 
-					ThreadProfilerContext::SetCurrent(nullptr);
+					PROFILER_CONTEXT_THREAD(compaction_profilers_[_options->NUM_OF_HIGH_COMPACTION_THREAD + i], LowCompactLoop);
                 }));
             //low_compact_thread[i]->detach();
         }
@@ -100,10 +99,12 @@ namespace BACH {
             read_rel_version.load()->DecRef();
             current_rel_version->DecRef();
         }
+#ifdef RUN_PROFILER
         for (auto profiler : compaction_profilers_) {
 			db_profiler.AddThreadProfiler(profiler);
         }
         db_profiler.PrintSummary();
+#endif
         //std::cout << "closed" << std::endl;
     }
 
@@ -327,7 +328,7 @@ namespace BACH {
     }
 
     void DB::HighCompactLoop() {
-		ThreadProfiler* local_profiler = ThreadProfilerContext::GetCurrent();
+        GET_THREAD_PROFILER();
         while (true) {
             if (close)
                 return;
@@ -344,22 +345,14 @@ namespace BACH {
                 x.file_id = relFiles->GetFileID();
                 if (x.relPersistence != nullptr) {
                     //persistence
-                    OperatorProfiler op;
-					OperatorProfilerContext::SetCurrentProfiler(&op);
-					op.Start();
+                    START_OPERATOR_PROFILER();
                     edit = RowMemtable->RowMemtablePersistence(x.file_id, x.relPersistence);
-                    op.End();
-					local_profiler->AddOperator("RelMemtablePersistence", op);
-					OperatorProfilerContext::SetCurrentProfiler(nullptr);
+					END_LOCAL_OPERATOR_PROFILER("RowMemtablePersistence");
                     time = x.relPersistence->max_time;
                 } else {
-					OperatorProfiler op;
-					OperatorProfilerContext::SetCurrentProfiler(&op);
-					op.Start();
+                    START_OPERATOR_PROFILER();
                     edit = relFiles->MergeRelFile(x);
-					op.End();
-					local_profiler->AddOperator("MergeRelFile", op);
-					OperatorProfilerContext::SetCurrentProfiler(nullptr);
+                    END_LOCAL_OPERATOR_PROFILER("MergeRelFile");
                 }
                 ProgressRelVersion(edit, time, x.relPersistence);
                 delete edit;
@@ -373,7 +366,7 @@ namespace BACH {
     }
     
     void DB::LowCompactLoop() {
-        ThreadProfiler* local_profiler = ThreadProfilerContext::GetCurrent();
+        GET_THREAD_PROFILER();
         while (true) {
             if (close)
                 return;
@@ -387,13 +380,9 @@ namespace BACH {
                 lock.unlock();
                 VersionEdit *edit;
                 x.file_id = relFiles->GetFileID();
-                OperatorProfiler op;
-				OperatorProfilerContext::SetCurrentProfiler(&op);
-                op.Start();
+                START_OPERATOR_PROFILER();
                 edit = relFiles->MergeRelFile(x);
-				op.End();
-				local_profiler->AddOperator("MergeRelFile", op);
-				OperatorProfilerContext::SetCurrentProfiler(nullptr);
+                END_LOCAL_OPERATOR_PROFILER("MergeRelFile");
 
                 ProgressRelVersion(edit, 0, x.relPersistence);
                 delete edit;

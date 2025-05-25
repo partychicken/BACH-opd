@@ -9,6 +9,56 @@
 #include <numeric>
 #include <iostream>
 
+#ifdef RUN_PROFILER
+#define START_OPERATOR_PROFILER() \
+	OperatorProfiler op; \
+	OperatorProfilerContext::SetCurrentProfiler(&op); \
+	op.Start() \
+
+#define END_OPERATOR_PROFILER(name) \
+	op.End(); \
+	profiler.AddOperator(name, op); \
+	OperatorProfilerContext::SetCurrentProfiler(nullptr)
+
+#define END_LOCAL_OPERATOR_PROFILER(name) \
+	op.End(); \
+	local_profiler->AddOperator(name, op); \
+	OperatorProfilerContext::SetCurrentProfiler(nullptr)
+
+#define PROFILER_CONTEXT_THREAD(thread_profiler, func) \
+	ThreadProfilerContext::SetCurrent(&thread_profiler); \
+	func();  \
+	ThreadProfilerContext::SetCurrent(nullptr)
+
+#define GET_THREAD_PROFILER() \
+	ThreadProfiler* local_profiler = ThreadProfilerContext::GetCurrent();
+
+#define START_WRITE_PROFILER() \
+	OperatorProfiler* op = OperatorProfilerContext::GetCurrentProfiler(); \
+	op->StartWrite()
+
+#define END_WRITE_PROFILER() \
+	op->EndWrite()
+
+#define START_READ_PROFILER() \
+	OperatorProfiler* op = OperatorProfilerContext::GetCurrentProfiler(); \
+	op->StartRead()
+
+#define END_READ_PROFILER() \
+	op->EndRead()
+
+#else
+#define START_OPERATOR_PROFILER() 
+#define END_OPERATOR_PROFILER(name)
+#define END_LOCAL_OPERATOR_PROFILER(name) 
+#define PROFILER_CONTEXT_THREAD(thread_profiler, func)  func()
+#define GET_THREAD_PROFILER()
+#define START_WRITE_PROFILER() 
+#define END_WRITE_PROFILER() 
+#define START_READ_PROFILER()
+#define END_READ_PROFILER()
+#endif
+
 namespace BACH {
 	// ?? git
 	using std::chrono::duration;
@@ -54,16 +104,16 @@ namespace BACH {
 	// time the operator in transaction/compaction
 	class OperatorProfiler {
 	public:
-		void Start();                 // ¿ªÊ¼¼ÆÊ±
-		void End();                   // ½áÊø¼ÆÊ±
+		void Start();                 // ï¿½ï¿½Ê¼ï¿½ï¿½Ê±
+		void End();                   // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê±
 
-		void StartRead();             // Ò»´Î¶ÁIO¿ªÊ¼
-		void EndRead();               // Ò»´Î¶ÁIO½áÊø
+		void StartRead();             // Ò»ï¿½Î¶ï¿½IOï¿½ï¿½Ê¼
+		void EndRead();               // Ò»ï¿½Î¶ï¿½IOï¿½ï¿½ï¿½ï¿½
 
-		void StartWrite();            // Ò»´ÎÐ´IO¿ªÊ¼
-		void EndWrite();              // Ò»´ÎÐ´IO½áÊø
+		void StartWrite();            // Ò»ï¿½ï¿½Ð´IOï¿½ï¿½Ê¼
+		void EndWrite();              // Ò»ï¿½ï¿½Ð´IOï¿½ï¿½ï¿½ï¿½
 
-		double Elapsed() const;       // ×ÜÊ±¼ä
+		double Elapsed() const;       // ï¿½ï¿½Ê±ï¿½ï¿½
 		double TotalReadTime() const;
 		double TotalWriteTime() const;
 
@@ -87,15 +137,15 @@ namespace BACH {
 
 	class ThreadProfiler {
 	public:
-		// Ìí¼ÓÒ»´ÎËã×ÓµÄÖ´ÐÐÊý¾Ý
+		// ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½Óµï¿½Ö´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 		void AddOperator(const std::string& op_name, const OperatorProfiler& op_profiler);
 
-		// »ñÈ¡Ä³¸öËã×ÓµÄÀÛ¼Æ×ÜÊ±¼ä/¶ÁÐ´ IO Ê±¼ä
+		// ï¿½ï¿½È¡Ä³ï¿½ï¿½ï¿½ï¿½ï¿½Óµï¿½ï¿½Û¼ï¿½ï¿½ï¿½Ê±ï¿½ï¿½/ï¿½ï¿½Ð´ IO Ê±ï¿½ï¿½
 		double GetTotalTime(const std::string& op_name) const;
 		double GetTotalReadTime(const std::string& op_name) const;
 		double GetTotalWriteTime(const std::string& op_name) const;
 
-		// »ñÈ¡ÓÃÓÚ p99 ¼ÆËãµÄÑù±¾
+		// ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ p99 ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 		const std::unordered_map<std::string, std::vector<double>>& GetLatencySamples() const;
 
 	private:
@@ -107,18 +157,18 @@ namespace BACH {
 
 	class DBProfiler {
 	public:
-		// ÊÕ¼¯À´×ÔÒ»¸öÏß³Ì/ÊÂÎñµÄÍ³¼ÆÊý¾Ý
+		// ï¿½Õ¼ï¿½ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ß³ï¿½/ï¿½ï¿½ï¿½ï¿½ï¿½Í³ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 		void AddThreadProfiler(const ThreadProfiler& profiler);
 
-		// »ñÈ¡Ã¿¸öËã×ÓµÄ p99 ÑÓ³Ù£¨µ¥Î»£ºÃë£©
+		// ï¿½ï¿½È¡Ã¿ï¿½ï¿½ï¿½ï¿½ï¿½Óµï¿½ p99 ï¿½Ó³Ù£ï¿½ï¿½ï¿½Î»ï¿½ï¿½ï¿½ë£©
 		std::unordered_map<std::string, double> GetP99Latency() const;
 
-		// »ñÈ¡Ëã×ÓµÄ×ÜÔËÐÐÊ±¼ä¡¢¶Á/Ð´ IO Ê±¼ä
+		// ï¿½ï¿½È¡ï¿½ï¿½ï¿½Óµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ä¡¢ï¿½ï¿½/Ð´ IO Ê±ï¿½ï¿½
 		double GetTotalTime(const std::string& op_name) const;
 		double GetTotalReadTime(const std::string& op_name) const;
 		double GetTotalWriteTime(const std::string& op_name) const;
 
-		// ´òÓ¡µ±Ç°ËùÓÐÍ³¼ÆÊý¾Ý
+		// ï¿½ï¿½Ó¡ï¿½ï¿½Ç°ï¿½ï¿½ï¿½ï¿½Í³ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 		void PrintSummary() const;
 
 	private:

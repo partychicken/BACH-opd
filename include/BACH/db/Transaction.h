@@ -59,9 +59,7 @@ namespace BACH
 
         // OLAP operation
 		void GetTuplesFromRange(idx_t col_id, std::string left_bound, std::string right_bound) {
-			OperatorProfiler op;
-			OperatorProfilerContext::SetCurrentProfiler(&op);
-			op.Start();
+			START_OPERATOR_PROFILER();
 
 			AnswerMerger am;
 			// add in-memory data into am here;
@@ -93,10 +91,7 @@ namespace BACH
 					cur_row_group.ApplyRangeFilter(col_id - 1, left_bound, right_bound, am);
 				}
 			}
-
-			op.End();
-			profiler.AddOperator("GetTuplesFromRange", op);
-			OperatorProfilerContext::SetCurrentProfiler(nullptr);
+			END_OPERATOR_PROFILER("GetTuplesFromRange");
 		}
 
         void ScanTuples();
@@ -111,7 +106,9 @@ namespace BACH
 
 		Version* version;
 		RelVersion* rel_version;
+#ifdef RUN_PROFILER
 		ThreadProfiler profiler;
+#endif	
 		bool valid = true;
 
 

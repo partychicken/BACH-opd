@@ -29,7 +29,9 @@ namespace BACH {
 
                 if (rel_version) db->ProgressReadRelVersion();
             }
+#ifdef RUN_PROFILER
             db->db_profiler.AddThreadProfiler(profiler);
+#endif
         }
     }
 
@@ -153,13 +155,9 @@ namespace BACH {
             return;
         }
         db->check_write_stall();
-        //OperatorProfiler op;
-        //OperatorProfilerContext::SetCurrentProfiler(&op);
-        //op.Start();
+        // START_OPERATOR_PROFILER();
         db->RowMemtable->PutTuple(tuple, key, write_epoch);
-        //op.End();
-        //profiler.AddOperator("PutTuple", op);
-        //OperatorProfilerContext::SetCurrentProfiler(nullptr);
+        // END_OPERATOR_PROFILER("PutTuple");
     }
 
     void Transaction::DelTuple(tp_key key) {
@@ -167,29 +165,21 @@ namespace BACH {
             return;
         }
         db->check_write_stall();
-        //OperatorProfiler op;
-        //OperatorProfilerContext::SetCurrentProfiler(&op);
-        //op.Start();
+        // START_OPERATOR_PROFILER();
         Tuple x;
         x.row.push_back(key);
         db->RowMemtable->PutTuple(x, key, write_epoch, true);
-        //op.End();
-        //profiler.AddOperator("DelTuple", op);
-        //OperatorProfilerContext::SetCurrentProfiler(nullptr);
+        // END_OPERATOR_PROFILER("DelTuple");
     }
 
     Tuple Transaction::GetTuple(tp_key key) {
-        //OperatorProfiler op;
-        //OperatorProfilerContext::SetCurrentProfiler(&op);
-        //op.Start();
+        // START_OPERATOR_PROFILER();
         Tuple x = db->RowMemtable->GetTuple(key, read_epoch, rel_version);
         // if (!std::isnan(x.property)) {
         //     return x;
         // }
         if (!x.row.empty()) {
-            //op.End();
-            //profiler.AddOperator("GetTuple", op);
-            //OperatorProfilerContext::SetCurrentProfiler(nullptr);
+            // END_OPERATOR_PROFILER("GetTuple");
             return x;
         }
         // key.resize(db->options->KEY_SIZE);
@@ -209,18 +199,14 @@ namespace BACH {
                                 i - 1].
                             getString(col_id);
                         }
-                        // op.End();
-                        // profiler.AddOperator("GetTuple", op);
-                        // OperatorProfilerContext::SetCurrentProfiler(nullptr);
+                        // END_OPERATOR_PROFILER("GetTuple");
                         return found;
                     }
                 }
             }
             iter.next();
         }
-        // op.End();
-        // profiler.AddOperator("GetTuple", op);
-        // OperatorProfilerContext::SetCurrentProfiler(nullptr);
+        // END_OPERATOR_PROFILER("GetTuple");
         return Tuple();
     }
 
@@ -246,9 +232,7 @@ namespace BACH {
     //}
 
     void Transaction::ScanTuples() {
-        OperatorProfiler op;
-        OperatorProfilerContext::SetCurrentProfiler(&op);
-        op.Start();
+        START_OPERATOR_PROFILER();
 
         AnswerMerger am;
 
@@ -264,15 +248,11 @@ namespace BACH {
                 cur_row_group.MaterializeAll(am);
             }
         }
-        op.End();
-        profiler.AddOperator("ScanTuples", op);
-        OperatorProfilerContext::SetCurrentProfiler(nullptr);
+        END_OPERATOR_PROFILER("ScanTuples");
     }
 
     std::vector<Tuple> Transaction::ScanKTuples(idx_t k, std::string key) {
-        // OperatorProfiler op;
-        // OperatorProfilerContext::SetCurrentProfiler(&op);
-        // op.Start();
+        // START_OPERATOR_PROFILER();
 
         std::map<std::string, Tuple> am;
         db->RowMemtable->GetKTuple(k, key, read_epoch, am, rel_version);
@@ -303,9 +283,7 @@ namespace BACH {
             res.emplace_back(x.second);
             if (res.size() >= k) break;
         }
-        // op.End();
-        // profiler.AddOperator("ScanKTuples", op);
-        // OperatorProfilerContext::SetCurrentProfiler(nullptr);
+        // END_OPERATOR_PROFILER("ScanKTuples");
         return res;
     }
 }

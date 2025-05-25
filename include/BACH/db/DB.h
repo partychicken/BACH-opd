@@ -80,12 +80,14 @@ namespace BACH
 		std::atomic<bool> write_stall[2] = {false, false};
 		std::mutex write_stall_mutex;
 		std::condition_variable write_stall_cv;
-		
+
+#ifdef RUN_PROFILER
 		// profiler for every compaction thread
 		std::vector<ThreadProfiler> compaction_profilers_;
 
 		// DB Profiler
 		DBProfiler db_profiler;
+#endif
 
 		bool close = false;
 		//compaction loop gfor background thread

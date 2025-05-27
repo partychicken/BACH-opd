@@ -56,9 +56,13 @@ namespace BACH {
 
         void GetKTuple(idx_t k, std::string key, time_t timestamp, std::map<std::string, Tuple> &am, RelVersion *version);
 
+        std::shared_ptr<relMemTable> GetCurrentTable() {
+            return currentMemTable;
+        }
+
     private:
-        std::shared_ptr<relMemTable> currentMemTable;
         DB *db;
+        std::shared_ptr<relMemTable> currentMemTable;
         size_t data_count_threshold = 1024; // ��������ֵ
         size_t column_num = 0; // ����
         std::atomic<size_t> memtable_cnt;

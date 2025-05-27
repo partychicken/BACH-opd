@@ -1,5 +1,7 @@
 #include "BACH/db/Transaction.h"
 
+#include <BACH/common/ScanIter.h>
+
 namespace BACH {
     Transaction::Transaction(time_t _write_epoch, time_t _read_epoch,
                              DB *db, Version *_version, time_t pos) : write_epoch(_write_epoch),
@@ -285,5 +287,9 @@ namespace BACH {
         }
         // END_OPERATOR_PROFILER("ScanKTuples");
         return res;
+    }
+
+    ScanIter Transaction::GetIter(std::string key) {
+        return ScanIter(rel_version, db->RowMemtable->GetCurrentTable(), key);
     }
 }

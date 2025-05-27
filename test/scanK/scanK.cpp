@@ -35,14 +35,20 @@ TEST_CASE("SCANK Test", "[scanK]") {
     sleep(5);
     std::cout << "\nFinished insert" << std::endl;
     auto z = x.BeginRelTransaction();
-    auto res = z.ScanKTuples(50, "1");
-    for (auto i : res) {
-        std::cout << i.GetKey() << std::endl;
+    auto res = z.GetIter("3");
+    for (int i = 0; i < 100; i++) {
+        Tuple result;
+        res.GetTuple(result);
+        res.next();
+        std::cout << result.GetKey() << std::endl;
     }
     std::cout << std::endl << "======================" << std::endl;
     auto z2 = x.BeginRelTransaction();
-    auto res2 = z.ScanKTuples(50, "3");
-    for (auto i: res2) {
-        std::cout << i.GetKey() << std::endl;
+    res = z.GetIter("3");
+    for (int i = 0; i < 100; i++) {
+        Tuple result;
+        res.GetTuple(result);
+        res.next();
+        std::cout << result.GetKey() << std::endl;
     }
 }

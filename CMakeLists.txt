@@ -30,7 +30,7 @@ set(BUILD_TEST ON)
 set(DEBUG ON)
 set(RUN_PROFILER OFF)
 
-set(CMAKE_CXX_FLAGS "-O3 -march=native -Wno-array-bounds ${CMAKE_CXX_FLAGS}")
+# set(CMAKE_CXX_FLAGS "-O3 -march=native -Wno-array-bounds ${CMAKE_CXX_FLAGS}")
 
 option(BUILD_UNITTEST "Build unit tests" OFF)
 set(BUILD_UNITTEST ON)

@@ -24,10 +24,11 @@
 namespace BACH {
     template<typename Key_t>
     struct RelFileMetaData;
+
     template<typename Key_t>
     struct BlockMetaT {
         //std::shared_ptr<BloomFilter> filter;
-        Key_t key_min;// key_max;
+        Key_t key_min; // key_max;
         size_t offset_in_file;
         size_t block_size;
     };
@@ -61,7 +62,7 @@ namespace BACH {
             size_t now_meta_offset = block_meta_begin_pos;
             // size_t tot_meta_size = (meta_size + block_filter_size) * (block_count - 1) + meta_size +
             //                        last_block_filter_size;
-            size_t tot_meta_size = (meta_size ) * (block_count - 1) + meta_size;
+            size_t tot_meta_size = (meta_size) * (block_count - 1) + meta_size;
             char blockinfobuf[tot_meta_size];
             if (!reader->fread(blockinfobuf, tot_meta_size, now_meta_offset)) {
                 std::cout << "read fail begin" << std::endl;
@@ -69,8 +70,10 @@ namespace BACH {
             }
             block_meta.resize(block_count);
             now_meta_offset = 0;
-            for (idx_t i = 0; i < block_count ; i++) {
-                BlockMetaT<Key_t> meta{/*std::make_shared<BloomFilter>(),*/ "", 0, 0};
+            for (idx_t i = 0; i < block_count; i++) {
+                BlockMetaT<Key_t> meta{
+                    /*std::make_shared<BloomFilter>(),*/ "", 0, 0
+                };
                 util::DecodeFixed(blockinfobuf + now_meta_offset, meta.key_min);
                 // util::DecodeFixed(blockinfobuf + now_meta_offset + key_size, meta.key_max);
                 // util::DecodeFixed(blockinfobuf + now_meta_offset + key_size * 2, meta.offset_in_file);
@@ -79,7 +82,7 @@ namespace BACH {
                 // meta.filter->create_from_data(block_func_num, filters);
                 util::DecodeFixed(blockinfobuf + now_meta_offset + key_size, meta.offset_in_file);
                 util::DecodeFixed(blockinfobuf + now_meta_offset + key_size + sizeof(size_t), meta.block_size);
-                block_meta[i]=std::move(meta);
+                block_meta[i] = std::move(meta);
 
                 // now_meta_offset += meta_size + block_filter_size;
                 now_meta_offset += meta_size;
@@ -187,6 +190,20 @@ namespace BACH {
             return res;
         }
 
+        idx_t GetBlock(Key_t key, BlockParser<Key_t> *&block) {
+            auto iter = upper_bound(block_meta.begin(), block_meta.end(), key, CompareKey);
+            if (iter != block_meta.begin()) --iter;
+            if (iter != block_meta.end() - 1 && key >= (iter + 1)->key_min) ++iter;
+            BlockMetaT<Key_t> &meta = *iter;
+            block = new BlockParser<Key_t>(reader, options, meta.offset_in_file, meta.block_size, col_num);
+            return iter - block_meta.begin();
+        }
+
+        BlockParser<Key_t> *GetBlock(const idx_t &block_idx) {
+            BlockMetaT<Key_t> &meta = block_meta[block_idx];
+            return new BlockParser<Key_t>(reader, options, meta.offset_in_file, meta.block_size, col_num);
+        }
+
         idx_t GetColumnNum() {
             return col_num;
         }
@@ -213,6 +230,7 @@ namespace BACH {
 
         bool valid = true;
     };
+
     struct FileMetaData {
         std::string file_name;
         label_t label;
@@ -273,15 +291,22 @@ namespace BACH {
         //}
 
         RelFileMetaData(RelFileMetaData &&x) : dictionary(x.dictionary), key_min(x.key_min), key_max(x.key_max),
-                                               FileMetaData(x), key_num(x.key_num), col_num(x.col_num), block_count(x.block_count), block_meta_begin_pos(x.block_meta_begin_pos),
-                                               block_filter_size(x.block_filter_size),last_block_filter_size(x.last_block_filter_size), block_func_num(x.block_func_num),
+                                               FileMetaData(x), key_num(x.key_num), col_num(x.col_num),
+                                               block_count(x.block_count), block_meta_begin_pos(x.block_meta_begin_pos),
+                                               block_filter_size(x.block_filter_size),
+                                               last_block_filter_size(x.last_block_filter_size),
+                                               block_func_num(x.block_func_num),
                                                parser(x.parser) {
         }
 
-        RelFileMetaData(const RelFileMetaData &x) : FileMetaData(x), dictionary(x.dictionary), key_min(x.key_min), key_max(x.key_max),
-        key_num(x.key_num), col_num(x.col_num),block_count(x.block_count), block_meta_begin_pos(x.block_meta_begin_pos),
-            block_filter_size(x.block_filter_size), last_block_filter_size(x.last_block_filter_size), block_func_num(x.block_func_num),
-            parser(x.parser) {
+        RelFileMetaData(const RelFileMetaData &x) : FileMetaData(x), dictionary(x.dictionary), key_min(x.key_min),
+                                                    key_max(x.key_max),
+                                                    key_num(x.key_num), col_num(x.col_num), block_count(x.block_count),
+                                                    block_meta_begin_pos(x.block_meta_begin_pos),
+                                                    block_filter_size(x.block_filter_size),
+                                                    last_block_filter_size(x.last_block_filter_size),
+                                                    block_func_num(x.block_func_num),
+                                                    parser(x.parser) {
         }
 
         RelFileMetaData(label_t _label, idx_t _level, vertex_t _vertex_id_b,

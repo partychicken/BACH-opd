@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include "DB.h"
 #include "BACH/sstable/SSTableParser.h"
+#include "BACH/common/ScanIter.h"
 #include "BACH/common/tuple.h"
 #include "BACH/sstable/RelVersion.h"
 #include "BACH/sstable/FileMetaData.h"
@@ -95,6 +96,7 @@ namespace BACH
 		}
 
         void ScanTuples();
+		ScanIter GetIter(std::string key);
 
 		std::vector<Tuple> ScanKTuples(idx_t k, std::string key);
 

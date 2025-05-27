@@ -133,28 +133,58 @@ namespace BACH {
         return result;
     }
 
-    void relMemTable::GetKTuple(idx_t k, tp_key start_key, time_t timestamp, std::map<std::string, Tuple> &am) {
+    void relMemTable::GetKTuple(idx_t k, tp_key start_key, time_t timestamp, std::vector<std::unique_ptr<Tuple>> &am) {
         RelSkipList::Accessor accessor(tuple_index);
+        idx_t kk = k;
         auto it = accessor.lower_bound(std::make_pair(start_key, 0));
+        std::vector<std::unique_ptr<Tuple>> nowa;
+        std::vector<std::unique_ptr<Tuple>> as;
         for (; it != accessor.end(); ++it) {
-            if (am.contains(it->first)) {
-                continue;
-            }
             auto found = it->second;
             while(found != NONEINDEX) {
                 if (tuple_pool[found]->time <= timestamp) {
                     if (!tuple_pool[found]->tombstone) {
-                        Tuple tmp (tuple_pool[found]->tuple);
-                        am.emplace(tuple_pool[found]->tuple.GetKey(), std::move(tmp));
+                        //Tuple tmp (tuple_pool[found]->tuple);
+                        nowa.emplace_back(std::make_unique<Tuple>(tuple_pool[found]->tuple));
                         k--;
-                        if (!k) return;
+                        if (!k) goto end;
                     }
                     break;
                 }
                 found = tuple_pool[found]->next;
             }
         }
+        end:
+        size_t i = 0, j = 0;
+        while (i < nowa.size() && j < am.size()) {
+            auto x = nowa[i]->row[0] <=> am[j]->row[0];
+            if (x < 0) {
+                as.emplace_back(std::move(nowa[i]));
+                i++;
+            } else if (x > 0) {
+                as.emplace_back(std::move(am[j]));
+                j++;
+            } else {
+                // if equal, we prefer the one in nowa
+                as.emplace_back(std::move(am[j]));
+                i++;
+                j++;
+            }
+        }
+        while (i < nowa.size()) {
+            as.emplace_back(std::move(nowa[i]));
+            i++;
+        }
+        while (j < am.size()) {
+            as.emplace_back(std::move(am[j]));
+            j++;
+        }
+        if(as.size() > kk) {
+            as.resize(kk);
+        }
+        am = std::move(as);
     }
+
 
     void relMemTable::UpdateMinMax(tp_key key) {
         if (key > max_key) {

@@ -66,7 +66,7 @@ namespace BACH
 			auto vf = CreateValueFilterFunction(col_id, left_bound, right_bound);
 			db->RowMemtable->FilterByValueRange(read_epoch, vf, am, rel_version);
 
-			auto files = rel_version->FileIndex;
+			auto& files = rel_version->FileIndex;
 
 			//auto MakeLeftBoundFunc = [](const std::string& right_bound) {
 			//	// ����һ������������� lambda����Ϊ right_bound ��ֵ���񣬱հ�������Ȼ�Ǻ�������
@@ -79,8 +79,8 @@ namespace BACH
 
 			//auto right_func = MakeLeftBoundFunc(right_bound);
 
-			for (auto cur_level : files) {
-				for (auto cur_file : cur_level) {
+			for (auto& cur_level : files) {
+				for (auto& cur_file : cur_level) {
 					//auto reader = db->ReaderCaches->find(cur_file);
 					//auto parser = RelFileParser<std::string>(reader, db->options, cur_file->file_size);
 					//auto DictList = static_cast<RelFileMetaData<std::string> *>(cur_file)->dictionary;
@@ -96,7 +96,7 @@ namespace BACH
 
         void ScanTuples();
 
-		std::vector<Tuple> ScanKTuples(idx_t k, std::string key);
+		std::vector<std::unique_ptr<Tuple>> ScanKTuples(idx_t k, std::string key);
 
 	private:
 		time_t write_epoch;

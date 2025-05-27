@@ -60,18 +60,18 @@ namespace BACH {
         RowMemtable = std::make_unique<rowMemoryManager>(this, column_num);
         relFiles = std::make_unique<RelFileManager>(this);
         read_rel_version = current_rel_version = new RelVersion(this);
-        for (idx_t i = 0; i < _options->NUM_OF_HIGH_COMPACTION_THREAD; ++i) {
+        for (idx_t i = 0; i < options->NUM_OF_HIGH_COMPACTION_THREAD; ++i) {
             high_compact_thread.push_back(std::make_shared<std::thread>(
-                [&] { 
+                [this, i] { 
                     PROFILER_CONTEXT_THREAD(compaction_profilers_[i], HighCompactLoop);
                 }));
             //high_compact_thread[i]->detach();
         }
 
-        for (idx_t i = 0; i < _options->NUM_OF_LOW_COMPACTION_THREAD; ++i) {
+        for (idx_t i = 0; i < options->NUM_OF_LOW_COMPACTION_THREAD; ++i) {
             low_compact_thread.push_back(std::make_shared<std::thread>(
-                [&] { 
-					PROFILER_CONTEXT_THREAD(compaction_profilers_[_options->NUM_OF_HIGH_COMPACTION_THREAD + i], LowCompactLoop);
+                [this, i] { 
+					PROFILER_CONTEXT_THREAD(compaction_profilers_[options->NUM_OF_HIGH_COMPACTION_THREAD + i], LowCompactLoop);
                 }));
             //low_compact_thread[i]->detach();
         }

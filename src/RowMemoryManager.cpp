@@ -43,7 +43,7 @@ namespace BACH {
         return Tuple();
     }
 
-    void rowMemoryManager::GetKTuple(idx_t k, tp_key key, time_t timestamp, std::map<std::string, Tuple> &am, RelVersion *version) {
+    void rowMemoryManager::GetKTuple(idx_t k, tp_key key, time_t timestamp, std::vector<std::unique_ptr<Tuple>> &am, RelVersion *version) {
         auto x = currentMemTable;
         while (x)  {
             //std::shared_lock<std::shared_mutex> lock(x->mutex);
@@ -110,11 +110,10 @@ namespace BACH {
         std::string file_name = temp_file_metadata->file_name;
         auto fw = std::make_shared<FileWriter>(db->options->STORAGE_DIR + "/" + file_name, false);
         RelFileBuilder<std::string> rfb(fw, db->options);
-
+        std::unique_lock<std::shared_mutex> lock(memtable->mutex);
         TempColumn tmp(memtable.get(), memtable->total_tuple, memtable->column_num);
         idx_t **data = new idx_t *[memtable->column_num];
         std::vector<OrderedDictionary *> dicts(memtable->column_num - 1);
-        std::unique_lock<std::shared_mutex> lock(memtable->mutex);
         for (size_t i = 0; i < memtable->column_num - 1; i++) {
             data[i] = new idx_t[memtable->total_tuple];
             // dicts[i] = new OrderedDictionary();

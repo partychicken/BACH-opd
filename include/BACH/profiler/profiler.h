@@ -42,9 +42,11 @@
 
 #define START_READ_PROFILER() \
 	OperatorProfiler* op = OperatorProfilerContext::GetCurrentProfiler(); \
+	if(op!= nullptr) \
 	op->StartRead()
 
 #define END_READ_PROFILER() \
+	if(op!= nullptr) \
 	op->EndRead()
 
 #else

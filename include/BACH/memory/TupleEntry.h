@@ -102,7 +102,7 @@ namespace BACH {
 
         void FilterByValueRange(time_t timestamp, const std::function<bool(Tuple &)> &func, AnswerMerger &am);
 
-		void GetKTuple(idx_t k, tp_key key, time_t timestamp, std::map<std::string, Tuple> &am);
+		void GetKTuple(idx_t k, tp_key key, time_t timestamp, std::vector<std::unique_ptr<Tuple>> &am);
     };
 
 

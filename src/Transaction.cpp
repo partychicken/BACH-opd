@@ -251,39 +251,68 @@ namespace BACH {
         END_OPERATOR_PROFILER("ScanTuples");
     }
 
-    std::vector<Tuple> Transaction::ScanKTuples(idx_t k, std::string key) {
+    std::vector<std::unique_ptr<Tuple>> Transaction::ScanKTuples(idx_t k, std::string key) {
         // START_OPERATOR_PROFILER();
 
-        std::map<std::string, Tuple> am;
+        std::vector<std::unique_ptr<Tuple>> am;
         db->RowMemtable->GetKTuple(k, key, read_epoch, am, rel_version);
 
         std::string KEY_MAX;
         for (unsigned int i = 0; i < db->options->KEY_SIZE; i++) KEY_MAX += ((char) 127);
         RelVersionIterator iter(rel_version, key, KEY_MAX);
+        idx_t now_level_k = k;
+        std::vector<std::unique_ptr<Tuple>> res;
         while (!iter.End()) {
             auto cur_file = iter.GetFile();
-            auto reader = db->ReaderCaches->find(cur_file);
-            auto parser = RelFileParser<std::string>(reader, db->options, cur_file->file_size, static_cast<RelFileMetaData<std::string> *>(cur_file));
-            std::vector<Tuple> res = parser.GetKTuple(k, key);
-            for (auto x: res) {
-                if (am.contains(x.GetKey())) continue;
+            RelFileParser<std::string>* parser = cur_file->parser;
+            auto an = parser->GetKTuple(now_level_k, key);
+            for (auto x: an) {
                 if (!x.row.empty()) {
                     for (size_t i = 1; i < x.row.size(); i++) {
                         idx_t col_id = *((idx_t *) x.row[i].data());
                         x.row[i] = static_cast<RelFileMetaData<std::string> *>(iter.GetFile())->dictionary[i - 1].
                         getString(col_id);
                     }
-                    am.emplace(x.GetKey(), std::move(x));
+                    res.emplace_back(std::make_unique<Tuple>(std::move(x)));
                 }
             }
-            iter.next();
-        }
-        std::vector<Tuple> res;
-        for (auto &x : am) {
-            res.emplace_back(x.second);
-            if (res.size() >= k) break;
+            if(!now_level_k){
+                iter.nextlevel();
+                now_level_k = k;
+                std::vector<std::unique_ptr<Tuple>> as;
+                size_t i = 0, j = 0;
+                while (i < res.size() && j < am.size()) {
+                    auto x = res[i]->row[0] <=> am[j]->row[0];
+                    if (x < 0) {
+                        as.emplace_back(std::move(res[i]));
+                        i++;
+                    } else if (x > 0) {
+                        as.emplace_back(std::move(am[j]));
+                        j++;
+                    } else {
+                        // if equal, we prefer the one in nowa
+                        as.emplace_back(std::move(am[j]));
+                        i++;
+                        j++;
+                    }
+                }
+                while (i < res.size()) {
+                    as.emplace_back(std::move(res[i]));
+                    i++;
+                }
+                while (j < am.size()) {
+                    as.emplace_back(std::move(am[j]));
+                    j++;
+                }
+                if(as.size() > k) {
+                    as.resize(k);
+                }
+                am.swap(as);
+                res.clear();
+            } 
+            else iter.next();
         }
         // END_OPERATOR_PROFILER("ScanKTuples");
-        return res;
+        return am;
     }
 }

@@ -45,7 +45,7 @@ namespace BACH {
         for (idx_t i = 0; i < cnt; i++) {
             if (bitmap[i]) {
                 Tuple tmp;
-                tmp.col_num = col_num;
+                // tmp.col_num = col_num;
                 tmp.row.push_back(keys[offset + i]);
                 for (idx_t j = 0; j < col_num - 1; j++) {
                     tmp.row.push_back(dict(j)->getString(cols[j][offset + i]));

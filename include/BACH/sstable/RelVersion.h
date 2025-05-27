@@ -47,6 +47,7 @@ namespace BACH
         RelFileMetaData<std::string>* GetFile() const;
         bool End() const { return end; }
         void next();
+        void nextscankfile();
         void nextlevel();
     private:
         RelVersion* version;

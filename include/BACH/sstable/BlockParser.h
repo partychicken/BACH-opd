@@ -118,8 +118,22 @@ namespace BACH {
 
         void GetKTuple(idx_t &k, Key_t key, std::vector<Tuple> &res) {
             char* buffer = data_buffer;
-            size_t inner_off = 0;
-            for (idx_t j = 0; j < key_num; j++) {
+            idx_t l = 0, r = key_num - 1;
+            while (l < r) {
+                idx_t mid = (l + r) >> 1;
+                auto compare = [&]() {
+                    for (size_t i = 0; i < key_size; i++) {
+                        if (buffer[mid * key_size + i] != key[i]) {
+                            return buffer[mid * key_size + i] < key[i];
+                        }
+                    }
+                    return false; // mid key is equal to key
+                };
+                if (compare()) l = mid + 1;
+                else r = mid;
+            }
+            size_t inner_off = l * key_size;
+            for (idx_t j = l; j < key_num; j++) {
                 Key_t nowkey = util::GetDecodeFixed<Key_t>(buffer + inner_off);
                 if (nowkey >= key) {
                     res.emplace_back(GetTupleWithIdx(nowkey, j));
@@ -155,7 +169,7 @@ namespace BACH {
 
         Tuple GetTupleWithIdx(Key_t key, const idx_t &idx) {
             Tuple result;
-            result.col_num = col_num + 1;
+            // result.col_num = col_num + 1;
             if constexpr (!std::is_same_v<Key_t, std::string>) result.row.push_back(key.to_string());
             else result.row.push_back(key);
             for (idx_t i = 0; i < col_num; i++) {

@@ -126,7 +126,7 @@ namespace BACH {
                     BlockParser<Key_t> block_parser(reader, options,
                                                     meta.offset_in_file, meta.block_size, col_num);
                     Tuple res = block_parser.GetTuple(key);
-                    if (res.col_num) {
+                    if (res.row.size() > 0) {
                         return res;
                     }
                 }

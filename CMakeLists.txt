@@ -28,7 +28,7 @@ target_link_options(bach-opd PRIVATE -ltcmalloc)
 
 set(BUILD_TEST ON)
 set(DEBUG ON)
-set(RUN_PROFILER OFF)
+set(RUN_PROFILER ON)
 
 set(CMAKE_CXX_FLAGS "-O3 -march=native -Wno-array-bounds ${CMAKE_CXX_FLAGS}")
 

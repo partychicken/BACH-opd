@@ -10,12 +10,12 @@ namespace BACH {
 
     struct Tuple {
 
-		Tuple() : col_num(0), property(NONEINDEX) {}
+		//Tuple() /*: col_num(0), property(NONEINDEX) */{}
 
-        int col_num = 0;
+        // int col_num = 0;
         std::vector <std::string> row;
 
-        tuple_property_t property;
+        // tuple_property_t property;
 
         std::string GetRow(const int &col) {
             return row[col];

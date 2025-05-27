@@ -82,7 +82,7 @@ TEST_CASE("FILE IO Test", "[compaction]") {
         REQUIRE(std::string(t.GetRow(1).c_str()) == ans_sheet[i]);
         // REQUIRE(std::string(t.GetRow(1).c_str()) != "");
     }
-    std::cout<<k.GetTuple("0").col_num<<std::endl;
+    // std::cout<<k.GetTuple("0").col_num<<std::endl;
     // for (int i = 0; i < 64; i++) {
     //     z.GetTuplesFromRange(1, "a", "b");
     // }

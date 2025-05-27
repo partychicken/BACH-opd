@@ -206,6 +206,16 @@ namespace BACH {
             (static_cast<RelFileMetaData<std::string> *>(version->FileIndex[level][++idx])->key_min > key_max))
             nextlevel();
     }
+    
+    void RelVersionIterator::nextscankfile() {
+        if (end)
+            return;
+        if (level == 0 && idx < version->FileIndex[level].size() - 1) {
+            ++idx;
+            return;
+        }
+        nextlevel();
+    }
 
     void RelVersionIterator::nextlevel() {
         ++level;

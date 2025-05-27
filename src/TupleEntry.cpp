@@ -156,7 +156,7 @@ namespace BACH {
         }
         end:
         size_t i = 0, j = 0;
-        while (i < nowa.size() && j < am.size()) {
+        while (i < nowa.size() && j < am.size() && as.size() < kk) {
             auto x = nowa[i]->row[0] <=> am[j]->row[0];
             if (x < 0) {
                 as.emplace_back(std::move(nowa[i]));
@@ -171,16 +171,13 @@ namespace BACH {
                 j++;
             }
         }
-        while (i < nowa.size()) {
+        while (i < nowa.size() && as.size() < kk) {
             as.emplace_back(std::move(nowa[i]));
             i++;
         }
-        while (j < am.size()) {
+        while (j < am.size() && as.size() < kk) {
             as.emplace_back(std::move(am[j]));
             j++;
-        }
-        if(as.size() > kk) {
-            as.resize(kk);
         }
         am = std::move(as);
     }

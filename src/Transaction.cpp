@@ -281,7 +281,7 @@ namespace BACH {
                 now_level_k = k;
                 std::vector<std::unique_ptr<Tuple>> as;
                 size_t i = 0, j = 0;
-                while (i < res.size() && j < am.size()) {
+                while (i < res.size() && j < am.size() && as.size() < k) {
                     auto x = res[i]->row[0] <=> am[j]->row[0];
                     if (x < 0) {
                         as.emplace_back(std::move(res[i]));
@@ -296,16 +296,13 @@ namespace BACH {
                         j++;
                     }
                 }
-                while (i < res.size()) {
+                while (i < res.size() && as.size() < k) {
                     as.emplace_back(std::move(res[i]));
                     i++;
                 }
-                while (j < am.size()) {
+                while (j < am.size() && as.size() < k) {
                     as.emplace_back(std::move(am[j]));
                     j++;
-                }
-                if(as.size() > k) {
-                    as.resize(k);
                 }
                 am.swap(as);
                 res.clear();

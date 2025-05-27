@@ -23,11 +23,12 @@ namespace BACH {
         BlockParser(FileReader *_fileReader,
                     std::shared_ptr<Options> _options, size_t _offset_in_file,
                     size_t _block_size, idx_t _col_num): reader(_fileReader), options(_options),
-                                         offset_in_file(_offset_in_file), block_size(_block_size), col_num(_col_num) {
+                                                         offset_in_file(_offset_in_file), block_size(_block_size),
+                                                         col_num(_col_num) {
             size_t block_end = block_size;
             //size_t offset = 2 * sizeof(idx_t) + sizeof(size_t) + col_num * sizeof(size_t);
             size_t offset = 2 * sizeof(idx_t) + sizeof(size_t);
-            data_buffer = static_cast<char*>(malloc(block_size));
+            data_buffer = static_cast<char *>(malloc(block_size));
             if (!reader->fread(data_buffer, block_size, offset_in_file)) {
                 std::cout << "read fail begin" << std::endl;
                 ++*(int *) NULL;
@@ -65,8 +66,28 @@ namespace BACH {
             delete[] col_size;
         }
 
+        idx_t GetIdx(Key_t key) {
+            char *buffer = data_buffer;
+            idx_t l = 0, r = key_num - 1;
+            while (l < r) {
+                idx_t mid = (l + r) >> 1;
+                Key_t nowkey = util::GetDecodeFixed<Key_t>(buffer + mid * key_size);
+                // auto compare = [&]() {
+                //     for (size_t i = 0; i < key_size; i++) {
+                //         if (buffer[mid * key_size + i] != key[i]) {
+                //             return buffer[mid * key_size + i] < key[i];
+                //         }
+                //     }
+                //     return false; // mid key is equal to key
+                // };
+                if (nowkey < key) l = mid + 1;
+                else r = mid;
+            }
+            return l;
+        }
+
         Tuple GetTuple(Key_t key) {
-            char* buffer = data_buffer;
+            char *buffer = data_buffer;
             // idx_t tmp_read_num = key_num;
             // size_t inner_off = 0;
             // for (idx_t j = 0; j < tmp_read_num; j++) {
@@ -98,7 +119,7 @@ namespace BACH {
             return GetTupleWithIdx(key, l);
         }
 
-        void GetKeyCol(Key_t* res) {
+        void GetKeyCol(Key_t *res) {
             char *buffer = data_buffer;
             for (idx_t i = 0; i < key_num; i++) {
                 res[i] = std::string(buffer + key_size * i, key_size);
@@ -117,23 +138,9 @@ namespace BACH {
         }
 
         void GetKTuple(idx_t &k, Key_t key, std::vector<Tuple> &res) {
-            char* buffer = data_buffer;
-            idx_t l = 0, r = key_num - 1;
-            while (l < r) {
-                idx_t mid = (l + r) >> 1;
-                auto compare = [&]() {
-                    for (size_t i = 0; i < key_size; i++) {
-                        if (buffer[mid * key_size + i] != key[i]) {
-                            return buffer[mid * key_size + i] < key[i];
-                        }
-                    }
-                    return false; // mid key is equal to key
-                };
-                if (compare()) l = mid + 1;
-                else r = mid;
-            }
-            size_t inner_off = l * key_size;
-            for (idx_t j = l; j < key_num; j++) {
+            char *buffer = data_buffer;
+            size_t inner_off = 0;
+            for (idx_t j = 0; j < key_num; j++) {
                 Key_t nowkey = util::GetDecodeFixed<Key_t>(buffer + inner_off);
                 if (nowkey >= key) {
                     res.emplace_back(GetTupleWithIdx(nowkey, j));
@@ -163,9 +170,9 @@ namespace BACH {
             return col_num;
         }
 
-    private:
-        FileReader *reader;
-        std::shared_ptr<Options> options;
+        Key_t GetKeyWithIdx(const idx_t &idx) {
+            return util::GetDecodeFixed<Key_t>(data_buffer + idx * key_size);
+        }
 
         Tuple GetTupleWithIdx(Key_t key, const idx_t &idx) {
             Tuple result;
@@ -179,6 +186,11 @@ namespace BACH {
             }
             return result;
         }
+
+    private:
+        FileReader *reader;
+        std::shared_ptr<Options> options;
+
 
         size_t offset_in_file = 0;
         size_t block_size = 0;

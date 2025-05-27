@@ -312,4 +312,8 @@ namespace BACH {
         // END_OPERATOR_PROFILER("ScanKTuples");
         return am;
     }
+
+    ScanIter Transaction::GetIter(std::string key) {
+        return ScanIter(rel_version, db->RowMemtable->GetCurrentTable(), key);
+    }
 }

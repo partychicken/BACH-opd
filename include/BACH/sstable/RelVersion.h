@@ -37,6 +37,7 @@ namespace BACH
 
         friend class RelVersionIterator;
         friend class rowMemoryManager;
+        friend class ScanIter;
     };
 
     class RelVersionIterator
@@ -49,6 +50,12 @@ namespace BACH
         void next();
         void nextscankfile();
         void nextlevel();
+        idx_t GetLevel() const{
+            return level;
+        }
+        idx_t GetIdx() const{
+            return idx;
+        }
     private:
         RelVersion* version;
         std::string key_min, key_max;

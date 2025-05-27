@@ -496,9 +496,9 @@ namespace BACH {
     }
     
     void DB::check_write_stall() {
-        if (write_stall[0].load() && write_stall[1].load()) {
+        if (write_stall[0].load() || write_stall[1].load()) {
             std::unique_lock<std::mutex> lock(write_stall_mutex);
-            write_stall_cv.wait(lock, [&] { return !write_stall[0].load() || !write_stall[1].load(); });
+            write_stall_cv.wait(lock, [&] { return !write_stall[0].load() && !write_stall[1].load(); });
         }
     }
 }

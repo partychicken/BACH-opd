@@ -42,6 +42,7 @@ namespace BACH {
                     FileIndex[i->level].insert(x, f);
                     FileTotalSize[i->level] += i->file_size;
                 }
+                f->parser = new RelFileParser<std::string>(db->ReaderCaches->find(f), db->options, f->file_size, f);
             }
         }
         if(FileIndex[0].size() > db->options->ZERO_LEVEL_FILES) {
@@ -68,6 +69,7 @@ namespace BACH {
                             + j->file_name).c_str());
                     //if(k->filter->size() == util::ClacFileSize(db->options, k->level))
                     delete j->filter;
+                    delete j->parser;
                     delete j->reader;
                     db->ReaderCaches->deletecache(j);
                     delete j;
@@ -187,7 +189,7 @@ namespace BACH {
         nextlevel();
     }
 
-    FileMetaData *RelVersionIterator::GetFile() const {
+    RelFileMetaData<std::string> *RelVersionIterator::GetFile() const {
         if (end)
             return nullptr;
         return version->FileIndex[level][idx];

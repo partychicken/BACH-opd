@@ -79,13 +79,23 @@ namespace BACH {
             idx_t l = 0, r = key_num - 1;
             while (l < r) {
                 idx_t mid = (l + r) >> 1;
-                Key_t midkey = util::GetDecodeFixed<Key_t>(buffer + mid * key_size);
-                if (midkey < key) l = mid + 1;
+                auto compare = [&]() {
+                    for (size_t i = 0; i < key_size; i++) {
+                        if (buffer[mid * key_size + i] != key[i]) {
+                            return buffer[mid * key_size + i] < key[i];
+                        }
+                    }
+                    return false; // mid key is equal to key
+                };
+                if (compare()) l = mid + 1;
                 else r = mid;
             }
-            Key_t nowkey = util::GetDecodeFixed<Key_t>(buffer + l * key_size);
-            if (nowkey == key) return GetTupleWithIdx(key, l);
-            return Tuple();
+            for (size_t i = 0; i < key_size; i++) {
+                if (buffer[l * key_size + i] != key[i]) {
+                    return Tuple(); // not found
+                }
+            }
+            return GetTupleWithIdx(key, l);
         }
 
         void GetKeyCol(Key_t* res) {

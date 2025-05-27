@@ -189,9 +189,9 @@ namespace BACH {
                 reinterpret_cast<RelFileMetaData<std::string> *>(iter.GetFile())->key_max) {
                 // ԭ���ж�����Ϊ(*iter.GetFile()->filter)[src - iter.GetFile()->vertex_id_b]
                 if (iter.GetFile()->bloom_filter.exists(key)) {
-                    RelFileParser<std::string> parser(db->ReaderCaches->find(iter.GetFile()), db->options,
-                                                    iter.GetFile()->file_size, static_cast<RelFileMetaData<std::string> *>(iter.GetFile()));
-                    Tuple found = parser.GetTuple(key);
+
+                    RelFileParser<std::string>* parser = iter.GetFile()->parser;
+                    Tuple found = parser->GetTuple(key);
                     if (!found.row.empty()) {
                         for (size_t i = 1; i < found.row.size(); i++) {
                             idx_t col_id = *((idx_t *) found.row[i].data());

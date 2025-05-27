@@ -61,7 +61,7 @@ namespace BACH {
 
     Tuple relMemTable::GetTuple(tp_key key, time_t timestamp) {
         RelSkipList::Accessor accessor(tuple_index);
-        auto it = accessor.lower_bound(std::make_pair(key, 0));
+        auto it = accessor.find(std::make_pair(key, 0));
         if (it != accessor.end()) {
             //if (it->tuple.GetKey() == key && it->time <= timestamp) {
             //    BACH::TupleEntry entry = *it;

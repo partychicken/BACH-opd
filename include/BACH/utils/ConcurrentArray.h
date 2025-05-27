@@ -38,20 +38,12 @@ namespace BACH
 		}
 		T& operator[](size_t index)
 		{
-			if (index >= cnt)
-			{
-				std::cout << "out of range" << std::endl;
-			}
 			index += 1;
 			size_t num = util::highbit(index);
 			return array[num][index - (1 << num)];
 		}
 		const T& operator[](size_t index) const
 		{
-			if (index >= cnt)
-			{
-				std::cout << "out of range" << std::endl;
-			}
 			index += 1;
 			size_t num = util::highbit(index);
 			return array[num][index - (1 << num)];

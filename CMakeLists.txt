@@ -24,6 +24,7 @@ add_subdirectory(include/dynamic_bitset)
 target_link_libraries(bach-opd PRIVATE sul::dynamic_bitset)
 add_subdirectory(include/folly)
 target_link_libraries(bach-opd PRIVATE folly)
+target_link_options(bach-opd PRIVATE -ltcmalloc)
 
 set(BUILD_TEST ON)
 set(DEBUG ON)
@@ -40,7 +41,7 @@ endif()
 
 if(DEBUG)
 	set(CMAKE_CXX_FLAGS " -g -Wall ${CMAKE_CXX_FLAGS}")
-	target_link_options(bach-opd PRIVATE -lprofiler -ltcmalloc)
+	target_link_options(bach-opd PRIVATE -lprofiler)
 endif()
 
 if(BUILD_TEST)

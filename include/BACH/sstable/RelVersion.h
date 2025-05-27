@@ -44,9 +44,10 @@ namespace BACH
     public:
         RelVersionIterator(RelVersion* _version, std::string _key_min, std::string _key_max);
         ~RelVersionIterator() = default;
-        FileMetaData* GetFile() const;
+        RelFileMetaData<std::string>* GetFile() const;
         bool End() const { return end; }
         void next();
+        void nextlevel();
     private:
         RelVersion* version;
         std::string key_min, key_max;
@@ -54,7 +55,6 @@ namespace BACH
         idx_t idx = 0;
         size_t file_size, size;
         bool end = false;
-        void nextlevel();
         bool findsrc();
     };
 

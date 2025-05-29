@@ -35,6 +35,10 @@ namespace BACH {
 
         GetNow();
     }
+    
+    ScanIter::~ScanIter() {
+        delete[] block_ptr_list;
+    }
 
     void ScanIter::GetTuple(Tuple &res) {
         if (now_least_type == 1) {

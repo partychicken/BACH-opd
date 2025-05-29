@@ -7,6 +7,8 @@ namespace BACH {
     class ScanIter {
     public:
         ScanIter(RelVersion *rel_version,  std::shared_ptr<relMemTable> x, std::string key);
+        
+        ~ScanIter();
 
         void next();
 

@@ -166,6 +166,24 @@ namespace BACH {
             }
         }
 
+        //temporarily only support one column (just for experiment)
+        void GetKVTogether(Key_t *keys, idx_t &key_num, idx_t *vals, idx_t &val_num, idx_t col_id) {
+            int idx = 0;
+            for (idx_t i = 0; i < block_count; i++) {
+                BlockMetaT<Key_t> &meta = block_meta[i];
+                BlockParser<Key_t> block_parser(reader, options,
+                                                meta.offset_in_file, meta.block_size, col_num);
+                idx_t block_key_num = block_parser.key_num;
+                block_parser.GetKeyCol(keys + idx);
+                idx_t *block_vals = block_parser.GetValCol(col_id);
+                for (idx_t j = 0; j < block_key_num; j++) {
+                    vals[idx++] = block_vals[j];
+                }
+                val_num += block_key_num;
+                key_num += block_key_num;
+            }
+        }
+
         static bool CompareKey(const Key_t &key, const BlockMetaT<Key_t> &meta) {
             return key < meta.key_min;
         }

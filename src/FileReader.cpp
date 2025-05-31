@@ -56,10 +56,10 @@ namespace BACH {
 		size_t cnt = pread(fd, buf, count, offset);
 		if (cnt != count) {
 			cnt = pread(fd, buf, count, offset);
-			END_READ_PROFILER();
+			END_READ_PROFILER(count);
 			return false;
 		}
-		END_READ_PROFILER();
+		END_READ_PROFILER(count);
 		return true;
 	}
 

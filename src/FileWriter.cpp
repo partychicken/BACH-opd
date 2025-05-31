@@ -86,7 +86,7 @@ namespace BACH
 
 		START_WRITE_PROFILER();
 		fsync(fd);
-		END_WRITE_PROFILER();
+		END_WRITE_PROFILER(buffer_offset);
 	}
 
 	void FileWriter::close() {
@@ -101,7 +101,7 @@ namespace BACH
 		cnt += ret;
 		assert(ret == len);
 		buffer_offset = 0;
-		END_WRITE_PROFILER();
+		END_WRITE_PROFILER(len);
 		return true;
 	}
 }

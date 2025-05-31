@@ -37,17 +37,17 @@
 	OperatorProfiler* op = OperatorProfilerContext::GetCurrentProfiler(); \
 	op->StartWrite()
 
-#define END_WRITE_PROFILER() \
-	op->EndWrite()
+#define END_WRITE_PROFILER(amount) \
+	op->EndWrite(amount)
 
 #define START_READ_PROFILER() \
 	OperatorProfiler* op = OperatorProfilerContext::GetCurrentProfiler(); \
 	if(op!= nullptr) \
 	op->StartRead()
 
-#define END_READ_PROFILER() \
+#define END_READ_PROFILER(amount) \
 	if(op!= nullptr) \
-	op->EndRead()
+	op->EndRead(amount)
 
 #else
 #define START_OPERATOR_PROFILER() 
@@ -56,9 +56,9 @@
 #define PROFILER_CONTEXT_THREAD(thread_profiler, func)  func()
 #define GET_THREAD_PROFILER()
 #define START_WRITE_PROFILER() 
-#define END_WRITE_PROFILER() 
+#define END_WRITE_PROFILER(amount) 
 #define START_READ_PROFILER()
-#define END_READ_PROFILER()
+#define END_READ_PROFILER(amount)
 #endif
 
 namespace BACH {
@@ -110,14 +110,17 @@ namespace BACH {
 		void End();                   // ������ʱ
 
 		void StartRead();             // һ�ζ�IO��ʼ
-		void EndRead();               // һ�ζ�IO����
+		void EndRead(size_t amount);               // һ�ζ�IO����
 
 		void StartWrite();            // һ��дIO��ʼ
-		void EndWrite();              // һ��дIO����
+		void EndWrite(size_t amount);              // һ��дIO����
 
 		double Elapsed() const;       // ��ʱ��
 		double TotalReadTime() const;
 		double TotalWriteTime() const;
+
+		size_t TotalReadAmount() const { return total_read_amount_; }
+		size_t TotalWriteAmount() const { return total_write_amount_; }
 
 	private:
 		using Clock = std::chrono::high_resolution_clock;
@@ -129,12 +132,15 @@ namespace BACH {
 
 		double total_read_time_ = 0.0;
 		double total_write_time_ = 0.0;
+		size_t total_read_amount_ = 0;
+		size_t total_write_amount_ = 0;
 
 		TimePoint read_start_;
 		bool reading_ = false;
 
 		TimePoint write_start_;
 		bool writing_ = false;
+
 	};
 
 	class ThreadProfiler {
@@ -146,6 +152,14 @@ namespace BACH {
 		double GetTotalTime(const std::string& op_name) const;
 		double GetTotalReadTime(const std::string& op_name) const;
 		double GetTotalWriteTime(const std::string& op_name) const;
+		size_t GetTotalReadAmount(const std::string& op_name) const {
+			auto it = total_read_amount_.find(op_name);
+			return it != total_read_amount_.end() ? it->second : 0;
+		}
+		size_t GetTotalWriteAmount(const std::string& op_name) const {
+			auto it = total_write_amount_.find(op_name);
+			return it != total_write_amount_.end() ? it->second : 0;
+		}
 
 		// ��ȡ���� p99 ���������
 		const std::unordered_map<std::string, std::vector<double>>& GetLatencySamples() const;
@@ -155,6 +169,8 @@ namespace BACH {
 		std::unordered_map<std::string, double> total_time_;
 		std::unordered_map<std::string, double> total_read_time_;
 		std::unordered_map<std::string, double> total_write_time_;
+		std::unordered_map<std::string, size_t> total_read_amount_;
+		std::unordered_map<std::string, size_t> total_write_amount_;
 	};
 
 	class DBProfiler {
@@ -179,6 +195,8 @@ namespace BACH {
 		std::unordered_map<std::string, double> total_times_;
 		std::unordered_map<std::string, double> total_read_;
 		std::unordered_map<std::string, double> total_write_;
+		std::unordered_map<std::string, size_t> total_read_amount_;
+		std::unordered_map<std::string, size_t> total_write_amount_;
 
 		double ComputeP99(const std::vector<double>& samples) const;
 	};

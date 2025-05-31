@@ -25,11 +25,12 @@ namespace BACH {
         }
     }
 
-    void OperatorProfiler::EndRead() {
+    void OperatorProfiler::EndRead(size_t amount) {
         if (reading_) {
             auto end = Clock::now();
             total_read_time_ += std::chrono::duration_cast<std::chrono::duration<double>>(end - read_start_).count();
             reading_ = false;
+            total_read_amount_ += amount;
         }
     }
 
@@ -40,11 +41,12 @@ namespace BACH {
         }
     }
 
-    void OperatorProfiler::EndWrite() {
+    void OperatorProfiler::EndWrite(size_t amount) {
         if (writing_) {
             auto end = Clock::now();
             total_write_time_ += std::chrono::duration_cast<std::chrono::duration<double>>(end - write_start_).count();
             writing_ = false;
+            total_write_amount_ += amount;
         }
     }
 
@@ -62,11 +64,15 @@ namespace BACH {
         double elapsed = op_profiler.Elapsed();
         double read = op_profiler.TotalReadTime();
         double write = op_profiler.TotalWriteTime();
+        size_t read_amount = op_profiler.TotalReadAmount();
+        size_t write_amount = op_profiler.TotalWriteAmount();
 
         latency_samples_[op_name].push_back(elapsed);
         total_time_[op_name] += elapsed;
         total_read_time_[op_name] += read;
         total_write_time_[op_name] += write;
+        total_read_amount_[op_name] += read_amount;
+        total_write_amount_[op_name] += write_amount;
     }
 
     double ThreadProfiler::GetTotalTime(const std::string& op_name) const {
@@ -101,6 +107,8 @@ namespace BACH {
             total_times_[op] += profiler.GetTotalTime(op);
             total_read_[op] += profiler.GetTotalReadTime(op);
             total_write_[op] += profiler.GetTotalWriteTime(op);
+            total_read_amount_[op] += profiler.GetTotalReadAmount(op);
+            total_write_amount_[op] += profiler.GetTotalWriteAmount(op);
         }
     }
 
@@ -147,6 +155,8 @@ namespace BACH {
             std::cout << "  Total time: " << total_times_.at(op) << "s\n";
             std::cout << "  Total read time: " << total_read_.at(op) << "s\n";
             std::cout << "  Total write time: " << total_write_.at(op) << "s\n";
+            std::cout << "  Total read amount: " << total_read_amount_.at(op) << "\n";
+            std::cout << "  Total write amount: " << total_write_amount_.at(op) << "\n";
             std::cout << "  p99 latency: " << ComputeP99(samples) << "s\n";
         }
     }

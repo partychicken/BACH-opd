@@ -60,17 +60,14 @@ namespace BACH {
     VersionEdit *RelFileManager::MergeRelFile(Compaction &compaction) {
         // Replace vectors with C-style arrays
         size_t file_size = compaction.file_list.size();
-        RelFileParser<std::string> *parsers = (RelFileParser<std::string> *) malloc(
-            sizeof(RelFileParser<std::string>) * file_size);
+        RelFileParser<std::string> *parsers[file_size];
         int16_t *file_ids = (int16_t *) malloc(sizeof(int16_t) * file_size);
         std::vector<OrderedDictionary> **DictList = (std::vector<OrderedDictionary> **) malloc(
             sizeof(std::vector<OrderedDictionary> *) * file_size);
 
         int file_num = 0;
         for (auto &file: compaction.file_list) {
-            auto reader = db->ReaderCaches->find(file);
-            new(&parsers[file_num]) RelFileParser<std::string>(reader, db->options, file->file_size,
-                                                               static_cast<RelFileMetaData<std::string> *>(file));
+            parsers[file_num] = static_cast<RelFileMetaData<std::string> *>(file)->parser;
             DictList[file_num] = &(static_cast<RelFileMetaData<std::string> *>(file)->dictionary);
             if (file->level == compaction.target_level)
                 file_ids[file_num] = -db->options->FILE_MERGE_NUM - 10 + file->file_id;
@@ -79,7 +76,7 @@ namespace BACH {
             file_num++;
         }
 
-        idx_t col_num = parsers[0].GetColumnNum(); // not check the consistency among files
+        idx_t col_num = parsers[0]->GetColumnNum(); // not check the consistency among files
 
         int *max_val = (int *) malloc(sizeof(int) * col_num);
         memset(max_val, 0, sizeof(int) * col_num);
@@ -108,14 +105,14 @@ namespace BACH {
         memset(now_idx, 0, sizeof(int) * file_num);
 
         for (int i = 0; i < file_num; i++) {
-            keys[i] = new std::string[parsers[i].GetKeyNum()];
+            keys[i] = new std::string[parsers[i]->GetKeyNum()];
             for (idx_t j = 0; j < col_num; j++) {
-                vals[i][j] = (idx_t *)malloc(sizeof(idx_t) * parsers[i].GetKeyNum());
+                vals[i][j] = (idx_t *)malloc(sizeof(idx_t) * parsers[i]->GetKeyNum());
             }
             idx_t check_size = 0, tmp = 0;
-            //parsers[i].GetKeyCol(keys[i], check_size);
-            parsers[i].GetKVTogether(keys[i], check_size, vals[i][0], tmp, 0);
-            if (check_size != parsers[i].GetKeyNum()) {
+            //parsers[i]->GetKeyCol(keys[i], check_size);
+            parsers[i]->GetKVTogether(keys[i], check_size, vals[i][0], tmp, 0);
+            if (check_size != parsers[i]->GetKeyNum()) {
                 // Cleanup and return
                 free(max_val);
                 free(now_idx);
@@ -128,7 +125,7 @@ namespace BACH {
                 free(keys);
                 free(DictList);
                 free(file_ids);
-                free(parsers);
+                //free(parsers);
                 return nullptr;
             }
             key_tot_num += (key_num[i] = check_size);
@@ -360,12 +357,6 @@ namespace BACH {
         free(keys);
         free(DictList);
         free(file_ids);
-
-        // Call destructors for placement new objects
-        for (int i = 0; i < file_num; i++) {
-            parsers[i].~RelFileParser<std::string>();
-        }
-        free(parsers);
 
         if (rel_builder) delete rel_builder;
         if (order_key_buf) delete[] order_key_buf;
